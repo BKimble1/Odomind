@@ -125,7 +125,8 @@ jobs:
             -scheme Odomind \
             -destination "${{ steps.simulator.outputs.destination }}" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -only-testing:OdomindUITests \
+            -only-testing:OdomindUITests/OdomindJourneyUITests \
+            -only-testing:OdomindUITests/OdomindAccessibilityUITests \
             -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/ui.log"

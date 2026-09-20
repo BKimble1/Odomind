@@ -69,9 +69,6 @@ final class OdomindScreenshotTests: XCTestCase {
         app.tabBars.buttons["History"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["History"]))
         capture("\(prefix)-07-history")
-
-        app.buttons["today.updateMileage"].firstMatch.tap()
-        app.tabBars.buttons["Today"].tap()
     }
 
     func testCaptureLightAppearance() {
