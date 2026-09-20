@@ -199,12 +199,7 @@ struct MileageSummaryRow: View {
                     .font(.headline)
                 Spacer()
                 if vehicle.isDemo {
-                    Text("SAMPLE")
-                        .font(.caption2.weight(.bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.18), in: RoundedRectangle(cornerRadius: Theme.Radius.badge))
-                        .foregroundStyle(.orange)
+                    SampleBadge()
                 }
             }
 

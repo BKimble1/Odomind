@@ -214,9 +214,7 @@ struct ServiceRecordRow: View {
             }
 
             if record.isDemo {
-                Text("SAMPLE DATA")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.orange)
+                SampleBadge()
             }
         }
         .padding(.vertical, 2)

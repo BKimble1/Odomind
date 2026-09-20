@@ -160,7 +160,7 @@ struct MaintenanceRow: View {
                     if item.hasPendingProposal {
                         Label("Change to review", systemImage: "bell.badge")
                             .font(.caption2)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Theme.Colors.caution)
                     }
                 }
             }

@@ -97,6 +97,23 @@ struct InlineNotice: View {
     }
 }
 
+/// Marks content that came from the built-in sample vehicle.
+///
+/// One component rather than three near-identical inline copies, so the mark
+/// cannot end up saying "SAMPLE" on one screen and "SAMPLE DATA" on another,
+/// and so its contrast is fixed in one place.
+struct SampleBadge: View {
+    var body: some View {
+        Text("SAMPLE")
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.orange.opacity(0.18), in: RoundedRectangle(cornerRadius: Theme.Radius.badge))
+            .foregroundStyle(Theme.Colors.caution)
+            .accessibilityLabel(Text("Sample data"))
+    }
+}
+
 /// A label and value on one line, wrapping gracefully at large text sizes.
 struct ValueRow: View {
     let label: String

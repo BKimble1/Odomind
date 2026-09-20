@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import OdomindCore
 
 /// Visual constants.
@@ -18,6 +19,24 @@ enum Theme {
     enum Radius {
         static let card: CGFloat = 12
         static let badge: CGFloat = 6
+    }
+
+    enum Colors {
+        /// Amber that is legible as text.
+        ///
+        /// `Color.orange` is a fill colour. As small text on a light grouped
+        /// background it measures about 2.2:1, well under the 4.5:1 that
+        /// WCAG asks for and that XCTest's accessibility audit checks. This is
+        /// the same hue taken dark enough for light mode and light enough for
+        /// dark mode to clear it either way.
+        ///
+        /// It is for text only. Decorative icons that carry no information
+        /// alone can keep the system colour.
+        static let caution = Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 1.00, green: 0.76, blue: 0.40, alpha: 1)
+                : UIColor(red: 0.54, green: 0.31, blue: 0.00, alpha: 1)
+        })
     }
 }
 

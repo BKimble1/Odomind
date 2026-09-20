@@ -103,9 +103,7 @@ struct VehicleRow: View {
             }
             Spacer()
             if vehicle.isDemo {
-                Text("SAMPLE")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.orange)
+                SampleBadge()
             }
             if isSelected {
                 Image(systemName: "checkmark")
