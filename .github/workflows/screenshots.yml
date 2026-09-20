@@ -1,0 +1,139 @@
+name: Screenshots
+
+# Captures the app running in a simulator and publishes the result two ways:
+# as a downloadable artifact, and — because artifact downloads are not
+# reachable from every environment this repository gets worked on from — as a
+# base64 copy in the log of a small job per screen, which can be reassembled
+# with `.github/scripts/decode-screenshot.py`.
+#
+# Deliberately manual. It is a way to look at the app, not a gate, so it never
+# runs on a push and never blocks a pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      quality:
+        description: "JPEG quality for the log copies (1-100). Lower is smaller."
+        required: false
+        default: "50"
+      width:
+        description: "Pixel width for the log copies."
+        required: false
+        default: "430"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Capture the running app
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: .github/scripts/select-xcode.sh
+
+      - name: Discover a simulator
+        id: simulator
+        run: .github/scripts/select-simulator.sh
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Capture
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindUITests/OdomindScreenshotTests \
+            -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/screens.log"
+
+      - name: Name and shrink the captures
+        run: |
+          mkdir -p "$RUNNER_TEMP/screenshots" "$RUNNER_TEMP/small"
+          xcrun xcresulttool export attachments \
+            --path "$RUNNER_TEMP/screens.xcresult" \
+            --output-path "$RUNNER_TEMP/screenshots"
+          python3 .github/scripts/name-screenshots.py "$RUNNER_TEMP/screenshots"
+
+          for source in "$RUNNER_TEMP"/screenshots/*.png; do
+            [ -e "$source" ] || continue
+            name=$(basename "$source" .png)
+            sips --resampleWidth "${{ inputs.width }}" \
+                 -s format jpeg \
+                 -s formatOptions "${{ inputs.quality }}" \
+                 "$source" --out "$RUNNER_TEMP/small/$name.jpg" >/dev/null
+          done
+          ls -l "$RUNNER_TEMP/small"
+
+      - name: Upload the full-size screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: ${{ runner.temp }}/screenshots
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload the small copies
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-small-${{ github.run_id }}
+          path: ${{ runner.temp }}/small
+          retention-days: 14
+          if-no-files-found: error
+
+  emit:
+    name: Log ${{ matrix.screen }}
+    needs: capture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        screen:
+          - light-00-onboarding
+          - light-01-today
+          - light-02-maintenance
+          - light-03-task-detail
+          - light-04-garage
+          - light-05-vehicle
+          - light-06-specifications
+          - light-07-history
+          - dark-01-today
+          - large-text-01-today
+    steps:
+      - name: Download the small copies
+        uses: actions/download-artifact@v4
+        with:
+          name: screenshots-small-${{ github.run_id }}
+          path: small
+
+      - name: Emit
+        run: |
+          file=$(find small -maxdepth 1 -type f -name "${{ matrix.screen }}*.jpg" | sort | head -1)
+          if [ -z "$file" ]; then
+            echo "IMGMISS:${{ matrix.screen }}"
+            exit 0
+          fi
+          echo "IMGSTART:${{ matrix.screen }}:$(wc -c < "$file" | tr -d ' ')"
+          base64 -w 0 "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+          echo "IMGEND:${{ matrix.screen }}"

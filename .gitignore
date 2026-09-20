@@ -38,5 +38,9 @@ Package.resolved.bak
 Local.xcconfig
 Odomind/Resources/Local-Info.plist
 
+# Python bytecode from the helper scripts
+__pycache__/
+*.pyc
+
 # Generated verification output
 ci-artifacts/

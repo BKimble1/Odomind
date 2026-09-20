@@ -7,7 +7,7 @@ final class CalendarServiceTests: XCTestCase {
 
     private let calendar = Calendar.fixedUTC()
 
-    private func draft(isEstimated: Bool) -> CalendarEventDraft? {
+    private func draft(isEstimated: Bool) -> CalendarEventDraft {
         CalendarService.makeEventDraft(
             title: "Engine oil and filter",
             vehicleName: "The Jeep",
@@ -19,20 +19,28 @@ final class CalendarServiceTests: XCTestCase {
     }
 
     func testEventIsAllDayAndSpansOneDay() throws {
-        let draft = try XCTUnwrap(self.draft(isEstimated: false))
+        let draft = self.draft(isEstimated: false)
         let event = draft.event
+        let day = calendar.startOfDay(for: appDate(2026, 7, 15))
 
         XCTAssertTrue(event.isAllDay)
-        XCTAssertEqual(event.startDate, calendar.startOfDay(for: appDate(2026, 7, 15)))
-        XCTAssertEqual(
-            event.endDate,
-            calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: appDate(2026, 7, 15)))
+        XCTAssertEqual(event.startDate, day)
+
+        // EventKit normalises the end of an all-day event to the last instant
+        // of the final day it covers, so the invariant worth asserting is the
+        // span, not the exact timestamp: a deadline on the 15th must not put a
+        // two-day block on the calendar.
+        let end = try XCTUnwrap(event.endDate)
+        XCTAssertTrue(
+            calendar.isDate(end, inSameDayAs: day),
+            "a one-day deadline ended on \(end), which is not \(day)"
         )
+        XCTAssertGreaterThanOrEqual(end, event.startDate)
         XCTAssertEqual(event.title, "Engine oil and filter — The Jeep")
     }
 
     func testNotesSayThatTheEventIsASnapshot() throws {
-        let draft = try XCTUnwrap(self.draft(isEstimated: false))
+        let draft = self.draft(isEstimated: false)
         let notes = try XCTUnwrap(draft.event.notes)
 
         XCTAssertTrue(notes.contains("Every 5,000 miles"), "the schedule should travel with the event")
@@ -43,7 +51,7 @@ final class CalendarServiceTests: XCTestCase {
     }
 
     func testAnEstimatedDueDateSaysSoInTheEvent() throws {
-        let draft = try XCTUnwrap(self.draft(isEstimated: true))
+        let draft = self.draft(isEstimated: true)
         let notes = try XCTUnwrap(draft.event.notes)
         XCTAssertTrue(
             notes.lowercased().contains("estimate"),
@@ -52,16 +60,25 @@ final class CalendarServiceTests: XCTestCase {
     }
 
     func testAConfirmedDueDateDoesNotClaimToBeAnEstimate() throws {
-        let draft = try XCTUnwrap(self.draft(isEstimated: false))
+        let draft = self.draft(isEstimated: false)
         let notes = try XCTUnwrap(draft.event.notes)
         XCTAssertFalse(notes.lowercased().contains("is an estimate"))
     }
 
-    func testTheDraftKeepsItsStore() throws {
-        // EventKit objects must not outlive the store they came from; the draft
-        // exists to hold both for the lifetime of the editor sheet.
-        let draft = try XCTUnwrap(self.draft(isEstimated: false))
-        XCTAssertTrue(draft.store is EKEventStore)
+    func testEachDraftHasItsOwnIdentity() {
+        // The draft exists to hold the event together with the store it came
+        // from, because EventKit objects must not outlive their store, and to
+        // give `sheet(item:)` something to key on. A reused identity would
+        // stop the editor reopening after the owner cancels.
+        let first = self.draft(isEstimated: false)
+        let second = self.draft(isEstimated: false)
+
+        XCTAssertEqual(first.id, first.id)
+        XCTAssertNotEqual(
+            first.id,
+            second.id,
+            "sheet(item:) needs a fresh identity to present the editor a second time"
+        )
     }
 }
 

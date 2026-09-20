@@ -21,9 +21,6 @@ enum CalendarService {
     ///
     /// EventKit objects must outlive their store, so the draft carries both and
     /// the view holds the draft for as long as the editor is on screen.
-    ///
-    /// Returns `nil` only when the due date cannot be represented, which the
-    /// caller reports rather than silently skipping.
     static func makeEventDraft(
         title: String,
         vehicleName: String,
@@ -31,17 +28,20 @@ enum CalendarService {
         isEstimated: Bool,
         scheduleSummary: String?,
         calendar: Calendar
-    ) -> CalendarEventDraft? {
+    ) -> CalendarEventDraft {
         // Constructing a store does not request authorization and reads nothing.
         let store = EKEventStore()
         let event = EKEvent(eventStore: store)
         event.title = "\(title) — \(vehicleName)"
         event.isAllDay = true
 
+        // An all-day EKEvent ends on the last day it covers, not on the
+        // morning after. Passing an exclusive end date here makes EventKit
+        // stretch the entry to 23:59:59 of that following day, which puts a
+        // two-day block on the owner's calendar for a one-day deadline.
         let day = calendar.startOfDay(for: dueDate)
-        guard let end = calendar.date(byAdding: .day, value: 1, to: day) else { return nil }
         event.startDate = day
-        event.endDate = end
+        event.endDate = day
 
         var notes: [String] = []
         if let scheduleSummary {

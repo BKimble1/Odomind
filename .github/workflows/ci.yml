@@ -156,6 +156,11 @@ jobs:
             || echo "xcresulttool could not export attachments on this toolchain"
           find "$RUNNER_TEMP/screenshots" -type f | head -50
 
+          # Attachments export under opaque names; the manifest beside them
+          # carries the readable one.
+          python3 .github/scripts/name-screenshots.py "$RUNNER_TEMP/screenshots"
+          find "$RUNNER_TEMP/screenshots" -maxdepth 1 -type f -name '*.png' | sort
+
       - name: Upload screenshots
         if: always() && steps.screenshots.outcome == 'success'
         uses: actions/upload-artifact@v4
