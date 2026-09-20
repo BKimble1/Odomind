@@ -100,7 +100,8 @@ final class BackupTests: XCTestCase {
                     specification: Specification(
                         kind: .engineOilViscosity,
                         value: .text("5W-20"),
-                        provenance: .userEntered
+                        provenance: .userEntered,
+                        updatedAt: Fixture.stamp
                     )
                 )
             ],

@@ -569,7 +569,7 @@
           "count": 12,
           "unit": "months"
         },
-        "type": "time"
+        "type": "conditionCheck"
       },
       "defaultRuleProvenance": {
         "attribution": {

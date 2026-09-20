@@ -10,13 +10,13 @@ import OdomindCore
 enum StoreCoding {
     static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = DateCoding.encodingStrategy
         return encoder
     }()
 
     static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = DateCoding.decodingStrategy
         return decoder
     }()
 

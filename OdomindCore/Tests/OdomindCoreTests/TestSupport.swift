@@ -40,6 +40,13 @@ func makeDate(
 enum Fixture {
     static let vehicleID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
 
+    /// A fixed "created at" used by every fixture.
+    ///
+    /// Real records are stamped by `SystemClock`, which rounds to the precision
+    /// the transfer formats keep. Fixtures use a whole-second instant so a
+    /// round-trip assertion tests the format, not the clock.
+    static let stamp = makeDate(2026, 1, 1, hour: 9)
+
     static func vehicle(
         id: UUID = Fixture.vehicleID,
         unit: DistanceUnit = .miles,
@@ -105,7 +112,8 @@ enum Fixture {
         baseline: HistoryBaseline = .notProvided,
         threshold: DueSoonThreshold = DueSoonThreshold(distance: Distance(500, .miles), days: 30),
         snoozedUntil: Date? = nil,
-        reminder: ReminderPreference = .disabled
+        reminder: ReminderPreference = .disabled,
+        createdAt: Date = Fixture.stamp
     ) -> MaintenancePlanItem {
         MaintenancePlanItem(
             id: id,
@@ -119,7 +127,8 @@ enum Fixture {
             baseline: baseline,
             snoozedUntil: snoozedUntil,
             dueSoonThreshold: threshold,
-            reminder: reminder
+            reminder: reminder,
+            createdAt: createdAt
         )
     }
 
@@ -129,7 +138,8 @@ enum Fixture {
         definitionIDs: [String] = ["engine-oil-and-filter"],
         vehicleID: UUID = Fixture.vehicleID,
         totalCost: Money? = nil,
-        unit: DistanceUnit = .miles
+        unit: DistanceUnit = .miles,
+        stamp: Date = Fixture.stamp
     ) -> ServiceRecord {
         ServiceRecord(
             vehicleID: vehicleID,
@@ -138,7 +148,9 @@ enum Fixture {
             items: definitionIDs.map {
                 ServiceLineItem(definitionID: $0, title: $0, action: .replace)
             },
-            totalCost: totalCost
+            totalCost: totalCost,
+            createdAt: stamp,
+            updatedAt: stamp
         )
     }
 

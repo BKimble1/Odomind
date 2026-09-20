@@ -125,6 +125,20 @@ public enum ScheduleRule: Hashable, Sendable {
         return false
     }
 
+    /// True for the rule shapes that read as "replace every N distance".
+    ///
+    /// Used to catch a catalog entry that schedules an inspection as though it
+    /// were a replacement deadline — the confusion that makes owners replace
+    /// parts that were fine and skip ones that were not.
+    public var readsAsReplacementInterval: Bool {
+        switch self {
+        case .distance, .distanceOrTime:
+            return true
+        case .time, .fixedMilestones, .oneTime, .conditionCheck, .vehicleIndicator:
+            return false
+        }
+    }
+
     /// Plain-language description used on task cards and in explanations.
     public var summary: String {
         switch self {

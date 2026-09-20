@@ -206,8 +206,12 @@ public enum CatalogValidator {
                 }
 
                 // An inspection action paired with a replacement-style interval
-                // is the exact confusion this app is meant to avoid.
-                if definition.action.isCheckOnly, !rule.isInspectionOnly, !rule.isOneTime {
+                // is the exact confusion this app is meant to avoid. A calendar
+                // deadline, a milestone or a vehicle indicator is fine: an
+                // emissions test really does expire on a date, and a milestone
+                // check really is counted off the odometer. Only the
+                // "every N miles" shapes read as a replacement schedule.
+                if definition.action.isCheckOnly, rule.readsAsReplacementInterval {
                     issues.append(
                         CatalogValidationIssue(
                             severity: .warning,

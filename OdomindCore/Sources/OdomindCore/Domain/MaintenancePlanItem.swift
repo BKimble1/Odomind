@@ -165,6 +165,15 @@ public struct MaintenancePlanItem: Codable, Hashable, Sendable, Identifiable {
     public var notes: String?
     public var isCustom: Bool
     public var safetyNote: String?
+    /// When the owner last added this task to their calendar, and the due date
+    /// that event was written with.
+    ///
+    /// A saved calendar event is a snapshot: Odomind does not keep it in step
+    /// with the schedule. Recording both lets the app warn before creating a
+    /// duplicate, and say plainly when the event on the calendar no longer
+    /// matches what Odomind now computes.
+    public var lastCalendarExportOn: Date?
+    public var lastCalendarExportDueDate: Date?
     public var createdAt: Date
 
     public init(
@@ -188,6 +197,8 @@ public struct MaintenancePlanItem: Codable, Hashable, Sendable, Identifiable {
         notes: String? = nil,
         isCustom: Bool = false,
         safetyNote: String? = nil,
+        lastCalendarExportOn: Date? = nil,
+        lastCalendarExportDueDate: Date? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -210,6 +221,8 @@ public struct MaintenancePlanItem: Codable, Hashable, Sendable, Identifiable {
         self.notes = notes
         self.isCustom = isCustom
         self.safetyNote = safetyNote
+        self.lastCalendarExportOn = lastCalendarExportOn
+        self.lastCalendarExportDueDate = lastCalendarExportDueDate
         self.createdAt = createdAt
     }
 
@@ -271,5 +284,33 @@ public struct MaintenancePlanItem: Codable, Hashable, Sendable, Identifiable {
     /// Dismisses a parked proposal and keeps the current schedule.
     public mutating func dismissPendingProposal() {
         pendingProposal = nil
+    }
+
+    /// Whether a calendar event was already created for this task, and whether
+    /// the schedule has moved since.
+    public func calendarExportState(currentDueDate: Date?) -> CalendarExportState {
+        guard let exportedOn = lastCalendarExportOn else { return .notExported }
+        guard let currentDueDate, let exportedDueDate = lastCalendarExportDueDate else {
+            return .exported(on: exportedOn)
+        }
+        if abs(currentDueDate.timeIntervalSince(exportedDueDate)) < 60 {
+            return .exported(on: exportedOn)
+        }
+        return .exportedButStale(on: exportedOn, eventDate: exportedDueDate)
+    }
+}
+
+/// What Odomind knows about a calendar event it helped create.
+public enum CalendarExportState: Hashable, Sendable {
+    case notExported
+    case exported(on: Date)
+    /// An event exists, but the due date has changed since it was written.
+    /// Odomind cannot edit or remove it, and says so rather than implying it
+    /// keeps the calendar in step.
+    case exportedButStale(on: Date, eventDate: Date)
+
+    public var hasEvent: Bool {
+        if case .notExported = self { return false }
+        return true
     }
 }

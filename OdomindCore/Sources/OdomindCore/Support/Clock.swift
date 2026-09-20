@@ -12,7 +12,14 @@ public protocol OdomindClock: Sendable {
 
 public struct SystemClock: OdomindClock {
     public init() {}
-    public var now: Date { Date() }
+
+    /// The current instant, rounded to the precision Odomind's transfer formats
+    /// preserve.
+    ///
+    /// Without this, a record created now and the same record restored from a
+    /// backup differ by a few microseconds, which makes duplicate detection and
+    /// round-trip tests quietly unreliable.
+    public var now: Date { DateCoding.normalized(Date()) }
 }
 
 /// A clock pinned to a fixed instant. Test-only convenience, but it lives in

@@ -137,6 +137,8 @@ extension StoredPlanItem {
             snoozedUntil: item.snoozedUntil,
             notes: item.notes,
             safetyNote: item.safetyNote,
+            lastCalendarExportOn: item.lastCalendarExportOn,
+            lastCalendarExportDueDate: item.lastCalendarExportDueDate,
             createdAt: item.createdAt,
             catalogRuleData: try StoreCoding.encodeOptional(item.catalogRule),
             catalogProvenanceData: try StoreCoding.encodeOptional(item.catalogProvenance),
@@ -161,6 +163,8 @@ extension StoredPlanItem {
         snoozedUntil = item.snoozedUntil
         notes = item.notes
         safetyNote = item.safetyNote
+        lastCalendarExportOn = item.lastCalendarExportOn
+        lastCalendarExportDueDate = item.lastCalendarExportDueDate
         catalogRuleData = try StoreCoding.encodeOptional(item.catalogRule)
         catalogProvenanceData = try StoreCoding.encodeOptional(item.catalogProvenance)
         ownerRuleData = try StoreCoding.encodeOptional(item.ownerRule)
@@ -237,6 +241,8 @@ extension StoredPlanItem {
             notes: notes,
             isCustom: isCustom,
             safetyNote: safetyNote,
+            lastCalendarExportOn: lastCalendarExportOn,
+            lastCalendarExportDueDate: lastCalendarExportDueDate,
             createdAt: createdAt
         )
     }

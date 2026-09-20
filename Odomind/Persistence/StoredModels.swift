@@ -118,6 +118,8 @@ final class StoredPlanItem {
     var snoozedUntil: Date?
     var notes: String?
     var safetyNote: String?
+    var lastCalendarExportOn: Date?
+    var lastCalendarExportDueDate: Date?
     var createdAt: Date = Date()
 
     /// `ScheduleRule?` as JSON (empty when absent).
@@ -151,6 +153,8 @@ final class StoredPlanItem {
         snoozedUntil: Date?,
         notes: String?,
         safetyNote: String?,
+        lastCalendarExportOn: Date?,
+        lastCalendarExportDueDate: Date?,
         createdAt: Date,
         catalogRuleData: Data,
         catalogProvenanceData: Data,
@@ -173,6 +177,8 @@ final class StoredPlanItem {
         self.snoozedUntil = snoozedUntil
         self.notes = notes
         self.safetyNote = safetyNote
+        self.lastCalendarExportOn = lastCalendarExportOn
+        self.lastCalendarExportDueDate = lastCalendarExportDueDate
         self.createdAt = createdAt
         self.catalogRuleData = catalogRuleData
         self.catalogProvenanceData = catalogProvenanceData

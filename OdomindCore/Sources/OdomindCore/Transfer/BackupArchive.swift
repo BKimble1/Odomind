@@ -136,14 +136,14 @@ public struct BackupArchive: Codable, Hashable, Sendable {
 
     public static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = DateCoding.encodingStrategy
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return encoder
     }
 
     public static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = DateCoding.decodingStrategy
         return decoder
     }
 
