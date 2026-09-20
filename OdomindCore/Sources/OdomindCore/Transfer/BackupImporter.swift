@@ -1,6 +1,6 @@
 import Foundation
 
-public enum BackupIssue: Hashable, Sendable {
+public enum BackupIssue: Error, Hashable, Sendable {
     case unsupportedFormatVersion(found: Int, supported: Int)
     case malformed(String)
     case readingForUnknownVehicle(UUID)
