@@ -328,3 +328,55 @@ final class SpecificationResolutionTests: XCTestCase {
         )
     }
 }
+
+final class CalendarExportStateTests: XCTestCase {
+
+    private func item(exportedOn: Date?, exportedDueDate: Date?) -> MaintenancePlanItem {
+        var item = Fixture.planItem(rule: .time(interval: .months(6)))
+        item.lastCalendarExportOn = exportedOn
+        item.lastCalendarExportDueDate = exportedDueDate
+        return item
+    }
+
+    func testNothingExportedYet() {
+        let state = item(exportedOn: nil, exportedDueDate: nil)
+            .calendarExportState(currentDueDate: makeDate(2026, 7, 15))
+        XCTAssertEqual(state, .notExported)
+        XCTAssertFalse(state.hasEvent)
+    }
+
+    func testExportedAndStillMatching() {
+        let due = makeDate(2026, 7, 15)
+        let state = item(exportedOn: makeDate(2026, 6, 1), exportedDueDate: due)
+            .calendarExportState(currentDueDate: due)
+        XCTAssertEqual(state, .exported(on: makeDate(2026, 6, 1)))
+        XCTAssertTrue(state.hasEvent)
+    }
+
+    func testScheduleMovedAfterTheEventWasCreated() {
+        // Odomind cannot edit or remove an event it helped create, so when the
+        // due date moves it has to say so rather than quietly disagree with the
+        // owner's calendar.
+        let state = item(exportedOn: makeDate(2026, 6, 1), exportedDueDate: makeDate(2026, 7, 15))
+            .calendarExportState(currentDueDate: makeDate(2026, 9, 1))
+        guard case .exportedButStale(let on, let eventDate) = state else {
+            return XCTFail("expected exportedButStale, got \(state)")
+        }
+        XCTAssertEqual(on, makeDate(2026, 6, 1))
+        XCTAssertEqual(eventDate, makeDate(2026, 7, 15))
+        XCTAssertTrue(state.hasEvent)
+    }
+
+    func testASecondOfDriftIsNotTreatedAsAChange() {
+        let due = makeDate(2026, 7, 15)
+        let state = item(exportedOn: makeDate(2026, 6, 1), exportedDueDate: due)
+            .calendarExportState(currentDueDate: due.addingTimeInterval(30))
+        XCTAssertEqual(state, .exported(on: makeDate(2026, 6, 1)))
+    }
+
+    func testExportedWithNoCurrentDueDateIsStillReportedAsExported() {
+        let state = item(exportedOn: makeDate(2026, 6, 1), exportedDueDate: makeDate(2026, 7, 15))
+            .calendarExportState(currentDueDate: nil)
+        XCTAssertEqual(state, .exported(on: makeDate(2026, 6, 1)))
+    }
+}
