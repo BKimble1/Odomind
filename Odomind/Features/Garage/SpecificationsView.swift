@@ -39,8 +39,14 @@ struct SpecificationsView: View {
 
         List {
             Section {
+                // Read from what the catalog actually resolved rather than
+                // asserting a fixed claim, so this stays true if a later
+                // catalog does carry values for some vehicles.
+                let shipped = resolved.filter { !$0.isOwnerOverride }.count
                 InlineNotice(
-                    message: "Odomind ships no fluid, tire or pressure values for this vehicle. Add them once from your owner's manual and the door placard, and they appear everywhere they are relevant."
+                    message: shipped == 0
+                        ? "Odomind ships no fluid, tire or pressure values for this vehicle. Add them once from your owner's manual and the door placard, and they appear everywhere they are relevant."
+                        : "Odomind has \(shipped) value\(shipped == 1 ? "" : "s") for this vehicle and shows where each came from. Anything below marked Not available is yours to add from your owner's manual and the door placard."
                 )
             }
 
