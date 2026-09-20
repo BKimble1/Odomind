@@ -172,8 +172,8 @@ jobs:
         run: |
           echo "### Test failures" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          grep -hE "error:|failed|XCTAssert" "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
-            | sort -u | head -80 | tee -a "$GITHUB_STEP_SUMMARY"
+          ./.github/scripts/test-failures.sh "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log \
+            | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       # Result bundles contain only this repository's fixtures and the
@@ -195,10 +195,5 @@ jobs:
       - name: Errors
         if: failure()
         run: |
-          echo "================ ERRORS ================"
-          grep -hE "error:" "$RUNNER_TEMP"/build.log "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
-            | sed 's|/Users/runner/work/Odomind/Odomind/||' | sort -u | head -60
-          echo "================ FAILED TESTS ================"
-          grep -hE "^Test Case .* failed|XCTAssert.* failed" "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
-            | sed 's|/Users/runner/work/Odomind/Odomind/||' | head -40
-          echo "================ END ================"
+          ./.github/scripts/test-failures.sh \
+            "$RUNNER_TEMP"/build.log "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log

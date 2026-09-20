@@ -40,7 +40,7 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         capture("\(prefix)-02-maintenance")
 
-        let task = app.otherElements["maintenance.task.engine-oil-and-filter"]
+        let task = app.element(withIdentifier: "maintenance.task.engine-oil-and-filter")
         if waitFor(task, 8) {
             task.tap()
             capture("\(prefix)-03-task-detail")
@@ -51,7 +51,7 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Garage"]))
         capture("\(prefix)-04-garage")
 
-        let vehicle = app.otherElements["garage.vehicle"]
+        let vehicle = app.element(withIdentifier: "garage.vehicle")
         if waitFor(vehicle, 8) {
             vehicle.tap()
             capture("\(prefix)-05-vehicle")

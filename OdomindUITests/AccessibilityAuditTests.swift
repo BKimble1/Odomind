@@ -55,7 +55,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         audit("Maintenance")
 
-        let task = app.otherElements["maintenance.task.engine-oil-and-filter"]
+        let task = app.element(withIdentifier: "maintenance.task.engine-oil-and-filter")
         if waitFor(task, 10) {
             task.tap()
             _ = waitFor(app.navigationBars.firstMatch, 10)
@@ -78,10 +78,10 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
 
         app.tabBars.buttons["Garage"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Garage"]))
-        guard waitFor(app.otherElements["garage.vehicle"], 10) else {
+        guard waitFor(app.element(withIdentifier: "garage.vehicle"), 10) else {
             return XCTFail("the vehicle row is missing")
         }
-        app.otherElements["garage.vehicle"].tap()
+        app.element(withIdentifier: "garage.vehicle").tap()
         guard waitFor(app.buttons["vehicle.specifications"], 10) else {
             return XCTFail("the specifications link is missing")
         }

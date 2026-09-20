@@ -13,6 +13,7 @@
 		106E39ED2033E52D7C4870FD /* Formatters.swift in app */ = {isa = PBXBuildFile; fileRef = 8398D2DB6DA2236C3F4BE1EB /* Formatters.swift */; };
 		10F92A26F729A5BC325F47D8 /* SchemaVersions.swift in app */ = {isa = PBXBuildFile; fileRef = 69B949A63F3F13666BE07B7F /* SchemaVersions.swift */; };
 		14F754AE3B0FF815E3789FFE /* AddTaskView.swift in app */ = {isa = PBXBuildFile; fileRef = B1EA4CA87CC0DB4389407224 /* AddTaskView.swift */; };
+		1AD9CA88CF1951E51473182B /* UITestSupport.swift in ui */ = {isa = PBXBuildFile; fileRef = 44B829C32BCFC525C938CF8E /* UITestSupport.swift */; };
 		215E875DFB7F81818AFAD2BF /* VehicleIdentificationProvider.swift in app */ = {isa = PBXBuildFile; fileRef = EBE1C200ED995AE8B9F001DA /* VehicleIdentificationProvider.swift */; };
 		226493C8E491D33DAAF29DEE /* vpic-wrangler-2010.json in unit */ = {isa = PBXBuildFile; fileRef = DE7CA5A5084E5925CE843403 /* vpic-wrangler-2010.json */; };
 		28A7586F5BD5FCD9C788DC62 /* AppModel+Maintenance.swift in app */ = {isa = PBXBuildFile; fileRef = 1A7BBB67937F2CA20AC0D728 /* AppModel+Maintenance.swift */; };
@@ -162,6 +163,7 @@
 		709FC316DBB607E3C4B6445A /* AccessibilityAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditTests.swift; sourceTree = "<group>"; };
 		CA28853266D8D2A9B30AE5AE /* OdomindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OdomindUITests.swift; sourceTree = "<group>"; };
 		88CDE1B128AD99B377A95D61 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
+		44B829C32BCFC525C938CF8E /* UITestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSupport.swift; sourceTree = "<group>"; };
 		6261ED6897AD093E11015507 /* Odomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Odomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D75DC02CB38741BFC1B30B2 /* OdomindTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OdomindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B56692CEB13524BE07238E0E /* OdomindUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OdomindUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -398,6 +400,7 @@
 				709FC316DBB607E3C4B6445A,
 				CA28853266D8D2A9B30AE5AE,
 				88CDE1B128AD99B377A95D61,
+				44B829C32BCFC525C938CF8E,
 			);
 			path = OdomindUITests;
 			sourceTree = "<group>";
@@ -639,6 +642,7 @@
 				99F5C262B261F50773534A4F /* AccessibilityAuditTests.swift */,
 				595D4E601CB4BA2A3F5BF1F9 /* OdomindUITests.swift */,
 				F49E6D610ED74861DCF730E4 /* ScreenshotTests.swift */,
+				1AD9CA88CF1951E51473182B /* UITestSupport.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
