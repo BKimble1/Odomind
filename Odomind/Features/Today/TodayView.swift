@@ -49,6 +49,20 @@ struct TodayView: View {
         }
     }
 
+    /// How many tasks a group shows on Today before deferring to Maintenance.
+    ///
+    /// Overdue and due-soon work is what this screen is for, so it is never
+    /// truncated. The long tail — everything scheduled far out, and everything
+    /// still waiting on an answer — is capped so it cannot bury the rest.
+    private func visibleItems(in group: DueGroup) -> [ScheduleEvaluation] {
+        switch group.state {
+        case .overdue, .dueSoon:
+            return group.items
+        default:
+            return Array(group.items.prefix(4))
+        }
+    }
+
     @ViewBuilder
     private func content(for vehicle: Vehicle) -> some View {
         List {
@@ -127,10 +141,19 @@ struct TodayView: View {
             }
 
             ForEach(groups) { group in
+                let shown = visibleItems(in: group)
                 Section {
-                    ForEach(group.items) { evaluation in
+                    ForEach(shown) { evaluation in
                         NavigationLink(value: evaluation.planItemID) {
                             TaskSummaryRow(evaluation: evaluation, vehicle: vehicle)
+                        }
+                    }
+                    if shown.count < group.items.count {
+                        Button {
+                            router.selectedTab = .maintenance
+                        } label: {
+                            Text("See all \(group.items.count) in Maintenance")
+                                .font(.callout)
                         }
                     }
                 } header: {
