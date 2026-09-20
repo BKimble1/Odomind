@@ -51,15 +51,19 @@ struct TodayView: View {
 
     /// How many tasks a group shows on Today before deferring to Maintenance.
     ///
-    /// Overdue and due-soon work is what this screen is for, so it is never
-    /// truncated. The long tail — everything scheduled far out, and everything
-    /// still waiting on an answer — is capped so it cannot bury the rest.
+    /// Anything the owner has to act on is shown in full: what is overdue, what
+    /// is due soon, what is waiting on a schedule and what is waiting on a
+    /// service date. On a freshly added vehicle that last pair *is* the screen,
+    /// and capping it would hide the only thing there is to do.
+    ///
+    /// What gets capped is work with nothing to act on yet — the far-out
+    /// scheduled tasks — so a long tail cannot push the rest off the screen.
     private func visibleItems(in group: DueGroup) -> [ScheduleEvaluation] {
         switch group.state {
-        case .overdue, .dueSoon:
+        case .overdue, .dueSoon, .needsSetup, .historyUnknown:
             return group.items
-        default:
-            return Array(group.items.prefix(4))
+        case .upcoming, .completed, .notApplicable:
+            return Array(group.items.prefix(6))
         }
     }
 
