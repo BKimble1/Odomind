@@ -49,6 +49,7 @@
 		955A93FD048CC67777069046 /* AppModelTests.swift in unit */ = {isa = PBXBuildFile; fileRef = B14166184739F71CE3EA0D41 /* AppModelTests.swift */; };
 		95E78C5D7C8753C9764820AC /* OdomindStore.swift in app */ = {isa = PBXBuildFile; fileRef = B677462088269013520AA3D0 /* OdomindStore.swift */; };
 		976AF9F82F8EBC8767165BC7 /* Components.swift in app */ = {isa = PBXBuildFile; fileRef = AF5F964CB354B27C09AD0836 /* Components.swift */; };
+		99F5C262B261F50773534A4F /* AccessibilityAuditTests.swift in ui */ = {isa = PBXBuildFile; fileRef = 709FC316DBB607E3C4B6445A /* AccessibilityAuditTests.swift */; };
 		9AB1B4FFAD4296F63E26C6ED /* vpic-partial-ev.json in unit */ = {isa = PBXBuildFile; fileRef = B0FA6651AD2928ADDBB7D8FB /* vpic-partial-ev.json */; };
 		A3154ABCC21BA915F542F25A /* DataSourcesView.swift in app */ = {isa = PBXBuildFile; fileRef = 912A91CC7745E84468B53AFA /* DataSourcesView.swift */; };
 		B0695222D8AED2EEF57E59A6 /* RootView.swift in app */ = {isa = PBXBuildFile; fileRef = 71BAABA7DBFA2C122221D775 /* RootView.swift */; };
@@ -156,6 +157,7 @@
 		260C9AC5F34853A02A52E37C /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
 		BF29A6AF4DE7245A2BBDC5E1 /* ReminderAndBackupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderAndBackupTests.swift; sourceTree = "<group>"; };
 		BE0CA80060ADD54B17D87FCE /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
+		709FC316DBB607E3C4B6445A /* AccessibilityAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuditTests.swift; sourceTree = "<group>"; };
 		CA28853266D8D2A9B30AE5AE /* OdomindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OdomindUITests.swift; sourceTree = "<group>"; };
 		88CDE1B128AD99B377A95D61 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 		6261ED6897AD093E11015507 /* Odomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Odomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -390,6 +392,7 @@
 		E240A3AC134553B31BEF94B9 /* OdomindUITests */ = {
 			isa = PBXGroup;
 			children = (
+				709FC316DBB607E3C4B6445A,
 				CA28853266D8D2A9B30AE5AE,
 				88CDE1B128AD99B377A95D61,
 			);
@@ -629,6 +632,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				99F5C262B261F50773534A4F /* AccessibilityAuditTests.swift */,
 				595D4E601CB4BA2A3F5BF1F9 /* OdomindUITests.swift */,
 				F49E6D610ED74861DCF730E4 /* ScreenshotTests.swift */,
 			);

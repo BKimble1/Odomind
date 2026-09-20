@@ -127,6 +127,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -only-testing:OdomindUITests/OdomindJourneyUITests \
             -only-testing:OdomindUITests/OdomindAccessibilityUITests \
+            -only-testing:OdomindUITests/OdomindAccessibilityAuditTests \
             -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/ui.log"
