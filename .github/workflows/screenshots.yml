@@ -133,6 +133,11 @@ jobs:
           file=$(find small -maxdepth 1 -type f -name "${{ matrix.screen }}*.jpg" | sort | head -1)
           if [ -z "$file" ]; then
             echo "IMGMISS:${{ matrix.screen }}"
+            # Say what did arrive. If xcresulttool's manifest format changes,
+            # every screen goes missing at once and the reason is the naming,
+            # not the capture — that is only obvious with the list in hand.
+            echo "What the artifact actually contains:"
+            find small -type f | sort
             exit 0
           fi
           echo "IMGSTART:${{ matrix.screen }}:$(wc -c < "$file" | tr -d ' ')"
