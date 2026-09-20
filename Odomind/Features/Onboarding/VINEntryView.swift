@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import VisionKit
 import OdomindCore
 
@@ -168,11 +169,29 @@ struct VINScannerView: View {
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
                                 .padding()
                         }
+                } else if DataScannerViewController.isSupported {
+                    // The device can scan; something else is in the way, and
+                    // camera access being off is much the most likely. Offer
+                    // the way back as well as the way around.
+                    ContentUnavailableView {
+                        Label("Scanning is unavailable", systemImage: "camera.badge.ellipsis")
+                    } description: {
+                        Text("Camera access may be turned off for Odomind. Typing the VIN works just as well — it is 17 characters off the dashboard or door jamb.")
+                    } actions: {
+                        Button("Type it instead") { dismiss() }
+                            .buttonStyle(.borderedProminent)
+                        if let settings = URL(string: UIApplication.openSettingsURLString) {
+                            Link("Open Odomind's settings", destination: settings)
+                        }
+                    }
                 } else {
                     ContentUnavailableView {
-                        Label("Scanning is not available", systemImage: "camera.badge.ellipsis")
+                        Label("This device cannot scan text", systemImage: "camera.badge.ellipsis")
                     } description: {
-                        Text("This device cannot scan text, or camera access is turned off for Odomind. Type the VIN instead — it works just as well.")
+                        Text("Typing the VIN works just as well — it is 17 characters off the dashboard or door jamb.")
+                    } actions: {
+                        Button("Type it instead") { dismiss() }
+                            .buttonStyle(.borderedProminent)
                     }
                 }
             }

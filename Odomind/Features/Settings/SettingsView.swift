@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import OdomindCore
 
 struct SettingsView: View {
@@ -201,6 +202,15 @@ struct ReminderSettingsView: View {
                             kind: .caution,
                             message: "Notifications are turned off for Odomind in iOS Settings, so nothing will be delivered."
                         )
+                        // iOS only lets an app ask once. After a refusal the
+                        // only way back is Settings, so saying so without
+                        // offering the way there is a dead end.
+                        if let settings = URL(string: UIApplication.openSettingsURLString) {
+                            Link(destination: settings) {
+                                Label("Open Odomind's settings", systemImage: "arrow.up.forward.app")
+                            }
+                            .accessibilityIdentifier("reminders.openSettings")
+                        }
                     }
                 } header: {
                     Text("Status")
