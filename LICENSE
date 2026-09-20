@@ -1,0 +1,31 @@
+Copyright (c) 2026 Idlery Services LLC. All rights reserved.
+
+This repository is published publicly for review, evaluation, and transparency.
+It is NOT released under an open-source license.
+
+You may:
+  - read, clone, and build this source for personal evaluation;
+  - submit contributions back to this repository.
+
+You may not, without prior written permission from Idlery Services LLC:
+  - redistribute this source or binaries built from it;
+  - publish a derivative work or a competing application based on it;
+  - use the "Odomind" or "Idlery" names or the artwork in this repository.
+
+This software is provided "AS IS", without warranty of any kind, express or
+implied. Odomind does not provide mechanical, safety, or repair advice. Always
+follow the maintenance schedule and specifications published by your vehicle's
+manufacturer.
+
+--------------------------------------------------------------------------------
+Third-party data
+
+Vehicle identification data may be retrieved at runtime from the U.S. National
+Highway Traffic Safety Administration (NHTSA) Product Information Catalog and
+Vehicle Listing (vPIC) API. That data is not covered by this notice; see
+docs/DATA-SOURCES.md for attribution and terms.
+
+--------------------------------------------------------------------------------
+If you intend to open-source this project, replacing this file with MIT or
+Apache-2.0 is a single-file change; see docs/DATA-SOURCES.md first, because the
+bundled maintenance catalog has its own redistribution constraints.

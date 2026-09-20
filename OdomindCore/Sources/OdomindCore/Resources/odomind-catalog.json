@@ -1,0 +1,1217 @@
+{
+  "catalogVersion": "2026.09.1",
+  "coverageNotice": "Odomind ships general maintenance templates that apply to no particular make or model, plus a small number of vehicle profiles carrying only facts that could be sourced and legally redistributed. It does not ship manufacturers' maintenance schedules, fluid specifications, capacities or tire pressures. Where Odomind does not have a value it says so and offers to store the one from your owner's manual, rather than showing a number it cannot stand behind.",
+  "demoContent": {
+    "configuration": {
+      "camshaftDrive": "timingChain",
+      "confirmedFields": [
+        "powertrain",
+        "transmission",
+        "drivetrain",
+        "camshaftDrive"
+      ],
+      "drivetrain": "fourWheelDrivePartTime",
+      "engineCode": "EGH",
+      "engineCylinders": 6,
+      "engineDisplacementLiters": 3.8,
+      "frontDifferential": "fitted",
+      "market": "unitedStates",
+      "powertrain": "gasoline",
+      "rearDifferential": "fitted",
+      "transferCase": "fitted",
+      "transmission": "automatic",
+      "transmissionSpeeds": 4,
+      "usageProfile": "normal"
+    },
+    "disclaimer": "This vehicle and its entire service history are fictional sample data, created to show how Odomind works. Nothing here belongs to a real vehicle or a real person. Remove it at any time from Settings; removing it never touches your own records.",
+    "displayUnit": "miles",
+    "identity": {
+      "bodyClass": "Sport Utility Vehicle (SUV)",
+      "identityProvenance": "userEntered",
+      "make": "Jeep",
+      "model": "Wrangler",
+      "modelYear": 2010,
+      "trim": "Unlimited Sport"
+    },
+    "readings": [
+      {
+        "daysAgo": 395,
+        "value": 118000
+      },
+      {
+        "daysAgo": 280,
+        "value": 121500
+      },
+      {
+        "daysAgo": 150,
+        "value": 125200
+      },
+      {
+        "daysAgo": 45,
+        "value": 128400
+      },
+      {
+        "daysAgo": 5,
+        "value": 129600
+      }
+    ],
+    "services": [
+      {
+        "currencyCode": "USD",
+        "daysAgo": 380,
+        "definitionIDs": [
+          "engine-oil-and-filter"
+        ],
+        "notes": "Sample record. Not a real service.",
+        "odometer": 118400,
+        "shopName": "Sample Service Center",
+        "totalCostMinorUnits": 7250
+      },
+      {
+        "currencyCode": "USD",
+        "daysAgo": 200,
+        "definitionIDs": [
+          "engine-oil-and-filter",
+          "tire-rotation"
+        ],
+        "notes": "Sample record. One receipt covering two jobs.",
+        "odometer": 123800,
+        "shopName": "Sample Service Center",
+        "totalCostMinorUnits": 8997
+      },
+      {
+        "currencyCode": "USD",
+        "daysAgo": 95,
+        "definitionIDs": [
+          "engine-air-filter",
+          "cabin-air-filter"
+        ],
+        "notes": "Sample record. Done at home.",
+        "odometer": 126900,
+        "totalCostMinorUnits": 6400
+      }
+    ],
+    "vehicleNickname": "Sample vehicle (demo)"
+  },
+  "publishedOn": "2026-09-20T00:00:00Z",
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "allowsRedistribution": true,
+      "attributionRequired": false,
+      "coverage": "Vehicle-independent starting points for common maintenance tasks, written for Odomind. Applies to no particular make or model.",
+      "id": "odomind-general-guidance",
+      "limitations": "These are general templates, not a manufacturer's schedule. Intervals published by your vehicle's manufacturer take precedence and can differ substantially. Odomind labels every one of these values as general guidance.",
+      "name": "Odomind general maintenance guidance",
+      "terms": "Written for Odomind by Idlery Services LLC and distributed with the app."
+    },
+    {
+      "allowsRedistribution": false,
+      "attributionRequired": true,
+      "attributionText": "Vehicle identification data from the NHTSA Product Information Catalog and Vehicle Listing (vPIC).",
+      "coverage": "VIN decoding and make, model, and vehicle-type listings for vehicles sold in the United States. Vehicle identification only.",
+      "id": "nhtsa-vpic",
+      "limitations": "No published service-level agreement, uptime guarantee or documented rate limit. Coverage is strongest for model year 1981 onward. Trim, series, engine model and transmission fields are frequently blank or ambiguous. vPIC contains no maintenance schedules, no fluid specifications, no capacities and no fitment data, and its GetParts endpoint returns manufacturer regulatory document submissions under 49 CFR Parts 565 and 566 rather than a replacement-parts catalog.",
+      "name": "NHTSA Product Information Catalog and Vehicle Listing (vPIC)",
+      "terms": "A public API published by the U.S. National Highway Traffic Safety Administration. Works of the U.S. federal government are generally not subject to domestic copyright (17 U.S.C. section 105), but NHTSA publishes no explicit open-data licence for vPIC and no terms granting bulk redistribution. Odomind queries it at runtime for identification, caches responses on the owner's device, and does not redistribute a copy of the dataset.",
+      "url": "https://vpic.nhtsa.dot.gov/api/"
+    },
+    {
+      "allowsRedistribution": true,
+      "attributionRequired": false,
+      "coverage": "Engine-family attributes that decide whether a task applies at all, such as whether an engine drives its camshafts by belt or by chain.",
+      "id": "odomind-engine-reference",
+      "limitations": "Covers only the applicability attributes listed. It is not a source for intervals, capacities, viscosities, pressures or torque values, and it has not been checked against the manufacturer's own service documentation, so nothing sourced here is shown as verified.",
+      "name": "Odomind engine reference notes",
+      "terms": "Compiled for Odomind by Idlery Services LLC from engine-family references and distributed with the app."
+    }
+  ],
+  "taskDefinitions": [
+    {
+      "action": "replace",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "engine",
+      "defaultRule": {
+        "distance": {
+          "amount": 5000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 6,
+          "unit": "months"
+        },
+        "type": "distanceOrTime"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "engine-oil-and-filter",
+      "isAdvanced": false,
+      "purpose": "Engine oil lubricates and cools the engine and carries away contaminants. It breaks down with heat, time and distance, so it is replaced on a schedule rather than when it looks dirty.",
+      "relatedSpecifications": [
+        "engineOilViscosity",
+        "engineOilCapacityWithFilter",
+        "engineOilStandard",
+        "engineOilFilterPartNumber"
+      ],
+      "searchKeywords": [
+        "oil change",
+        "oil filter",
+        "lube",
+        "service"
+      ],
+      "title": "Engine oil and filter"
+    },
+    {
+      "action": "recordIndicator",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "engine",
+      "defaultRule": {
+        "indicator": {
+          "indicatorName": "Oil Change Required"
+        },
+        "type": "vehicleIndicator"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "oil-life-monitor",
+      "isAdvanced": true,
+      "purpose": "Many vehicles calculate remaining oil life and show a message when service is due. Odomind cannot read your vehicle, so record the message when it appears and Odomind will keep the history.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "oil life",
+        "maintenance minder",
+        "service light",
+        "indicator"
+      ],
+      "title": "Oil life monitor reading"
+    },
+    {
+      "action": "rotate",
+      "applicability": {},
+      "category": "tiresAndWheels",
+      "defaultRule": {
+        "distance": {
+          "amount": 6000,
+          "unit": "miles"
+        },
+        "type": "distance"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "tire-rotation",
+      "isAdvanced": false,
+      "purpose": "Moving tires between positions evens out wear so the set lasts longer and the vehicle handles predictably.",
+      "relatedSpecifications": [
+        "tireSizeFront",
+        "tireSizeRear",
+        "lugNutTorque"
+      ],
+      "searchKeywords": [
+        "rotate tires",
+        "tyres",
+        "wear"
+      ],
+      "title": "Tire rotation"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "tiresAndWheels",
+      "defaultRule": {
+        "time": {
+          "count": 1,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "tire-pressure-check",
+      "isAdvanced": false,
+      "purpose": "Tires lose pressure slowly and with temperature changes. Correct cold pressure affects braking, handling, fuel use and tire life.",
+      "relatedSpecifications": [
+        "coldTirePressureFront",
+        "coldTirePressureRear",
+        "spareTirePressure"
+      ],
+      "safetyNote": "Use the pressure on your vehicle's door placard or owner's manual. The number moulded into the tire sidewall is that tire's maximum, not your vehicle's operating pressure.",
+      "searchKeywords": [
+        "psi",
+        "inflation",
+        "tpms",
+        "pressure"
+      ],
+      "title": "Tire pressure check"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "tiresAndWheels",
+      "defaultRule": {
+        "distance": {
+          "amount": 6000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 6,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "tire-condition-inspection",
+      "isAdvanced": false,
+      "purpose": "Checks tread depth, uneven wear, cracking and damage. Tires are replaced on condition and age, not at a fixed mileage, so this is an inspection rather than a replacement deadline.",
+      "relatedSpecifications": [
+        "tireSizeFront",
+        "tireSizeRear"
+      ],
+      "safetyNote": "Replace tires based on tread depth, damage and age as described by the tire and vehicle manufacturers. Odomind does not set a replacement mileage.",
+      "searchKeywords": [
+        "tread depth",
+        "wear",
+        "sidewall",
+        "replace tires"
+      ],
+      "title": "Tire condition inspection"
+    },
+    {
+      "action": "replace",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "filters",
+      "defaultRule": {
+        "distance": {
+          "amount": 15000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "distanceOrTime"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "engine-air-filter",
+      "isAdvanced": false,
+      "purpose": "Filters the air the engine breathes. A blocked filter restricts airflow; a damaged one lets grit through.",
+      "relatedSpecifications": [
+        "engineAirFilterPartNumber"
+      ],
+      "searchKeywords": [
+        "air filter",
+        "intake",
+        "element"
+      ],
+      "title": "Engine air filter"
+    },
+    {
+      "action": "replace",
+      "applicability": {},
+      "category": "climate",
+      "defaultRule": {
+        "distance": {
+          "amount": 15000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "distanceOrTime"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "cabin-air-filter",
+      "isAdvanced": false,
+      "purpose": "Filters the air coming into the passenger compartment. A blocked filter reduces airflow from the vents and can smell musty.",
+      "relatedSpecifications": [
+        "cabinAirFilterPartNumber"
+      ],
+      "searchKeywords": [
+        "pollen filter",
+        "hvac",
+        "vent",
+        "cabin filter"
+      ],
+      "title": "Cabin air filter"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "brakes",
+      "defaultRule": {
+        "distance": {
+          "amount": 6000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 6,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "brake-inspection",
+      "isAdvanced": false,
+      "purpose": "Checks pad and shoe thickness, disc condition, hoses and fluid level. Brake parts wear at a rate that depends on how you drive, so they are inspected rather than replaced on a mileage schedule.",
+      "relatedSpecifications": [
+        "brakeFluidType"
+      ],
+      "safetyNote": "Brake work affects your ability to stop. If an inspection finds wear beyond the manufacturer's limit, have it addressed before driving further.",
+      "searchKeywords": [
+        "pads",
+        "rotors",
+        "discs",
+        "shoes",
+        "calipers"
+      ],
+      "title": "Brake inspection"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {},
+      "category": "fluids",
+      "defaultRule": {
+        "time": {
+          "count": 3,
+          "unit": "years"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "brake-fluid",
+      "isAdvanced": false,
+      "purpose": "Brake fluid absorbs moisture from the air over time, which lowers its boiling point. Most manufacturers replace it on time rather than distance.",
+      "relatedSpecifications": [
+        "brakeFluidType"
+      ],
+      "safetyNote": "Use only the fluid specification your manufacturer lists. Mixing incompatible fluids can damage the braking system.",
+      "searchKeywords": [
+        "dot 3",
+        "dot 4",
+        "bleed",
+        "hydraulic"
+      ],
+      "title": "Brake fluid replacement"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "fluids",
+      "defaultRule": {
+        "time": {
+          "count": 5,
+          "unit": "years"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "engine-coolant",
+      "isAdvanced": false,
+      "purpose": "Coolant carries heat away from the engine and protects against freezing and corrosion. Its additives deplete over time.",
+      "relatedSpecifications": [
+        "coolantType",
+        "coolantCapacity"
+      ],
+      "safetyNote": "Coolant types are not interchangeable. Use the specification in your owner's manual.",
+      "searchKeywords": [
+        "antifreeze",
+        "radiator",
+        "flush",
+        "glycol"
+      ],
+      "title": "Engine coolant"
+    },
+    {
+      "action": "replace",
+      "applicability": {},
+      "category": "visibility",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "wiper-blades",
+      "isAdvanced": false,
+      "purpose": "Rubber hardens and tears with sun and use. Streaking or chattering means it is time, whatever the calendar says.",
+      "relatedSpecifications": [
+        "wiperBladeSizeDriver",
+        "wiperBladeSizePassenger",
+        "wiperBladeSizeRear"
+      ],
+      "searchKeywords": [
+        "wipers",
+        "windshield",
+        "windscreen",
+        "blades"
+      ],
+      "title": "Wiper blades"
+    },
+    {
+      "action": "topOff",
+      "applicability": {},
+      "category": "visibility",
+      "defaultRule": {
+        "time": {
+          "count": 3,
+          "unit": "months"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "washer-fluid",
+      "isAdvanced": false,
+      "purpose": "Keeps the windshield clear. Worth checking before winter and before a long drive.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "washer",
+        "screenwash",
+        "reservoir"
+      ],
+      "title": "Washer fluid top-up"
+    },
+    {
+      "action": "test",
+      "applicability": {},
+      "category": "electrical",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "battery-test",
+      "isAdvanced": false,
+      "purpose": "A load or conductance test shows whether the battery still holds enough charge to start reliably, before it strands you.",
+      "relatedSpecifications": [
+        "batteryGroupSize"
+      ],
+      "searchKeywords": [
+        "battery",
+        "12v",
+        "starting",
+        "charge"
+      ],
+      "title": "Battery test"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "electrical",
+      "defaultRule": {
+        "time": {
+          "count": 6,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "exterior-lights-check",
+      "isAdvanced": false,
+      "purpose": "Headlights, brake lights, indicators and reverse lights. A single failed bulb is easy to miss from the driver's seat.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "bulbs",
+        "headlight",
+        "brake light",
+        "indicator",
+        "turn signal"
+      ],
+      "title": "Exterior lights check"
+    },
+    {
+      "action": "inspect",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "beltsAndHoses",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "belts-and-hoses-inspection",
+      "isAdvanced": false,
+      "purpose": "Checks accessory belts and coolant hoses for cracking, glazing, swelling and leaks. This is an inspection, not a belt replacement schedule.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "serpentine",
+        "drive belt",
+        "hose",
+        "radiator hose"
+      ],
+      "title": "Belts and hoses inspection"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "suspensionAndSteering",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "suspension-steering-inspection",
+      "isAdvanced": false,
+      "purpose": "Checks shocks, struts, bushings, ball joints and steering components for wear, play and leaks.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "shocks",
+        "struts",
+        "ball joint",
+        "bushing",
+        "tie rod"
+      ],
+      "title": "Suspension and steering inspection"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "suspensionAndSteering",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "conditionCheck"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "wheel-alignment-check",
+      "isAdvanced": true,
+      "purpose": "Worth checking if the vehicle pulls, the wheel is off-centre, or tires wear unevenly. Also after suspension work or a hard pothole strike.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "alignment",
+        "tracking",
+        "camber",
+        "toe",
+        "pulling"
+      ],
+      "title": "Wheel alignment check"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "inspection",
+      "defaultRule": {
+        "milestones": {
+          "ageMilestones": [],
+          "distanceMilestones": [
+            {
+              "amount": 30000,
+              "unit": "miles"
+            },
+            {
+              "amount": 60000,
+              "unit": "miles"
+            },
+            {
+              "amount": 90000,
+              "unit": "miles"
+            }
+          ],
+          "repeatEvery": {
+            "amount": 30000,
+            "unit": "miles"
+          }
+        },
+        "type": "fixedMilestones"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "major-service-milestone",
+      "isAdvanced": true,
+      "purpose": "A general checkpoint at regular odometer milestones for the larger inspections many manufacturers group together. This is a template: your manufacturer's own milestone schedule may list different distances and different work.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "30k",
+        "60k",
+        "90k",
+        "major service",
+        "milestone",
+        "scheduled maintenance"
+      ],
+      "title": "Major service checkpoint"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "inspection",
+      "defaultRule": {
+        "distance": {
+          "amount": 1000,
+          "unit": "miles"
+        },
+        "time": {
+          "count": 3,
+          "unit": "months"
+        },
+        "type": "oneTime"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "first-service-inspection",
+      "isAdvanced": true,
+      "purpose": "Some manufacturers ask for an early check shortly after a vehicle enters service. Many do not. Add this only if your manual lists one.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "break in",
+        "first service",
+        "new vehicle"
+      ],
+      "title": "First service inspection"
+    },
+    {
+      "action": "replace",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "ignition",
+      "id": "spark-plugs",
+      "isAdvanced": true,
+      "purpose": "Spark plug life varies enormously with plug material and engine design, from around 30,000 to over 100,000 miles. Odomind will not guess: enter the interval from your owner's manual.",
+      "relatedSpecifications": [
+        "sparkPlugType",
+        "sparkPlugGap"
+      ],
+      "searchKeywords": [
+        "plugs",
+        "ignition",
+        "iridium",
+        "platinum",
+        "tune up"
+      ],
+      "title": "Spark plugs"
+    },
+    {
+      "action": "replace",
+      "applicability": {
+        "camshaftDrives": [
+          "timingBelt"
+        ],
+        "requiresCombustionEngine": true
+      },
+      "category": "engine",
+      "id": "timing-belt",
+      "isAdvanced": true,
+      "purpose": "Only belt-driven engines have one. A failed belt can destroy an interference engine, and the interval is specific to your engine, so enter it from your owner's manual.",
+      "relatedSpecifications": [],
+      "safetyNote": "If you do not know whether your engine uses a belt or a chain, confirm it before relying on this task. Odomind leaves it out until the engine is confirmed as belt-driven.",
+      "searchKeywords": [
+        "cam belt",
+        "timing",
+        "interference",
+        "water pump"
+      ],
+      "title": "Timing belt"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "transmissions": [
+          "automatic",
+          "dualClutch",
+          "continuouslyVariable"
+        ]
+      },
+      "category": "drivetrain",
+      "id": "automatic-transmission-fluid",
+      "isAdvanced": true,
+      "purpose": "Intervals and fluid specifications differ sharply between manufacturers, and some publish no interval at all. Enter yours from the owner's manual.",
+      "relatedSpecifications": [
+        "transmissionFluidType",
+        "transmissionFluidCapacity"
+      ],
+      "safetyNote": "Automatic transmission fluids are not interchangeable. Use the exact specification your manufacturer lists.",
+      "searchKeywords": [
+        "atf",
+        "gearbox",
+        "cvt fluid",
+        "transmission service"
+      ],
+      "title": "Automatic transmission fluid"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "transmissions": [
+          "manual"
+        ]
+      },
+      "category": "drivetrain",
+      "id": "manual-transmission-fluid",
+      "isAdvanced": true,
+      "purpose": "Manual gearbox oil specification and interval are model-specific. Enter yours from the owner's manual.",
+      "relatedSpecifications": [
+        "transmissionFluidType",
+        "transmissionFluidCapacity"
+      ],
+      "searchKeywords": [
+        "gear oil",
+        "manual gearbox",
+        "mtf"
+      ],
+      "title": "Manual transmission fluid"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "requiresTransferCase": true
+      },
+      "category": "drivetrain",
+      "id": "transfer-case-fluid",
+      "isAdvanced": true,
+      "purpose": "Only vehicles with a transfer case need this. The interval and fluid are model-specific, so enter them from the owner's manual.",
+      "relatedSpecifications": [
+        "transferCaseFluidType"
+      ],
+      "searchKeywords": [
+        "transfer case",
+        "4wd",
+        "4x4",
+        "t-case"
+      ],
+      "title": "Transfer case fluid"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "requiresFrontDifferential": true
+      },
+      "category": "drivetrain",
+      "id": "front-differential-fluid",
+      "isAdvanced": true,
+      "purpose": "Applies to vehicles with a separately serviceable front differential. The interval and fluid are model-specific.",
+      "relatedSpecifications": [
+        "frontDifferentialFluidType"
+      ],
+      "searchKeywords": [
+        "diff",
+        "differential",
+        "front axle",
+        "gear oil"
+      ],
+      "title": "Front differential fluid"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "requiresRearDifferential": true
+      },
+      "category": "drivetrain",
+      "id": "rear-differential-fluid",
+      "isAdvanced": true,
+      "purpose": "Applies to vehicles with a separately serviceable rear differential. The interval and fluid are model-specific.",
+      "relatedSpecifications": [
+        "rearDifferentialFluidType"
+      ],
+      "searchKeywords": [
+        "diff",
+        "differential",
+        "rear axle",
+        "gear oil",
+        "limited slip"
+      ],
+      "title": "Rear differential fluid"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {},
+      "category": "fluids",
+      "id": "power-steering-fluid",
+      "isAdvanced": true,
+      "purpose": "Applies to vehicles with hydraulic power steering. Many newer vehicles use electric assist and have no fluid at all.",
+      "relatedSpecifications": [
+        "powerSteeringFluidType"
+      ],
+      "searchKeywords": [
+        "power steering",
+        "hydraulic",
+        "pas"
+      ],
+      "title": "Power steering fluid"
+    },
+    {
+      "action": "replace",
+      "applicability": {
+        "requiresCombustionEngine": true
+      },
+      "category": "filters",
+      "id": "fuel-filter",
+      "isAdvanced": true,
+      "purpose": "Some vehicles have a serviceable fuel filter and a published interval; many have a lifetime filter inside the tank. Check your manual before adding this.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "fuel filter",
+        "diesel",
+        "water separator"
+      ],
+      "title": "Fuel filter"
+    },
+    {
+      "action": "serviceOrFlush",
+      "applicability": {
+        "powertrains": [
+          "batteryElectric",
+          "pluginHybrid",
+          "hybrid"
+        ]
+      },
+      "category": "fluids",
+      "id": "ev-battery-coolant",
+      "isAdvanced": true,
+      "purpose": "Electrified vehicles circulate coolant through the drive battery and power electronics. The interval and fluid are model-specific.",
+      "relatedSpecifications": [
+        "coolantType"
+      ],
+      "searchKeywords": [
+        "ev",
+        "battery coolant",
+        "thermal",
+        "traction battery"
+      ],
+      "title": "Drive battery coolant"
+    },
+    {
+      "action": "replace",
+      "applicability": {},
+      "category": "brakes",
+      "id": "brake-pad-replacement-note",
+      "isAdvanced": true,
+      "purpose": "Brake pads are replaced when an inspection finds them worn, not at a fixed mileage. Use this task to record replacements you have had done.",
+      "relatedSpecifications": [],
+      "safetyNote": "Odomind does not schedule brake pad replacement. Use Brake inspection to schedule checks, and log this task when pads are actually replaced.",
+      "searchKeywords": [
+        "pads",
+        "brake pads",
+        "replace brakes"
+      ],
+      "title": "Brake pad replacement"
+    },
+    {
+      "action": "replace",
+      "applicability": {},
+      "category": "seasonal",
+      "defaultRule": {
+        "time": {
+          "count": 6,
+          "unit": "months"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "seasonal-tire-change",
+      "isAdvanced": true,
+      "purpose": "Swapping between winter and summer or all-season tires. Add it if you run two sets.",
+      "relatedSpecifications": [
+        "tireSizeFront",
+        "tireSizeRear",
+        "wheelSizeFront",
+        "wheelSizeRear"
+      ],
+      "searchKeywords": [
+        "winter tires",
+        "snow tires",
+        "summer tires",
+        "seasonal",
+        "swap"
+      ],
+      "title": "Seasonal tire change"
+    },
+    {
+      "action": "inspect",
+      "applicability": {},
+      "category": "inspection",
+      "defaultRule": {
+        "time": {
+          "count": 12,
+          "unit": "months"
+        },
+        "type": "time"
+      },
+      "defaultRuleProvenance": {
+        "attribution": {
+          "datasetVersion": "2026.09.1",
+          "sourceName": "Odomind general maintenance guidance"
+        },
+        "origin": "generalTemplate",
+        "scope": {}
+      },
+      "id": "safety-or-emissions-inspection",
+      "isAdvanced": true,
+      "purpose": "Where you live may require a periodic inspection to keep the vehicle registered. Set the interval that applies to you.",
+      "relatedSpecifications": [],
+      "searchKeywords": [
+        "mot",
+        "smog",
+        "state inspection",
+        "emissions",
+        "roadworthy",
+        "registration"
+      ],
+      "title": "Safety or emissions inspection"
+    }
+  ],
+  "vehicleProfiles": [
+    {
+      "configurationFacts": [
+        {
+          "field": "powertrain",
+          "provenance": {
+            "attribution": {
+              "datasetVersion": "2026.09.1",
+              "note": "vPIC reports FuelTypePrimary for this vehicle. Identification only.",
+              "sourceName": "NHTSA vPIC",
+              "sourceReference": "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/{vin}?modelyear=2010"
+            },
+            "origin": "referenceSourced",
+            "scope": {}
+          },
+          "sourceID": "nhtsa-vpic",
+          "value": "gasoline"
+        },
+        {
+          "field": "engineDisplacementLiters",
+          "provenance": {
+            "attribution": {
+              "datasetVersion": "2026.09.1",
+              "note": "vPIC reports DisplacementL for this vehicle.",
+              "sourceName": "NHTSA vPIC",
+              "sourceReference": "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/{vin}?modelyear=2010"
+            },
+            "origin": "referenceSourced",
+            "scope": {}
+          },
+          "sourceID": "nhtsa-vpic",
+          "value": "3.8"
+        },
+        {
+          "field": "engineCylinders",
+          "provenance": {
+            "attribution": {
+              "datasetVersion": "2026.09.1",
+              "note": "vPIC reports EngineCylinders for this vehicle.",
+              "sourceName": "NHTSA vPIC",
+              "sourceReference": "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/{vin}?modelyear=2010"
+            },
+            "origin": "referenceSourced",
+            "scope": {}
+          },
+          "sourceID": "nhtsa-vpic",
+          "value": "6"
+        },
+        {
+          "field": "engineCode",
+          "provenance": {
+            "attribution": {
+              "datasetVersion": "2026.09.1",
+              "note": "Chrysler 3.8 L overhead-valve V6, sales code EGH. The only engine offered in the North American JK Wrangler for these model years.",
+              "sourceName": "Odomind engine reference notes",
+              "sourceReference": "odomind-engine-reference#chrysler-3800-egh"
+            },
+            "origin": "referenceSourced",
+            "scope": {}
+          },
+          "sourceID": "odomind-engine-reference",
+          "value": "EGH"
+        },
+        {
+          "field": "camshaftDrive",
+          "provenance": {
+            "attribution": {
+              "datasetVersion": "2026.09.1",
+              "note": "The 3.8 L EGH is a pushrod overhead-valve engine and drives its camshaft by chain, so no timing-belt service applies. Not checked against Chrysler service documentation, so it is not marked verified.",
+              "sourceName": "Odomind engine reference notes",
+              "sourceReference": "odomind-engine-reference#chrysler-3800-egh"
+            },
+            "origin": "referenceSourced",
+            "scope": {}
+          },
+          "sourceID": "odomind-engine-reference",
+          "value": "timingChain"
+        }
+      ],
+      "coverageNotes": [
+        "This profile carries only the facts Odomind could source and redistribute: the engine's identity and the fact that it is chain-driven rather than belt-driven. That is enough to keep timing-belt service out of your plan, which would otherwise be an expensive job you do not need.",
+        "It deliberately contains no oil viscosity, oil capacity, tire size, cold tire pressure, fluid specification or service interval. Those values were not available from a source Odomind could both verify and redistribute, and inventing them would be worse than leaving them out.",
+        "Add them yourself from your owner's manual and the placard in the driver's door opening. Odomind stores them against your vehicle, marks them as entered by you, and uses them everywhere a manufacturer value would appear.",
+        "Drivetrain is not pre-filled: the JK Wrangler was sold in both two-wheel-drive and four-wheel-drive forms, so Odomind asks rather than assumes. That answer decides whether transfer-case and differential service appear in your plan."
+      ],
+      "displayName": "Jeep Wrangler / Wrangler Unlimited (JK), 3.8 L V6, 2007–2011",
+      "id": "jeep-wrangler-jk-2007-2011-3800",
+      "match": {
+        "earliestModelYear": 2007,
+        "engineDisplacementLiters": [
+          3.8
+        ],
+        "latestModelYear": 2011,
+        "makes": [
+          "JEEP",
+          "Jeep"
+        ],
+        "markets": [
+          "unitedStates",
+          "canada"
+        ],
+        "models": [
+          "Wrangler",
+          "WRANGLER"
+        ]
+      },
+      "scheduleRules": [],
+      "specifications": []
+    }
+  ]
+}

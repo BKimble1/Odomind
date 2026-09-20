@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+  pull_request:
+  workflow_dispatch:
+
+# Read-only by default. No job in this workflow needs to write to the
+# repository, and no job receives a signing or deployment secret, so code from
+# a fork can never reach one.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Domain core and catalog
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: ./.github/scripts/select-xcode.sh
+
+      - name: Build OdomindCore
+        run: swift build --package-path OdomindCore
+
+      - name: Run deterministic domain tests
+        run: swift test --package-path OdomindCore --parallel
+
+      - name: Validate the bundled catalog
+        run: |
+          swift run --package-path OdomindCore odomind-catalog validate \
+            OdomindCore/Sources/OdomindCore/Resources/odomind-catalog.json --strict
+
+      - name: Print catalog coverage summary
+        run: |
+          swift run --package-path OdomindCore odomind-catalog summary \
+            OdomindCore/Sources/OdomindCore/Resources/odomind-catalog.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"

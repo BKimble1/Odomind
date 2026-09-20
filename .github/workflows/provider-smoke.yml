@@ -1,0 +1,50 @@
+name: Provider smoke test
+
+# Checks that NHTSA vPIC is reachable and still returns the fields Odomind
+# reads. Deliberately NOT part of the pull-request gate: a government API having
+# a bad afternoon must never turn every contributor's pull request red. The app
+# is expected to work offline, and the provider tests in the main suite run
+# against recorded fixtures.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Once a week, early on Monday UTC.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-smoke
+  cancel-in-progress: false
+
+jobs:
+  vpic:
+    name: NHTSA vPIC availability
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Decode a sample VIN
+        id: decode
+        continue-on-error: true
+        run: ./.github/scripts/check-vpic.py
+
+      - name: Report
+        run: |
+          outcome="${{ steps.decode.outcome }}"
+          {
+            echo "### NHTSA vPIC"
+            echo ""
+            if [ "$outcome" = "success" ]; then
+              echo "Reachable, and still returning every field Odomind's decoder reads."
+            else
+              echo "Not reachable, or the response shape changed. See the step log above."
+              echo ""
+              echo "This does not fail the build. Odomind treats VIN decoding as optional and"
+              echo "falls back to manual vehicle entry whenever the provider is unavailable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

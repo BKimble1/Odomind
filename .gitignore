@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcresult
+
+# Xcode user-specific project state (shared schemes ARE committed)
+Odomind.xcodeproj/project.xcworkspace/xcuserdata/
+Odomind.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+Odomind.xcodeproj/xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+.swiftpm/configuration/
+Package.resolved.bak
+
+# Signing material must never be committed
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.cer
+*.certSigningRequest
+*.p8
+
+# Local developer overrides
+Local.xcconfig
+Odomind/Resources/Local-Info.plist
+
+# Generated verification output
+ci-artifacts/
