@@ -51,6 +51,19 @@ final class OdomindJourneyUITests: XCTestCase {
         field.typeText(text)
     }
 
+    /// The element carrying `identifier`, whatever type it resolves to.
+    ///
+    /// A SwiftUI control inside a List can surface as a switch, a button or the
+    /// row that contains it depending on how its children combine, so a query
+    /// pinned to one type is a coin flip.
+    private func anyElement(_ identifier: String) -> XCUIElement {
+        let switches = app.switches[identifier]
+        if switches.exists { return switches }
+        let buttons = app.buttons[identifier]
+        if buttons.exists { return buttons }
+        return app.descendants(matching: .any)[identifier]
+    }
+
     /// Any element whose accessibility label contains `text`, whatever its type.
     private func element(labelContaining text: String) -> XCUIElement {
         app.descendants(matching: .any)
@@ -214,7 +227,11 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.buttons["maintenance.addFromCatalog"], 10, "the add menu did not open").tap()
         waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
 
-        let advanced = waitFor(app.switches["addTask.showAdvanced"], 10, "the advanced toggle is missing")
+        XCTAssertTrue(
+            anyElement("addTask.showAdvanced").waitForExistence(timeout: 10),
+            "the advanced toggle is missing"
+        )
+        let advanced = anyElement("addTask.showAdvanced")
         XCTAssertFalse(
             app.buttons["addTask.add.wheel-alignment-check"].exists,
             "an advanced task should be hidden until the owner asks for advanced tasks"
