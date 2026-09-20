@@ -86,8 +86,17 @@ final class AppModel {
     /// or is influenced by — whatever is on the simulator already.
     static let uiTestingArgument = "-odomind-ui-testing"
 
+    /// Launch argument that seeds the sample vehicle, used by the screenshot
+    /// pass so the captures show a populated app. Only honoured alongside the
+    /// UI-testing store, so it can never touch a real garage.
+    static let seedSampleArgument = "-odomind-seed-sample"
+
     static var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains(uiTestingArgument)
+    }
+
+    static var shouldSeedSample: Bool {
+        isUITesting && ProcessInfo.processInfo.arguments.contains(seedSampleArgument)
     }
 
     /// Builds the model an app launch uses.
@@ -109,6 +118,9 @@ final class AppModel {
 
     func load() async {
         refresh()
+        if AppModel.shouldSeedSample, snapshot.vehicles.isEmpty {
+            addDemoContent()
+        }
         isLoaded = true
         sweepOrphanedAttachments()
         await syncReminders()

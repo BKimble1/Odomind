@@ -68,6 +68,7 @@
 		E4032869D50521DA230BF90E /* vpic-ambiguous-engine.json in unit */ = {isa = PBXBuildFile; fileRef = 5600D040D8A6F377701655C6 /* vpic-ambiguous-engine.json */; };
 		EA7937B7BC84DECFEDB805CB /* TaskDetailView.swift in app */ = {isa = PBXBuildFile; fileRef = D553E1830DE4B0FE6AF6C159 /* TaskDetailView.swift */; };
 		EF3EAC200C0CF1F8868C2DE5 /* StoredModels.swift in app */ = {isa = PBXBuildFile; fileRef = 6AAA0CBD128EAEB32771C616 /* StoredModels.swift */; };
+		F49E6D610ED74861DCF730E4 /* ScreenshotTests.swift in ui */ = {isa = PBXBuildFile; fileRef = 88CDE1B128AD99B377A95D61 /* ScreenshotTests.swift */; };
 		F4EED2F46544409AA675B795 /* ConfigurationEditor.swift in app */ = {isa = PBXBuildFile; fileRef = 3A388B9D05C399008F82053D /* ConfigurationEditor.swift */; };
 		FB5FA8186487484E341E36FE /* OdomindApp.swift in app */ = {isa = PBXBuildFile; fileRef = 18F9DC46E1129831FAED0924 /* OdomindApp.swift */; };
 		4D46AF3EB482B31F8DCEF686 /* OdomindCore in Frameworks */ = {isa = PBXBuildFile; productRef = D974BFC3021CD2FC2943B026 /* OdomindCore */; };
@@ -156,6 +157,7 @@
 		BF29A6AF4DE7245A2BBDC5E1 /* ReminderAndBackupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderAndBackupTests.swift; sourceTree = "<group>"; };
 		BE0CA80060ADD54B17D87FCE /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
 		CA28853266D8D2A9B30AE5AE /* OdomindUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OdomindUITests.swift; sourceTree = "<group>"; };
+		88CDE1B128AD99B377A95D61 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 		6261ED6897AD093E11015507 /* Odomind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Odomind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D75DC02CB38741BFC1B30B2 /* OdomindTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OdomindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B56692CEB13524BE07238E0E /* OdomindUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OdomindUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -389,6 +391,7 @@
 			isa = PBXGroup;
 			children = (
 				CA28853266D8D2A9B30AE5AE,
+				88CDE1B128AD99B377A95D61,
 			);
 			path = OdomindUITests;
 			sourceTree = "<group>";
@@ -627,6 +630,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				595D4E601CB4BA2A3F5BF1F9 /* OdomindUITests.swift */,
+				F49E6D610ED74861DCF730E4 /* ScreenshotTests.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

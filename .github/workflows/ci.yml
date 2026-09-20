@@ -130,6 +130,39 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/ui.log"
 
+      - name: Capture screenshots of the running app
+        id: screenshots
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindUITests/OdomindScreenshotTests \
+            -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/screens.log"
+
+          mkdir -p "$RUNNER_TEMP/screenshots"
+          # Xcode 16 exports attachments directly; older tooling needs the
+          # legacy path, so try the modern form and fall back.
+          xcrun xcresulttool export attachments \
+            --path "$RUNNER_TEMP/screens.xcresult" \
+            --output-path "$RUNNER_TEMP/screenshots" 2>/dev/null \
+            || echo "xcresulttool could not export attachments on this toolchain"
+          find "$RUNNER_TEMP/screenshots" -type f | head -50
+
+      - name: Upload screenshots
+        if: always() && steps.screenshots.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: ${{ runner.temp }}/screenshots
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Summarise test failures
         if: failure()
         run: |
