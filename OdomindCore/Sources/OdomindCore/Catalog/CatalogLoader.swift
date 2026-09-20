@@ -86,7 +86,7 @@ public enum CatalogLoader {
         try makeEncoder().encode(catalog)
     }
 
-    static func describe(_ error: Error) -> String {
+    public static func describe(_ error: Error) -> String {
         guard let decodingError = error as? DecodingError else {
             return String(describing: error)
         }

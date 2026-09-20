@@ -100,6 +100,10 @@ public enum DrivetrainLayout: String, Codable, Sendable, CaseIterable, Hashable 
     case frontWheelDrive
     case rearWheelDrive
     case allWheelDrive
+    /// Four-wheel drive where the sub-type has not been established. A VIN
+    /// decoder reports "4WD/4-Wheel Drive/4x4" without saying which, and
+    /// Odomind will not invent the distinction.
+    case fourWheelDrive
     case fourWheelDrivePartTime
     case fourWheelDriveFullTime
     case unknown
@@ -111,7 +115,7 @@ public enum DrivetrainLayout: String, Codable, Sendable, CaseIterable, Hashable 
     public var impliesTransferCase: Bool? {
         switch self {
         case .frontWheelDrive, .rearWheelDrive: return false
-        case .fourWheelDrivePartTime, .fourWheelDriveFullTime: return true
+        case .fourWheelDrive, .fourWheelDrivePartTime, .fourWheelDriveFullTime: return true
         case .allWheelDrive: return nil
         case .unknown: return nil
         }
@@ -122,6 +126,7 @@ public enum DrivetrainLayout: String, Codable, Sendable, CaseIterable, Hashable 
         case .frontWheelDrive: return "Front-wheel drive"
         case .rearWheelDrive: return "Rear-wheel drive"
         case .allWheelDrive: return "All-wheel drive"
+        case .fourWheelDrive: return "Four-wheel drive"
         case .fourWheelDrivePartTime: return "Four-wheel drive (part-time)"
         case .fourWheelDriveFullTime: return "Four-wheel drive (full-time)"
         case .unknown: return "Not confirmed"
@@ -264,7 +269,7 @@ public struct VehicleConfiguration: Codable, Hashable, Sendable {
         switch drivetrain {
         case .frontWheelDrive, .rearWheelDrive:
             return .notFitted
-        case .fourWheelDrivePartTime, .fourWheelDriveFullTime:
+        case .fourWheelDrive, .fourWheelDrivePartTime, .fourWheelDriveFullTime:
             return .fitted
         case .allWheelDrive, .unknown:
             return .unknown
@@ -275,7 +280,7 @@ public struct VehicleConfiguration: Codable, Hashable, Sendable {
     public var effectiveRearDifferential: Fitment {
         if rearDifferential != .unknown { return rearDifferential }
         switch drivetrain {
-        case .rearWheelDrive, .fourWheelDrivePartTime, .fourWheelDriveFullTime:
+        case .rearWheelDrive, .fourWheelDrive, .fourWheelDrivePartTime, .fourWheelDriveFullTime:
             return .fitted
         case .frontWheelDrive:
             return .notFitted
