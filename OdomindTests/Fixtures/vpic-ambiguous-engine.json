@@ -1,0 +1,30 @@
+{
+  "Count": 1,
+  "Message": "Results returned successfully.",
+  "SearchCriteria": "VIN:1FTFW1ET0EFA00000",
+  "Results": [
+    {
+      "AdditionalErrorText": "Unable to identify the engine for this vehicle.",
+      "BodyClass": "Pickup",
+      "DisplacementL": "",
+      "DriveType": "4x2",
+      "ElectrificationLevel": "",
+      "EngineCylinders": "",
+      "ErrorCode": "0",
+      "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct",
+      "FuelTypePrimary": "",
+      "Make": "FORD",
+      "Manufacturer": "FORD MOTOR COMPANY",
+      "Model": "F-150",
+      "ModelYear": "2014",
+      "PlantCountry": "UNITED STATES (USA)",
+      "Series": "",
+      "SuggestedVIN": "",
+      "TransmissionSpeeds": "",
+      "TransmissionStyle": "",
+      "Trim": "",
+      "VIN": "1FTFW1ET0EFA00000",
+      "VehicleType": "TRUCK"
+    }
+  ]
+}

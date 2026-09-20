@@ -1,0 +1,42 @@
+{
+  "Count": 1,
+  "Message": "Results returned successfully. NOTE: Any missing decoded values should be interpreted as NHTSA does not have data on the specific variable. Missing value should NOT be interpreted as an indication that a feature or technology is unavailable for a vehicle.",
+  "SearchCriteria": "VIN:1J4BA3H14AL139999",
+  "Results": [
+    {
+      "ABS": "",
+      "AdditionalErrorText": "",
+      "BodyClass": "Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)",
+      "DisplacementCC": "3778",
+      "DisplacementCI": "230.5",
+      "DisplacementL": "3.8",
+      "Doors": "4",
+      "DriveType": "4WD/4-Wheel Drive/4x4",
+      "EngineConfiguration": "V-Shaped",
+      "EngineCylinders": "6",
+      "EngineHP": "",
+      "EngineModel": "",
+      "ErrorCode": "0",
+      "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct",
+      "FuelTypePrimary": "Gasoline",
+      "FuelTypeSecondary": "",
+      "GVWR": "Class 2E: 5,001 - 6,000 lb (2,268 - 2,722 kg)",
+      "Make": "JEEP",
+      "Manufacturer": "CHRYSLER GROUP LLC",
+      "Model": "Wrangler",
+      "ModelYear": "2010",
+      "PlantCity": "TOLEDO",
+      "PlantCountry": "UNITED STATES (USA)",
+      "Series": "JK",
+      "Series2": "",
+      "SuggestedVIN": "",
+      "TransmissionSpeeds": "",
+      "TransmissionStyle": "",
+      "Trim": "",
+      "Trim2": "",
+      "VIN": "1J4BA3H14AL139999",
+      "VehicleType": "MULTIPURPOSE PASSENGER VEHICLE (MPV)",
+      "ElectrificationLevel": ""
+    }
+  ]
+}

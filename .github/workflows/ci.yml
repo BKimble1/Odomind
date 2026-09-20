@@ -46,3 +46,109 @@ jobs:
           swift run --package-path OdomindCore odomind-catalog summary \
             OdomindCore/Sources/OdomindCore/Resources/odomind-catalog.json \
             | tee -a "$GITHUB_STEP_SUMMARY"
+
+  project-is-reproducible:
+    name: Xcode project matches the tree
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Regenerate and compare
+        run: |
+          python3 Tools/generate-xcodeproj.py
+          if ! git diff --quiet -- Odomind.xcodeproj; then
+            echo "::error::Odomind.xcodeproj is out of step with the files on disk."
+            echo "Run 'python3 Tools/generate-xcodeproj.py' and commit the result."
+            git --no-pager diff --stat -- Odomind.xcodeproj
+            exit 1
+          fi
+          echo "Project file matches the tree."
+
+  ios:
+    name: iOS app and tests
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: ./.github/scripts/select-xcode.sh
+
+      - name: Discover a simulator
+        id: simulator
+        run: |
+          destination="$(./.github/scripts/select-simulator.sh)"
+          echo "destination=$destination" >> "$GITHUB_OUTPUT"
+          echo "Using destination: $destination" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Summarise build failures
+        if: failure()
+        run: |
+          echo "### Compiler errors" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E "error:" "$RUNNER_TEMP/build.log" | sort -u | head -80 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindTests \
+            -resultBundlePath "$RUNNER_TEMP/unit.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/unit.log"
+
+      - name: Run UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindUITests \
+            -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/ui.log"
+
+      - name: Summarise test failures
+        if: failure()
+        run: |
+          echo "### Test failures" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -hE "error:|failed|XCTAssert" "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
+            | sort -u | head -80 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # Result bundles contain only this repository's fixtures and the
+      # simulator's own output. Nothing here is a person's data.
+      - name: Upload result bundles
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/unit.xcresult
+            ${{ runner.temp }}/ui.xcresult
+            ${{ runner.temp }}/build.log
+          retention-days: 7
+          if-no-files-found: ignore

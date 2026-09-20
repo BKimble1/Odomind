@@ -77,7 +77,7 @@ public enum SpecificationValue: Hashable, Sendable {
         }
     }
 
-    static func format(_ amount: Double) -> String {
+    public static func format(_ amount: Double) -> String {
         if amount == amount.rounded() && abs(amount) < 1e9 {
             return String(Int(amount))
         }

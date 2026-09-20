@@ -1,0 +1,214 @@
+import SwiftUI
+import OdomindCore
+
+struct SettingsView: View {
+    @Environment(AppModel.self) private var model
+
+    @State private var showingDeleteAll = false
+    @State private var showingRemoveDemo = false
+
+    var body: some View {
+        List {
+            Section {
+                NavigationLink(value: GarageRoute.reminders) {
+                    Label("Reminders", systemImage: "bell")
+                }
+                NavigationLink(value: GarageRoute.backup) {
+                    Label("Backup and restore", systemImage: "arrow.down.doc")
+                }
+                NavigationLink(value: GarageRoute.dataSources) {
+                    Label("Where the data comes from", systemImage: "doc.text.magnifyingglass")
+                }
+                NavigationLink(value: GarageRoute.privacy) {
+                    Label("Privacy", systemImage: "hand.raised")
+                }
+            }
+
+            Section {
+                if model.hasDemoContent {
+                    Button("Remove the sample vehicle") { showingRemoveDemo = true }
+                } else {
+                    Button("Add a sample vehicle") { model.addDemoContent() }
+                }
+            } header: {
+                Text("Sample data")
+            } footer: {
+                Text(model.demoDisclaimer ?? "Sample content is fictional and clearly marked. Removing it never touches your own records.")
+            }
+
+            Section {
+                NavigationLink(value: GarageRoute.diagnostics) {
+                    Label("Diagnostics", systemImage: "stethoscope")
+                }
+            } footer: {
+                Text("What Odomind has scheduled, and anything it could not read.")
+            }
+
+            Section {
+                Button("Delete all data", role: .destructive) { showingDeleteAll = true }
+            } footer: {
+                Text("Removes every vehicle, reading, task, service record and receipt from this device, and cancels every reminder. This cannot be undone.")
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Delete everything?", isPresented: $showingDeleteAll, titleVisibility: .visible) {
+            Button("Delete all data", role: .destructive) {
+                Task { await model.deleteAllData() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every vehicle, mileage reading, task, service record and receipt is deleted from this device. Export a backup first if you want to keep any of it.")
+        }
+        .confirmationDialog("Remove the sample vehicle?", isPresented: $showingRemoveDemo, titleVisibility: .visible) {
+            Button("Remove sample data", role: .destructive) {
+                Task { await model.removeDemoContent() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your own vehicles and records are not affected.")
+        }
+    }
+}
+
+struct ReminderSettingsView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let settings = model.snapshot.settings.reminders
+
+        List {
+            Section {
+                Toggle(
+                    "Reminders",
+                    isOn: Binding(
+                        get: { settings.remindersEnabled },
+                        set: { newValue in
+                            Task {
+                                if newValue {
+                                    _ = await model.enableReminders()
+                                } else {
+                                    await model.disableReminders()
+                                }
+                            }
+                        }
+                    )
+                )
+            } footer: {
+                Text("Odomind asks for notification permission the moment you turn this on, not before. Everything else works without it.")
+            }
+
+            if settings.remindersEnabled {
+                Section {
+                    DatePicker(
+                        "Preferred time",
+                        selection: Binding(
+                            get: {
+                                var components = DateComponents()
+                                components.hour = settings.preferredHour
+                                components.minute = settings.preferredMinute
+                                return model.calendar.date(from: components) ?? Date()
+                            },
+                            set: { newValue in
+                                let components = model.calendar.dateComponents([.hour, .minute], from: newValue)
+                                Task {
+                                    await model.updateReminderSettings {
+                                        $0 = ReminderSettings(
+                                            remindersEnabled: $0.remindersEnabled,
+                                            mileageUpdateRemindersEnabled: $0.mileageUpdateRemindersEnabled,
+                                            mileageUpdateIntervalDays: $0.mileageUpdateIntervalDays,
+                                            preferredHour: components.hour ?? 9,
+                                            preferredMinute: components.minute ?? 0,
+                                            includeEstimatedMileageReminders: $0.includeEstimatedMileageReminders
+                                        )
+                                    }
+                                }
+                            }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
+
+                    Toggle(
+                        "Estimated mileage reminders",
+                        isOn: Binding(
+                            get: { settings.includeEstimatedMileageReminders },
+                            set: { newValue in
+                                Task {
+                                    await model.updateReminderSettings {
+                                        $0 = ReminderSettings(
+                                            remindersEnabled: $0.remindersEnabled,
+                                            mileageUpdateRemindersEnabled: $0.mileageUpdateRemindersEnabled,
+                                            mileageUpdateIntervalDays: $0.mileageUpdateIntervalDays,
+                                            preferredHour: $0.preferredHour,
+                                            preferredMinute: $0.preferredMinute,
+                                            includeEstimatedMileageReminders: newValue
+                                        )
+                                    }
+                                }
+                            }
+                        )
+                    )
+                } header: {
+                    Text("Delivery")
+                } footer: {
+                    Text("An estimated reminder is built from how far you usually drive, and says so. Odomind cannot watch your odometer, so it can never promise a reminder at an exact mileage.")
+                }
+
+                Section {
+                    Toggle(
+                        "Remind me to update my mileage",
+                        isOn: Binding(
+                            get: { settings.mileageUpdateRemindersEnabled },
+                            set: { newValue in
+                                Task {
+                                    await model.updateReminderSettings { $0.mileageUpdateRemindersEnabled = newValue }
+                                }
+                            }
+                        )
+                    )
+                    if settings.mileageUpdateRemindersEnabled {
+                        Stepper(
+                            "Every \(settings.mileageUpdateIntervalDays) days",
+                            value: Binding(
+                                get: { settings.mileageUpdateIntervalDays },
+                                set: { newValue in
+                                    Task {
+                                        await model.updateReminderSettings { $0.mileageUpdateIntervalDays = newValue }
+                                    }
+                                }
+                            ),
+                            in: 7...180,
+                            step: 7
+                        )
+                    }
+                } header: {
+                    Text("Mileage")
+                } footer: {
+                    Text("A current reading is what keeps next-due information accurate.")
+                }
+
+                Section {
+                    ValueRow(label: "Scheduled now", value: "\(model.reminderReport.unchanged + model.reminderReport.scheduled)")
+                    if model.reminderReport.wasTruncated {
+                        InlineNotice(
+                            kind: .caution,
+                            message: "iOS limits how many reminders an app can have pending, so Odomind keeps the nearest \(ReminderPlanner.maximumPendingRequests) and schedules the rest as those fire."
+                        )
+                    }
+                    if model.reminderReport.authorization == .denied {
+                        InlineNotice(
+                            kind: .caution,
+                            message: "Notifications are turned off for Odomind in iOS Settings, so nothing will be delivered."
+                        )
+                    }
+                } header: {
+                    Text("Status")
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Reminders")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

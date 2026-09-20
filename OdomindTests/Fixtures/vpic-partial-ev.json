@@ -1,0 +1,30 @@
+{
+  "Count": 1,
+  "Message": "Results returned successfully.",
+  "SearchCriteria": "VIN:5YJ3E1EA0JF000000",
+  "Results": [
+    {
+      "AdditionalErrorText": "",
+      "BodyClass": "Sedan/Saloon",
+      "DisplacementL": null,
+      "DriveType": "RWD/ Rear-Wheel Drive",
+      "ElectrificationLevel": "BEV (Battery Electric Vehicle)",
+      "EngineCylinders": null,
+      "ErrorCode": "6",
+      "ErrorText": "6 - Incomplete VIN; 400 - Invalid Character(s) Present",
+      "FuelTypePrimary": "Electric",
+      "Make": "TESLA",
+      "Manufacturer": "TESLA, INC.",
+      "Model": "Model 3",
+      "ModelYear": "2018",
+      "PlantCountry": "UNITED STATES (USA)",
+      "Series": "",
+      "SuggestedVIN": "5YJ3E1EA0JF000001",
+      "TransmissionSpeeds": "",
+      "TransmissionStyle": "",
+      "Trim": "",
+      "VIN": "5YJ3E1EA0JF000000",
+      "VehicleType": "PASSENGER CAR"
+    }
+  ]
+}
