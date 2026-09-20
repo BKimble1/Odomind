@@ -37,11 +37,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: .github/scripts/select-xcode.sh
+        run: ./.github/scripts/select-xcode.sh
 
       - name: Discover a simulator
         id: simulator
-        run: .github/scripts/select-simulator.sh
+        run: ./.github/scripts/select-simulator.sh
 
       - name: Build for testing
         run: |
@@ -51,6 +51,7 @@ jobs:
             -scheme Odomind \
             -destination "${{ steps.simulator.outputs.destination }}" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/build.log"
 

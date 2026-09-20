@@ -1,9 +1,15 @@
 #!/bin/bash
-# Prints an xcodebuild -destination string for an available iPhone simulator.
+# Prints an xcodebuild -destination string for an available iPhone simulator,
+# and writes it to $GITHUB_OUTPUT as `destination` when running in Actions.
 #
 # Hard-coding "iPhone 15 Pro" breaks the moment GitHub updates its image, so the
 # destination is discovered from what is actually installed. The minimum runtime
 # matches the app's deployment target.
+#
+# The GITHUB_OUTPUT write lives here rather than in each workflow because a
+# caller that forgets it passes -destination "" to xcodebuild, which answers
+# with four hundred lines of usage text and exit 64 — a long way from the real
+# cause. One implementation, one place to get it wrong.
 set -euo pipefail
 
 MIN_IOS_MAJOR="${MIN_IOS_MAJOR:-18}"
@@ -54,5 +60,17 @@ sys.stderr.write("Selected simulator: %s (%s)\n" % (name, udid))
 print("platform=iOS Simulator,id=%s" % udid)
 PY
 )"
+
+if [ -z "$destination" ]; then
+  echo "select-simulator.sh produced no destination" >&2
+  exit 1
+fi
+
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "destination=$destination" >> "$GITHUB_OUTPUT"
+fi
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  echo "Using destination: $destination" >> "$GITHUB_STEP_SUMMARY"
+fi
 
 echo "$destination"

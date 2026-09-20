@@ -79,10 +79,7 @@ jobs:
 
       - name: Discover a simulator
         id: simulator
-        run: |
-          destination="$(./.github/scripts/select-simulator.sh)"
-          echo "destination=$destination" >> "$GITHUB_OUTPUT"
-          echo "Using destination: $destination" >> "$GITHUB_STEP_SUMMARY"
+        run: ./.github/scripts/select-simulator.sh
 
       - name: Build for testing
         run: |
