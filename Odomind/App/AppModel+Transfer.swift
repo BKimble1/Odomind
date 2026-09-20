@@ -201,6 +201,8 @@ extension AppModel {
         await reminderCoordinator.scheduler.cancelAll()
         clearExports()
         refresh()
-        reminderReport = .never
+        // Re-run the reconciliation rather than blanking the report by hand, so
+        // the diagnostics screen shows what is actually scheduled: nothing.
+        await syncReminders()
     }
 }

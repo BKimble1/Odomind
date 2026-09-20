@@ -152,3 +152,16 @@ jobs:
             ${{ runner.temp }}/build.log
           retention-days: 7
           if-no-files-found: ignore
+
+      # Runs last on purpose, so the errors are the final thing in the log
+      # rather than buried behind a few thousand lines of build commands.
+      - name: Errors
+        if: failure()
+        run: |
+          echo "================ ERRORS ================"
+          grep -hE "error:" "$RUNNER_TEMP"/build.log "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
+            | sed 's|/Users/runner/work/Odomind/Odomind/||' | sort -u | head -60
+          echo "================ FAILED TESTS ================"
+          grep -hE "^Test Case .* failed|XCTAssert.* failed" "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log 2>/dev/null \
+            | sed 's|/Users/runner/work/Odomind/Odomind/||' | head -40
+          echo "================ END ================"
