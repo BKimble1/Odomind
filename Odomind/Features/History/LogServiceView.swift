@@ -75,6 +75,7 @@ struct LogServiceView: View {
                                 Spacer()
                             }
                         }
+                        .accessibilityIdentifier("logService.task.\(item.definitionID)")
                         .accessibilityAddTraits(draft.selectedPlanItemIDs.contains(item.id) ? [.isSelected] : [])
                     }
                     Button("Something else…") { showingExtraTasks = true }
@@ -169,6 +170,7 @@ struct LogServiceView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!draft.hasSelection || !blocking.isEmpty)
+                        .accessibilityIdentifier("logService.save")
                 }
             }
             .sheet(isPresented: $showingExtraTasks) {

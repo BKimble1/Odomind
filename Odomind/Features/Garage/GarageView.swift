@@ -115,5 +115,6 @@ struct VehicleRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("garage.vehicle")
     }
 }

@@ -66,6 +66,7 @@ struct VehicleDetailView: View {
                 NavigationLink(value: GarageRoute.specifications(vehicleID)) {
                     Label("Specifications", systemImage: "list.bullet.rectangle")
                 }
+                .accessibilityIdentifier("vehicle.specifications")
                 NavigationLink(value: GarageRoute.odometerHistory(vehicleID)) {
                     Label("Odometer history", systemImage: "gauge.with.dots.needle.33percent")
                 }

@@ -25,6 +25,7 @@ struct ExportView: View {
                 } label: {
                     Label("Service history (CSV)", systemImage: "tablecells")
                 }
+                .accessibilityIdentifier("export.csv")
 
                 if let vehicle = model.selectedVehicle {
                     Button {
@@ -67,6 +68,7 @@ struct ExportView: View {
                 } label: {
                     Label("Create a backup", systemImage: "arrow.down.doc")
                 }
+                .accessibilityIdentifier("export.backup")
             } header: {
                 Text("Backup")
             } footer: {

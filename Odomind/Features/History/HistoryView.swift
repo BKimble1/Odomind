@@ -49,10 +49,12 @@ struct HistoryView: View {
                         } label: {
                             Label("Export", systemImage: "square.and.arrow.up")
                         }
+                        .accessibilityIdentifier("history.export")
                     } label: {
                         Image(systemName: "ellipsis.circle")
                             .accessibilityLabel(Text("History options"))
                     }
+                    .accessibilityIdentifier("history.menu")
                 }
             }
             .navigationDestination(for: HistoryRoute.self) { route in
@@ -219,5 +221,6 @@ struct ServiceRecordRow: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("history.record")
     }
 }

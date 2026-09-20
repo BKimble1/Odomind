@@ -98,20 +98,24 @@ final class ReminderCoordinatorTests: XCTestCase {
         let (model, scheduler) = try makeModel()
         _ = try makeVehicleWithReminder(model)
         _ = await model.enableReminders()
-        XCTAssertFalse(await scheduler.pending().isEmpty)
+        let whileEnabled = await scheduler.pending()
+        XCTAssertFalse(whileEnabled.isEmpty)
 
         await model.disableReminders()
-        XCTAssertTrue(await scheduler.pending().isEmpty)
+        let afterDisabling = await scheduler.pending()
+        XCTAssertTrue(afterDisabling.isEmpty)
     }
 
     func testDeletingAVehicleCancelsItsReminders() async throws {
         let (model, scheduler) = try makeModel()
         let (vehicleID, _) = try makeVehicleWithReminder(model)
         _ = await model.enableReminders()
-        XCTAssertFalse(await scheduler.pending().isEmpty)
+        let beforeDeleting = await scheduler.pending()
+        XCTAssertFalse(beforeDeleting.isEmpty)
 
         await model.deleteVehicle(id: vehicleID)
-        XCTAssertTrue(await scheduler.pending().isEmpty, "a deleted vehicle must not keep firing notifications")
+        let afterDeleting = await scheduler.pending()
+        XCTAssertTrue(afterDeleting.isEmpty, "a deleted vehicle must not keep firing notifications")
     }
 
     func testLoggingServiceMovesTheReminderRatherThanAddingOne() async throws {
@@ -119,7 +123,8 @@ final class ReminderCoordinatorTests: XCTestCase {
         let (vehicleID, planItemID) = try makeVehicleWithReminder(model)
         _ = await model.enableReminders()
 
-        let before = try XCTUnwrap(await scheduler.pending().first)
+        let pendingBefore = await scheduler.pending()
+        let before = try XCTUnwrap(pendingBefore.first)
 
         var draft = ServiceDraft(
             vehicleID: vehicleID,
@@ -141,12 +146,14 @@ final class ReminderCoordinatorTests: XCTestCase {
         let (model, scheduler) = try makeModel()
         let (_, planItemID) = try makeVehicleWithReminder(model)
         _ = await model.enableReminders()
-        let before = try XCTUnwrap(await scheduler.pending().first)
+        let pendingBefore = await scheduler.pending()
+        let before = try XCTUnwrap(pendingBefore.first)
 
         model.snooze(planItemID: planItemID, until: appDate(2027, 1, 1))
         await model.syncReminders()
 
-        let after = try XCTUnwrap(await scheduler.pending().first)
+        let pendingAfter = await scheduler.pending()
+        let after = try XCTUnwrap(pendingAfter.first)
         XCTAssertGreaterThan(after.fireDate, before.fireDate)
         XCTAssertTrue(model.evaluation(planItemID: planItemID)?.isSnoozed ?? false)
     }

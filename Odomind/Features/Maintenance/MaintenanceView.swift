@@ -164,5 +164,6 @@ struct MaintenanceRow: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("maintenance.task.\(evaluation.definitionID)")
     }
 }

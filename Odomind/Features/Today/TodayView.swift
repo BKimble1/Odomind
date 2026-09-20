@@ -191,6 +191,7 @@ struct MileageSummaryRow: View {
                         .foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("today.odometer")
                 .accessibilityLabel(Text("Recorded odometer \(Format.distance(reading.value))"))
 
                 Text(stalenessText(for: reading))
@@ -260,6 +261,7 @@ struct TaskSummaryRow: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("today.task.\(evaluation.definitionID)")
     }
 }
 
