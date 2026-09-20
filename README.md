@@ -188,6 +188,24 @@ Actions are pinned to major version tags. To pin to commit SHAs instead — the
 stricter choice — resolve each tag once and record the SHA with the tag in a
 trailing comment, then update on a schedule.
 
+### Looking at the app without a Mac
+
+`.github/workflows/screenshots.yml` is manual only. It drives the app through
+onboarding, Today, Maintenance, a task, the Garage, a vehicle, its
+specifications and History in light, dark and a large text size, and publishes
+the captures two ways: as an artifact, and as base64 in the log of one small
+job per screen. Where artifact downloads are not reachable, save a job's log
+and rebuild the image:
+
+```bash
+.github/scripts/decode-screenshot.py today.log today.jpg
+```
+
+It refuses rather than writing a corrupt file if the log is missing a chunk,
+and tells you when a screen was not captured at all. This workflow is a way to
+see the app, never a gate — it does not run on a push and cannot fail a pull
+request.
+
 ---
 
 ## Privacy
