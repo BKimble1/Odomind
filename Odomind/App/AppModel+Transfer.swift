@@ -86,7 +86,8 @@ extension AppModel {
                 named: BackupService.suggestedFileName(now: clock.now, calendar: calendar),
                 in: directory
             )
-            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? nil
+            let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let size = attributes?[.size] as? Int
             let sizeText = size.map { " · \(ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file))" } ?? ""
             return ExportedFile(url: url, description: "Odomind backup\(sizeText)")
         } catch {

@@ -14,7 +14,7 @@ struct CustomTaskEditor: View {
     @State private var category: MaintenanceCategory = .other
     @State private var action: ServiceAction = .replace
     @State private var wantsSchedule = true
-    @State private var shape: ScheduleEditor.Shape = .distance
+    @State private var shape: ScheduleShape = .distance
     @State private var distanceText = ""
     @State private var timeCount = 6
     @State private var timeUnit: CalendarInterval.Unit = .months
@@ -81,7 +81,7 @@ struct CustomTaskEditor: View {
             if wantsSchedule {
                 Section("Schedule") {
                     Picker("Type", selection: $shape) {
-                        ForEach(ScheduleEditor.Shape.allCases) { option in
+                        ForEach(ScheduleShape.allCases) { option in
                             Text(option.title).tag(option)
                         }
                     }

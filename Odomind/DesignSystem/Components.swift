@@ -8,30 +8,16 @@ struct DueBadge: View {
     var compact: Bool = false
 
     var body: some View {
-        Label {
-            Text(state.displayName)
-        } icon: {
-            Image(systemName: state.symbolName)
+        Group {
+            if compact {
+                Image(systemName: state.symbolName)
+            } else {
+                Label(state.displayName, systemImage: state.symbolName)
+            }
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(state.tint)
-        .labelStyle(compact ? AnyLabelStyle(.iconOnly) : AnyLabelStyle(.titleAndIcon))
         .accessibilityLabel(Text(state.displayName))
-    }
-}
-
-/// Type-erased label style so a single view can switch between them.
-struct AnyLabelStyle: LabelStyle {
-    private let makeBodyClosure: (Configuration) -> AnyView
-
-    init<S: LabelStyle>(_ style: S) {
-        makeBodyClosure = { configuration in
-            AnyView(style.makeBody(configuration: configuration))
-        }
-    }
-
-    func makeBody(configuration: Configuration) -> some View {
-        makeBodyClosure(configuration)
     }
 }
 

@@ -1,6 +1,49 @@
 import SwiftUI
 import OdomindCore
 
+/// The schedule shapes the owner can choose from when writing their own.
+///
+/// Declared at file scope and not called `Shape`, which is a SwiftUI
+/// protocol and would read confusingly inside a view.
+enum ScheduleShape: String, CaseIterable, Identifiable {
+    case distance
+    case time
+    case distanceOrTime
+    case fixedMilestones
+    case conditionCheck
+    case oneTime
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .distance: return "Every set distance"
+        case .time: return "Every set time"
+        case .distanceOrTime: return "Distance or time, whichever first"
+        case .fixedMilestones: return "At odometer milestones"
+        case .conditionCheck: return "Periodic check"
+        case .oneTime: return "Once"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .distance:
+            return "Counts from the last time you logged this job."
+        case .time:
+            return "Counts from the last time you logged this job."
+        case .distanceOrTime:
+            return "Whichever arrives first after the last time you logged it."
+        case .fixedMilestones:
+            return "Counted off the odometer, not off the last service. Doing the work early does not move the next milestone."
+        case .conditionCheck:
+            return "Schedules a look, not a replacement. Use this where the answer is 'replace it when it is worn'."
+        case .oneTime:
+            return "Happens once and then stops."
+        }
+    }
+}
+
 /// Lets the owner write the schedule for one task.
 ///
 /// This is the manual workflow that makes a task without a published interval
@@ -13,46 +56,7 @@ struct ScheduleEditor: View {
 
     let planItemID: UUID
 
-    enum Shape: String, CaseIterable, Identifiable {
-        case distance
-        case time
-        case distanceOrTime
-        case fixedMilestones
-        case conditionCheck
-        case oneTime
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .distance: return "Every set distance"
-            case .time: return "Every set time"
-            case .distanceOrTime: return "Distance or time, whichever first"
-            case .fixedMilestones: return "At odometer milestones"
-            case .conditionCheck: return "Periodic check"
-            case .oneTime: return "Once"
-            }
-        }
-
-        var explanation: String {
-            switch self {
-            case .distance:
-                return "Counts from the last time you logged this job."
-            case .time:
-                return "Counts from the last time you logged this job."
-            case .distanceOrTime:
-                return "Whichever arrives first after the last time you logged it."
-            case .fixedMilestones:
-                return "Counted off the odometer, not off the last service. Doing the work early does not move the next milestone."
-            case .conditionCheck:
-                return "Schedules a look, not a replacement. Use this where the answer is 'replace it when it is worn'."
-            case .oneTime:
-                return "Happens once and then stops."
-            }
-        }
-    }
-
-    @State private var shape: Shape = .distance
+    @State private var shape: ScheduleShape = .distance
     @State private var distanceText = ""
     @State private var timeCount = 6
     @State private var timeUnit: CalendarInterval.Unit = .months
@@ -114,7 +118,7 @@ struct ScheduleEditor: View {
             Form {
                 Section {
                     Picker("Schedule type", selection: $shape) {
-                        ForEach(Shape.allCases) { option in
+                        ForEach(ScheduleShape.allCases) { option in
                             Text(option.title).tag(option)
                         }
                     }

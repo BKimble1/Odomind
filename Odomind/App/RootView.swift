@@ -52,12 +52,17 @@ struct RootView: View {
                 }
             }
         }
-        .alert(item: $model.alert) { alert in
-            Alert(
-                title: Text(alert.title),
-                message: Text([alert.message, alert.recoverySuggestion].compactMap { $0 }.joined(separator: "\n\n")),
-                dismissButton: .default(Text("OK"))
-            )
+        .alert(
+            model.alert?.title ?? "",
+            isPresented: Binding(
+                get: { model.alert != nil },
+                set: { isPresented in if !isPresented { model.alert = nil } }
+            ),
+            presenting: model.alert
+        ) { _ in
+            Button("OK", role: .cancel) { model.alert = nil }
+        } message: { alert in
+            Text([alert.message, alert.recoverySuggestion].compactMap { $0 }.joined(separator: "\n\n"))
         }
         .onChange(of: router.pendingVehicleSelection) { _, newValue in
             guard let newValue, model.snapshot.vehicle(id: newValue) != nil else { return }

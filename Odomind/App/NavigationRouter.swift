@@ -7,7 +7,8 @@ import OdomindCore
 /// Tab selection and per-tab navigation live here so a notification tap or a
 /// deep link can land on the right screen without every view having to know
 /// about routing.
-@MainActor
+/// Not actor-isolated so it can be created in the `App` struct's property
+/// initializer. SwiftUI only ever reads and writes it from the main actor.
 @Observable
 final class NavigationRouter {
     enum Tab: String, Hashable, CaseIterable {

@@ -20,6 +20,7 @@ struct LogServiceView: View {
     @State private var isShop = false
     @State private var showingExtraTasks = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var odometerText = ""
     @State private var didPrepare = false
 
     init(vehicle: Vehicle, preselectedPlanItemID: UUID? = nil, editingRecord: ServiceRecord? = nil) {
@@ -96,8 +97,11 @@ struct LogServiceView: View {
                 Section("When") {
                     DatePicker("Date", selection: $draft.performedOn, in: ...Date(), displayedComponents: .date)
                     HStack {
-                        TextField("Odometer", value: $draft.odometerAmount, format: .number)
+                        TextField("Odometer", text: $odometerText)
                             .keyboardType(.numberPad)
+                            .onChange(of: odometerText) { _, newValue in
+                                draft.odometerAmount = Int(newValue.filter(\.isNumber))
+                            }
                         Text(vehicle.displayUnit.abbreviation).foregroundStyle(.secondary)
                     }
                 }
@@ -207,6 +211,9 @@ struct LogServiceView: View {
 
         if draft.odometerAmount == nil, let latest = model.latestReading(for: vehicle.id) {
             draft.odometerAmount = latest.value.amount
+        }
+        if let amount = draft.odometerAmount {
+            odometerText = String(amount)
         }
     }
 
