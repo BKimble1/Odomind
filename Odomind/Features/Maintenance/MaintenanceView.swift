@@ -30,11 +30,13 @@ struct MaintenanceView: View {
                         } label: {
                             Label("Add from catalog", systemImage: "text.book.closed")
                         }
+                        .accessibilityIdentifier("maintenance.addFromCatalog")
                         Button {
                             router.maintenancePath.append(.customTask)
                         } label: {
                             Label("Create custom task", systemImage: "square.and.pencil")
                         }
+                        .accessibilityIdentifier("maintenance.createCustomTask")
                         if model.openProposalCount > 0 {
                             Divider()
                             Button {
@@ -46,6 +48,7 @@ struct MaintenanceView: View {
                     } label: {
                         Image(systemName: "plus")
                             .accessibilityLabel(Text("Add a maintenance task"))
+                            .accessibilityIdentifier("maintenance.addMenu")
                     }
                 }
             }

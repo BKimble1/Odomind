@@ -40,6 +40,7 @@ struct AddTaskView: View {
         List {
             Section {
                 Toggle("Show advanced and less common tasks", isOn: $showAdvanced)
+                    .accessibilityIdentifier("addTask.showAdvanced")
             } footer: {
                 Text("Advanced tasks include differential and transfer-case service, timing belts, seasonal work and anything your manual lists that Odomind does not recommend by default.")
             }
@@ -120,6 +121,7 @@ struct SuggestionRow: View {
                     Button("Add", action: add)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .accessibilityIdentifier("addTask.add.\(suggestion.definition.id)")
                 }
             }
 

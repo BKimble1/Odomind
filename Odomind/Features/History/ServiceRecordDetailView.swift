@@ -110,7 +110,9 @@ struct ServiceRecordDetailView: View {
 
             Section {
                 Button("Edit this record") { showingEdit = true }
+                    .accessibilityIdentifier("record.edit")
                 Button("Delete this record", role: .destructive) { showingDeleteConfirmation = true }
+                    .accessibilityIdentifier("record.delete")
             } footer: {
                 Text("Editing or deleting a record recalculates every schedule it affects.")
             }

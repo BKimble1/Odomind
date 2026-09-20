@@ -100,6 +100,7 @@ struct LogServiceView: View {
                     HStack {
                         TextField("Odometer", text: $odometerText)
                             .keyboardType(.numberPad)
+                            .accessibilityIdentifier("logService.odometer")
                             .onChange(of: odometerText) { _, newValue in
                                 draft.odometerAmount = Int(newValue.filter(\.isNumber))
                             }

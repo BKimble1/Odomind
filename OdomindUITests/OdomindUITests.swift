@@ -37,6 +37,20 @@ final class OdomindJourneyUITests: XCTestCase {
         field.typeText(text)
     }
 
+    /// Clears a field before typing.
+    ///
+    /// Odometer fields pre-fill with the last reading, so typing alone would
+    /// append to it and quietly record a much larger number than intended.
+    private func replaceText(_ text: String, in field: XCUIElement) {
+        waitFor(field, 10, "field never appeared")
+        field.tap()
+        let existing = (field.value as? String) ?? ""
+        if !existing.isEmpty {
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count + 2))
+        }
+        field.typeText(text)
+    }
+
     /// Any element whose accessibility label contains `text`, whatever its type.
     private func element(labelContaining text: String) -> XCUIElement {
         app.descendants(matching: .any)
@@ -181,6 +195,76 @@ final class OdomindJourneyUITests: XCTestCase {
         XCTAssertTrue(
             element(labelContaining: "125,000").waitForExistence(timeout: 10),
             "the next due odometer should be shown after logging the service"
+        )
+    }
+
+    func testAddATaskFromTheCatalog() {
+        addVehicle()
+
+        app.tabBars.buttons["Maintenance"].tap()
+        waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
+
+        // Onboarding starts a vehicle on every recommended task, so the one
+        // task guaranteed not to be tracked yet is an advanced one — which
+        // also means the test has to ask for advanced tasks to be shown.
+        let identifier = "maintenance.task.wheel-alignment-check"
+        XCTAssertFalse(app.otherElements[identifier].exists, "the alignment check should not be tracked yet")
+
+        app.buttons["maintenance.addMenu"].tap()
+        waitFor(app.buttons["maintenance.addFromCatalog"], 10, "the add menu did not open").tap()
+        waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
+
+        let advanced = waitFor(app.switches["addTask.showAdvanced"], 10, "the advanced toggle is missing")
+        XCTAssertFalse(
+            app.buttons["addTask.add.wheel-alignment-check"].exists,
+            "an advanced task should be hidden until the owner asks for advanced tasks"
+        )
+        advanced.tap()
+
+        let add = waitFor(
+            app.buttons["addTask.add.wheel-alignment-check"],
+            10,
+            "the alignment check is missing from the catalog list"
+        )
+        add.tap()
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        waitFor(app.navigationBars["Maintenance"], 10, "did not return to Maintenance")
+        waitFor(app.otherElements[identifier], 10, "the added task should now be tracked")
+    }
+
+    func testEditingARecordChangesWhatHistoryShows() {
+        addVehicle()
+
+        app.buttons["today.logService"].tap()
+        waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
+        app.buttons["logService.task.engine-oil-and-filter"].tap()
+
+        replaceText("121000", in: app.textFields["logService.odometer"])
+        app.buttons["logService.save"].tap()
+        waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
+
+        app.tabBars.buttons["History"].tap()
+        waitFor(app.navigationBars["History"], 10, "the History tab did not open")
+        let record = waitFor(app.otherElements["history.record"], 10, "the logged service is missing")
+        XCTAssertTrue(record.label.contains("121,000"), "expected the recorded reading, got '\(record.label)'")
+        record.tap()
+
+        waitFor(app.buttons["record.edit"], 10, "the record cannot be edited").tap()
+
+        replaceText("122500", in: app.textFields["logService.odometer"])
+        app.buttons["logService.save"].tap()
+
+        app.tabBars.buttons["History"].tap()
+        waitFor(app.navigationBars["History"], 10, "the History tab did not reopen")
+        let corrected = waitFor(app.otherElements["history.record"], 10, "the record disappeared after editing")
+        XCTAssertTrue(
+            corrected.label.contains("122,500"),
+            "the correction should replace the old reading, not sit beside it: '\(corrected.label)'"
+        )
+        XCTAssertFalse(
+            corrected.label.contains("121,000"),
+            "the old reading should be gone after the correction: '\(corrected.label)'"
         )
     }
 
