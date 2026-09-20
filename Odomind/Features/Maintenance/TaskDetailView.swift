@@ -91,7 +91,7 @@ struct TaskDetailView: View {
             LogServiceView(vehicle: vehicle, preselectedPlanItemID: planItemID)
         }
         .sheet(item: $calendarEvent) { draft in
-            EventEditView(event: draft.event) { action in
+            EventEditView(event: draft.event, eventStore: draft.store) { action in
                 calendarEvent = nil
                 if action == .saved {
                     model.markCalendarExported(
@@ -461,24 +461,13 @@ struct TaskDetailView: View {
 
     private func presentCalendarEditor(evaluation: ScheduleEvaluation, vehicle: Vehicle, item: MaintenancePlanItem) {
         guard let due = evaluation.nextDueDate ?? evaluation.estimatedDueDate else { return }
-        let service = CalendarService()
-        guard let event = service.makeEvent(
+        calendarEvent = CalendarService.makeEventDraft(
             title: item.title,
             vehicleName: vehicle.displayName,
             dueDate: due,
             isEstimated: evaluation.nextDueDate == nil,
             scheduleSummary: item.effectiveRule?.summary,
             calendar: model.calendar
-        ) else {
-            return
-        }
-        calendarEvent = CalendarEventDraft(event: event)
+        )
     }
-}
-
-/// Wraps an `EKEvent` so it can drive a `sheet(item:)` without conforming a
-/// framework class to `Identifiable`.
-struct CalendarEventDraft: Identifiable {
-    let id = UUID()
-    let event: EKEvent
 }

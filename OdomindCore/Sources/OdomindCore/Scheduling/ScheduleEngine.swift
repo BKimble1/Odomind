@@ -154,9 +154,7 @@ public enum ScheduleEngine {
     }
 
     /// Groups evaluations by state, preserving urgency order inside each group.
-    public static func grouped(
-        _ evaluations: [ScheduleEvaluation]
-    ) -> [(state: DueState, items: [ScheduleEvaluation])] {
+    public static func grouped(_ evaluations: [ScheduleEvaluation]) -> [DueGroup] {
         var buckets: [DueState: [ScheduleEvaluation]] = [:]
         for evaluation in evaluations {
             buckets[evaluation.state, default: []].append(evaluation)
@@ -165,7 +163,7 @@ public enum ScheduleEngine {
             .sorted { $0.sortRank < $1.sortRank }
             .compactMap { state in
                 guard let items = buckets[state], !items.isEmpty else { return nil }
-                return (state, items)
+                return DueGroup(state: state, items: items)
             }
     }
 

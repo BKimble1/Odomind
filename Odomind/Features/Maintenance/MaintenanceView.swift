@@ -83,7 +83,7 @@ struct MaintenanceView: View {
                 ContentUnavailableView.search(text: searchText)
             } else {
                 List {
-                    ForEach(byCategory(filtered), id: \.category) { group in
+                    ForEach(byCategory(filtered)) { group in
                         Section {
                             ForEach(group.items) { evaluation in
                                 NavigationLink(value: MaintenanceRoute.task(evaluation.planItemID)) {
@@ -112,9 +112,7 @@ struct MaintenanceView: View {
         }
     }
 
-    private func byCategory(
-        _ evaluations: [ScheduleEvaluation]
-    ) -> [(category: MaintenanceCategory, items: [ScheduleEvaluation])] {
+    private func byCategory(_ evaluations: [ScheduleEvaluation]) -> [EvaluationCategoryGroup] {
         var buckets: [MaintenanceCategory: [ScheduleEvaluation]] = [:]
         for evaluation in evaluations {
             let category = model.planItem(id: evaluation.planItemID)?.category ?? .other
@@ -122,9 +120,16 @@ struct MaintenanceView: View {
         }
         return MaintenanceCategory.allCases.compactMap { category in
             guard let items = buckets[category], !items.isEmpty else { return nil }
-            return (category, items)
+            return EvaluationCategoryGroup(category: category, items: items)
         }
     }
+}
+
+/// Tracked tasks grouped under one category heading.
+struct EvaluationCategoryGroup: Identifiable {
+    var id: MaintenanceCategory { category }
+    let category: MaintenanceCategory
+    let items: [ScheduleEvaluation]
 }
 
 struct MaintenanceRow: View {

@@ -226,7 +226,7 @@ final class AppModel {
     }
 
     /// Tasks in each due state, in urgency order.
-    func grouped(for vehicleID: UUID) -> [(state: DueState, items: [ScheduleEvaluation])] {
+    func grouped(for vehicleID: UUID) -> [DueGroup] {
         ScheduleEngine.grouped(evaluations(for: vehicleID).filter { $0.state != .notApplicable })
     }
 

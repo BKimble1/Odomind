@@ -104,7 +104,7 @@ struct HistoryView: View {
                     }
                 }
             } else {
-                ForEach(groupedByYear(records), id: \.year) { group in
+                ForEach(groupedByYear(records)) { group in
                     Section {
                         ForEach(group.records) { record in
                             NavigationLink(value: HistoryRoute.record(record.id)) {
@@ -153,14 +153,21 @@ struct HistoryView: View {
         }
     }
 
-    private func groupedByYear(_ records: [ServiceRecord]) -> [(year: Int, records: [ServiceRecord])] {
+    private func groupedByYear(_ records: [ServiceRecord]) -> [ServiceYearGroup] {
         var buckets: [Int: [ServiceRecord]] = [:]
         for record in records {
             let year = model.calendar.component(.year, from: record.performedOn)
             buckets[year, default: []].append(record)
         }
-        return buckets.keys.sorted(by: >).map { ($0, buckets[$0] ?? []) }
+        return buckets.keys.sorted(by: >).map { ServiceYearGroup(year: $0, records: buckets[$0] ?? []) }
     }
+}
+
+/// Service records grouped under one year heading.
+struct ServiceYearGroup: Identifiable {
+    var id: Int { year }
+    let year: Int
+    let records: [ServiceRecord]
 }
 
 struct ServiceRecordRow: View {

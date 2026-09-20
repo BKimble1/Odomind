@@ -58,7 +58,7 @@ struct AddTaskView: View {
                 }
             }
 
-            ForEach(byCategory(filtered), id: \.category) { group in
+            ForEach(byCategory(filtered)) { group in
                 Section {
                     ForEach(group.items) { suggestion in
                         SuggestionRow(
@@ -78,18 +78,26 @@ struct AddTaskView: View {
         .listStyle(.insetGrouped)
     }
 
-    private func byCategory(
-        _ suggestions: [SuggestedTask]
-    ) -> [(category: MaintenanceCategory, items: [SuggestedTask])] {
+    private func byCategory(_ suggestions: [SuggestedTask]) -> [SuggestionCategoryGroup] {
         var buckets: [MaintenanceCategory: [SuggestedTask]] = [:]
         for suggestion in suggestions {
             buckets[suggestion.definition.category, default: []].append(suggestion)
         }
         return MaintenanceCategory.allCases.compactMap { category in
             guard let items = buckets[category], !items.isEmpty else { return nil }
-            return (category, items.sorted { $0.definition.title < $1.definition.title })
+            return SuggestionCategoryGroup(
+                category: category,
+                items: items.sorted { $0.definition.title < $1.definition.title }
+            )
         }
     }
+}
+
+/// Catalog tasks grouped under one category heading.
+struct SuggestionCategoryGroup: Identifiable {
+    var id: MaintenanceCategory { category }
+    let category: MaintenanceCategory
+    let items: [SuggestedTask]
 }
 
 struct SuggestionRow: View {

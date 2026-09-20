@@ -236,3 +236,18 @@ public struct ScheduleEvaluation: Hashable, Sendable, Identifiable {
         return (stateRank, within)
     }
 }
+
+
+/// Evaluations sharing a due state, in urgency order.
+///
+/// A named type rather than a tuple so it can be identified directly in a list.
+public struct DueGroup: Identifiable, Hashable, Sendable {
+    public var id: DueState { state }
+    public var state: DueState
+    public var items: [ScheduleEvaluation]
+
+    public init(state: DueState, items: [ScheduleEvaluation]) {
+        self.state = state
+        self.items = items
+    }
+}

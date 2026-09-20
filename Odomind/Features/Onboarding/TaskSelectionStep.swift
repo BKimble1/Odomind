@@ -36,7 +36,7 @@ struct TaskSelectionStep: View {
                 Toggle("Show advanced tasks", isOn: $showAdvanced)
             }
 
-            ForEach(byCategory, id: \.category) { group in
+            ForEach(byCategory) { group in
                 Section {
                     ForEach(group.items) { suggestion in
                         TaskChoiceRow(
@@ -57,7 +57,7 @@ struct TaskSelectionStep: View {
         .onAppear(perform: preselect)
     }
 
-    private var byCategory: [(category: MaintenanceCategory, items: [SuggestedTask])] {
+    private var byCategory: [SuggestionCategoryGroup] {
         let visible = suggestions.filter { showAdvanced || !$0.definition.isAdvanced }
         var buckets: [MaintenanceCategory: [SuggestedTask]] = [:]
         for suggestion in visible {
@@ -65,7 +65,10 @@ struct TaskSelectionStep: View {
         }
         return MaintenanceCategory.allCases.compactMap { category in
             guard let items = buckets[category], !items.isEmpty else { return nil }
-            return (category, items.sorted { $0.definition.title < $1.definition.title })
+            return SuggestionCategoryGroup(
+                category: category,
+                items: items.sorted { $0.definition.title < $1.definition.title }
+            )
         }
     }
 

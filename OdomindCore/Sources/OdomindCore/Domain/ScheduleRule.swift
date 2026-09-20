@@ -45,7 +45,7 @@ public struct FixedMilestoneSchedule: Codable, Hashable, Sendable {
         distanceMilestones.isEmpty && ageMilestones.isEmpty && repeatEvery == nil
     }
 
-    var sortedDistanceMilestones: [Distance] {
+    public var sortedDistanceMilestones: [Distance] {
         distanceMilestones.sorted()
     }
 }

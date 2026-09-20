@@ -14,24 +14,26 @@ import OdomindCore
 /// A saved event is a snapshot of the due date at the moment it was created.
 /// Updating or removing it later would need full calendar access and stored
 /// event identifiers, which this version deliberately does not ask for.
-@MainActor
-final class CalendarService {
-    /// A store is needed to construct the event object. No authorization is
-    /// requested, and no calendar is read through it.
-    private let store = EKEventStore()
+enum CalendarService {
 
-    /// Builds an all-day event for a maintenance deadline.
+    /// Builds an all-day event for a maintenance deadline, together with the
+    /// store it belongs to.
+    ///
+    /// EventKit objects must outlive their store, so the draft carries both and
+    /// the view holds the draft for as long as the editor is on screen.
     ///
     /// Returns `nil` only when the due date cannot be represented, which the
     /// caller reports rather than silently skipping.
-    func makeEvent(
+    static func makeEventDraft(
         title: String,
         vehicleName: String,
         dueDate: Date,
         isEstimated: Bool,
         scheduleSummary: String?,
         calendar: Calendar
-    ) -> EKEvent? {
+    ) -> CalendarEventDraft? {
+        // Constructing a store does not request authorization and reads nothing.
+        let store = EKEventStore()
         let event = EKEvent(eventStore: store)
         event.title = "\(title) — \(vehicleName)"
         event.isAllDay = true
@@ -55,6 +57,15 @@ final class CalendarService {
         )
         event.notes = notes.joined(separator: "\n\n")
 
-        return event
+        return CalendarEventDraft(store: store, event: event)
     }
+}
+
+/// An event waiting to be shown in the system editor, with the store that owns
+/// it. Identifiable so it can drive `sheet(item:)` without conforming an
+/// EventKit class to `Identifiable`.
+struct CalendarEventDraft: Identifiable {
+    let id = UUID()
+    let store: EKEventStore
+    let event: EKEvent
 }

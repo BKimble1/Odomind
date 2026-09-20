@@ -8,12 +8,15 @@ import SwiftUI
 /// owner sees exactly what will be saved and which calendar it goes to.
 struct EventEditView: UIViewControllerRepresentable {
     let event: EKEvent
+    /// Held by the caller for the lifetime of the sheet: EventKit objects must
+    /// not outlive the store they came from.
+    let eventStore: EKEventStore
     let onComplete: (EKEventEditViewAction) -> Void
 
     func makeUIViewController(context: Context) -> EKEventEditViewController {
         let controller = EKEventEditViewController()
+        controller.eventStore = eventStore
         controller.event = event
-        controller.eventStore = event.eventStore
         controller.editViewDelegate = context.coordinator
         return controller
     }

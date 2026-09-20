@@ -126,7 +126,7 @@ struct TodayView: View {
                 }
             }
 
-            ForEach(groups, id: \.state) { group in
+            ForEach(groups) { group in
                 Section {
                     ForEach(group.items) { evaluation in
                         NavigationLink(value: evaluation.planItemID) {
