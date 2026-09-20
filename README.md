@@ -76,6 +76,13 @@ the date. A VIN decoder's output is not verified.
 To try it in the simulator instead, pick any iPhone destination and press ⌘R —
 no signing needed.
 
+**If you used a free Apple ID**, the provisioning profile Xcode creates lasts
+seven days. After that the app refuses to launch until you connect the phone
+and press ⌘R again. Your records are untouched — they live in the app's
+container, not the signature. A paid Apple Developer account raises that to a
+year. This catches people out because it looks like a crash rather than an
+expiry.
+
 ### TestFlight, later
 
 Nothing here blocks distribution; it simply has not been set up.
