@@ -143,6 +143,7 @@ struct LogServiceView: View {
                         HStack {
                             Image(systemName: "doc")
                                 .foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
                             Text(model.snapshot.attachment(id: id).map { Format.byteCount($0.byteCount) } ?? "Attachment")
                             Spacer()
                             Button("Remove") {

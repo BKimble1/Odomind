@@ -162,8 +162,12 @@ struct TodayView: View {
                     }
                 } header: {
                     HStack(spacing: Theme.Spacing.small) {
+                        // The text beside it already says the state, so the
+                        // symbol is decoration. Left visible to VoiceOver it
+                        // becomes its own element announcing nothing useful.
                         Image(systemName: group.state.symbolName)
                             .foregroundStyle(group.state.tint)
+                            .accessibilityHidden(true)
                         Text(group.state.displayName)
                         Spacer()
                         Text("\(group.items.count)")
