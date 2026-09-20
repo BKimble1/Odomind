@@ -25,7 +25,9 @@ Built by Idlery Services LLC. This repository is public for review; see
   unconfirmed keeps the dependent tasks out of your plan rather than guessing.
 - **Record mileage** in one field, whenever you think of it.
 - **Track maintenance** from a catalog of 32 common and advanced tasks, or from
-  tasks you write yourself, across six kinds of schedule.
+  tasks you write yourself, across seven kinds of schedule — including fixed
+  odometer milestones, which doing the work early does not move, and condition
+  checks, which schedule a look rather than a replacement.
 - **Log service** as a visit: one date, one reading, one total, and every task
   that was actually done.
 - **Keep specifications** from your manual and door placard, used everywhere.
