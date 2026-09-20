@@ -7,8 +7,10 @@ import OdomindCore
 /// service, and the app says exactly that rather than showing a "live database"
 /// badge it cannot back up. `CatalogUpdateStatus` is the single place that
 /// wording lives, so adding real updates later means changing one type.
-@MainActor
-final class CatalogService {
+///
+/// Not actor-isolated: it reads one file at init and never mutates afterwards,
+/// so it is safe to construct anywhere — including as a default argument.
+final class CatalogService: @unchecked Sendable {
     enum LoadState: Equatable {
         case loaded(MaintenanceCatalog)
         case failed(String)
@@ -24,7 +26,7 @@ final class CatalogService {
         }
     }
 
-    private(set) var state: LoadState
+    let state: LoadState
 
     init(loader: () throws -> MaintenanceCatalog = { try CatalogLoader.loadBundled() }) {
         do {
