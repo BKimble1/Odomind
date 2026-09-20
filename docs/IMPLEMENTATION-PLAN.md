@@ -19,9 +19,11 @@ Two of these shaped the whole build.
 
 **No local compiler** meant CI had to become the compiler. The domain core was
 written, committed and pushed first, on its own, so that a real `swiftc` could
-report on 4,000 lines before another 8,000 were written on top of it. That first
-run found exactly one error. The loop stayed short afterwards: small commits,
-read the compiler, fix, push.
+report on it before the app layer was written on top. The loop that followed
+was the whole build: small commits, read the compiler, fix, push. Several
+classes of mistake only a compiler catches — access levels across module
+boundaries, actor isolation in default arguments, `await` inside an
+autoclosure — were found that way rather than by review.
 
 **No reachable vehicle data** meant the catalog could not honestly ship
 manufacturer values. Rather than fill it with plausible numbers, the app was
