@@ -51,6 +51,30 @@ final class OdomindJourneyUITests: XCTestCase {
         field.typeText(text)
     }
 
+    /// Walks onboarding to a garage containing one vehicle.
+    private func addVehicle(odometer: String = "120000") {
+        let start = waitFor(
+            app.buttons["onboarding.addVehicle"],
+            20,
+            "onboarding did not appear — the app may not have started from a clean store"
+        )
+        start.tap()
+
+        type("2010", into: app.textFields["addVehicle.year"])
+        type("Jeep", into: app.textFields["addVehicle.make"])
+        type("Wrangler", into: app.textFields["addVehicle.model"])
+
+        let next = waitFor(app.buttons["addVehicle.next"], 10, "the Next button is missing")
+        next.tap()          // identity -> confirm
+        next.tap()          // confirm -> mileage
+
+        replaceText(odometer, in: app.textFields["addVehicle.odometer"])
+        next.tap()          // mileage -> tasks
+
+        waitFor(app.buttons["addVehicle.finish"], 10, "the Add vehicle button is missing").tap()
+        waitFor(app.navigationBars["Today"], 15, "Today did not appear after adding a vehicle")
+    }
+
     // MARK: - Tests
 
     func testAddAVehicleAndSeeItOnToday() {

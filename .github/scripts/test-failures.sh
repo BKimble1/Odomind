@@ -33,8 +33,10 @@ grab ": error: -\[|XCTAssert.* failed" | sort -u | head -40
 
 section "ACCESSIBILITY AUDIT FINDINGS"
 # The audit records issues rather than throwing, so they arrive as their own
-# lines naming the element and the rule it broke.
-grab "Accessibility|audit|contrast|hit region|Dynamic Type|clipped|no description" \
+# lines naming the element and the rule it broke. Matched narrowly: the build
+# log mentions "Accessibility" constantly (module caches, the test file's own
+# name) and a loose pattern buries the findings in compiler invocations.
+grab "Audit detected|insufficient contrast|hit region|Dynamic Type|is clipped|no description|has no label|Element:" \
   | sort -u | head -40
 
 section "FAILED TESTS"
