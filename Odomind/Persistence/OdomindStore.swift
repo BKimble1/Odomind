@@ -208,11 +208,21 @@ final class OdomindStore {
     /// receipts on disk.
     @discardableResult
     func deleteVehicle(id: UUID) throws -> [UUID] {
-        var orphanedAttachments: [UUID] = []
+        var releasedAttachments: [UUID] = []
         var problems: [StoreProblem] = []
 
+        // Anything another vehicle's record still points at stays. A restored
+        // backup can legitimately share an attachment between records.
+        var stillReferenced = Set<UUID>()
+        for record in try fetch(StoredServiceRecord.self) where record.vehicleID != id {
+            stillReferenced.formUnion(record.toDomain(problems: &problems).attachmentIDs)
+        }
+        for vehicle in try fetch(StoredVehicle.self) where vehicle.id != id {
+            if let photo = vehicle.photoAttachmentID { stillReferenced.insert(photo) }
+        }
+
         for record in try fetch(StoredServiceRecord.self) where record.vehicleID == id {
-            orphanedAttachments.append(contentsOf: record.toDomain(problems: &problems).attachmentIDs)
+            releasedAttachments.append(contentsOf: record.toDomain(problems: &problems).attachmentIDs)
             context.delete(record)
         }
         for reading in try fetch(StoredOdometerReading.self) where reading.vehicleID == id {
@@ -225,10 +235,11 @@ final class OdomindStore {
             context.delete(specification)
         }
         for vehicle in try fetch(StoredVehicle.self) where vehicle.id == id {
-            if let photo = vehicle.photoAttachmentID { orphanedAttachments.append(photo) }
+            if let photo = vehicle.photoAttachmentID { releasedAttachments.append(photo) }
             context.delete(vehicle)
         }
 
+        let orphanedAttachments = releasedAttachments.filter { !stillReferenced.contains($0) }
         for attachmentID in orphanedAttachments {
             for attachment in try fetch(StoredAttachment.self) where attachment.id == attachmentID {
                 context.delete(attachment)

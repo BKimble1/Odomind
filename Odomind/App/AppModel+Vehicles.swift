@@ -126,21 +126,21 @@ extension AppModel {
     /// Deletes a vehicle, its history, its files and its reminders.
     func deleteVehicle(id: UUID) async {
         let planItemIDs = snapshot.planItems(for: id).map(\.id)
-        let attachmentFileNames = Set(
-            snapshot.serviceRecords(for: id)
-                .flatMap(\.attachmentIDs)
-                .compactMap { snapshot.attachment(id: $0)?.fileName }
-        )
 
+        // The store decides which attachments are genuinely orphaned; one that
+        // another vehicle's record still references must keep its file.
+        let orphaned: [UUID]
         do {
-            _ = try store.deleteVehicle(id: id)
+            orphaned = try store.deleteVehicle(id: id)
         } catch {
             alert = .saveFailed(error)
             return
         }
 
-        for fileName in attachmentFileNames {
-            attachments.delete(fileName: fileName)
+        for attachmentID in orphaned {
+            if let metadata = snapshot.attachment(id: attachmentID) {
+                attachments.delete(fileName: metadata.fileName)
+            }
         }
         await reminderCoordinator.cancelReminders(forPlanItemIDs: planItemIDs)
         await reminderCoordinator.cancelMileageReminder(vehicleID: id)

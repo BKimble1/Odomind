@@ -168,18 +168,33 @@ extension AppModel {
             strategy: strategy
         )
 
-        if applySet.removesExistingData {
-            attachments.deleteEverything()
-        }
+        // Files are written first and old ones removed only once the store
+        // write has landed. Deleting up front meant a failed write left the
+        // receipts gone and the records rolled back — the one outcome a restore
+        // must never produce.
+        let existingFileNames = Set(snapshot.attachments.map(\.fileName))
+        var writtenFileNames: Set<String> = []
 
         do {
             try store.apply(applySet) { attachment in
-                try backupService.restoreAttachment(attachment)
+                let metadata = try backupService.restoreAttachment(attachment)
+                writtenFileNames.insert(metadata.fileName)
+                return metadata
             }
         } catch {
+            // The store rolled itself back; undo the files this attempt wrote.
+            for fileName in writtenFileNames.subtracting(existingFileNames) {
+                attachments.delete(fileName: fileName)
+            }
             alert = .saveFailed(error)
             refresh()
             return false
+        }
+
+        if applySet.removesExistingData {
+            for fileName in existingFileNames.subtracting(writtenFileNames) {
+                attachments.delete(fileName: fileName)
+            }
         }
 
         refresh()
