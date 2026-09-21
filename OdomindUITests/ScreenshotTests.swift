@@ -215,11 +215,16 @@ final class OdomindScreenshotTests: XCTestCase {
         //    a screen that offered nowhere to give it. The first capture of
         //    this screen is what showed it: every identifier was present and
         //    every element existed, so nothing failed.
-        firstResult.tap()
-
-        // Nothing below the fold is reachable while the keyboard from the
-        // query is still covering it.
+        // Before the tap, not after. On an iPhone SE the keyboard covers the
+        // matches themselves, so the tap landed on a key, nothing was
+        // selected, and the next step reported the year strip missing — with
+        // "saw []", which was the tell: not one row was visible.
         fresh.dismissKeyboard()
+        XCTAssertTrue(
+            fresh.scrollTo(firstResult, hittable: true),
+            "the first match should be tappable — saw \(fresh.visibleRowLabels())"
+        )
+        firstResult.tap()
 
         let year = fresh.element(withIdentifier: "addVehicle.modelYear.2023")
         XCTAssertTrue(

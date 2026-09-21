@@ -142,6 +142,15 @@ private struct FindVehicleStep: View {
     @State private var search: VehicleSearchModel?
     @State private var showingManualEntry = false
     @State private var showingVINEntry = false
+    /// Which field has the keyboard, so there is something to take it away
+    /// from. On a short phone a keyboard covers the matches themselves, and a
+    /// tap meant for one of them lands on a key instead.
+    @FocusState private var focused: Field?
+
+    private enum Field: Hashable {
+        case search
+        case nickname
+    }
 
     var body: some View {
         Form {
@@ -149,6 +158,7 @@ private struct FindVehicleStep: View {
                 TextField("Search make or model", text: $query)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.words)
+                    .focused($focused, equals: .search)
                     .accessibilityIdentifier("addVehicle.search")
                     .onChange(of: query) { _, newValue in
                         search?.search(newValue)
@@ -172,6 +182,7 @@ private struct FindVehicleStep: View {
                     ValueRow(label: "Selected", value: draft.identity.displayName)
                     TextField("Nickname (optional)", text: $draft.nickname)
                         .autocorrectionDisabled()
+                        .focused($focused, equals: .nickname)
                         .accessibilityIdentifier("addVehicle.nickname")
                 } header: {
                     Text("Your vehicle")
@@ -227,6 +238,13 @@ private struct FindVehicleStep: View {
                 } footer: {
                     Text("This is what \(model.identificationProvider.displayName) reported. It identifies the vehicle; it does not tell Odomind what fluids or intervals it takes.")
                 }
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focused = nil }
+                    .accessibilityIdentifier("addVehicle.dismissKeyboard")
             }
         }
         .sheet(isPresented: $showingManualEntry) {
@@ -455,6 +473,10 @@ private struct ConfirmStep: View {
 
     @State private var odometerText = ""
     @State private var didPrepare = false
+    /// A number pad has no return key, so without this there is no way to put
+    /// it away except by tapping something else — and on a short phone the
+    /// something else is underneath it.
+    @FocusState private var isEnteringMileage: Bool
     /// The configuration as it stood before any option was applied.
     ///
     /// Options are applied to *this*, never to the result of the previous
@@ -483,6 +505,7 @@ private struct ConfirmStep: View {
                 HStack {
                     TextField("Current reading", text: $odometerText)
                         .keyboardType(.numberPad)
+                        .focused($isEnteringMileage)
                         .accessibilityIdentifier("addVehicle.odometer")
                         .onChange(of: odometerText) { _, newValue in
                             draft.odometerAmount = Int(newValue.filter(\.isNumber))
@@ -510,6 +533,13 @@ private struct ConfirmStep: View {
                 } header: {
                     Text("From the lookup service")
                 }
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isEnteringMileage = false }
+                    .accessibilityIdentifier("addVehicle.dismissKeyboard")
             }
         }
         .onAppear(perform: prepare)

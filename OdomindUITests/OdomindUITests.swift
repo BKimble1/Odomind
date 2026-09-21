@@ -287,6 +287,9 @@ final class OdomindJourneyUITests: XCTestCase {
             result.waitForExistence(timeout: 15),
             "a bare model name should find something with no year typed — saw \(fresh.visibleRowLabels())"
         )
+        // The keyboard covers the matches on a short phone, and a tap aimed
+        // at one of them lands on a key.
+        fresh.dismissKeyboard()
         result.tap()
 
         let year = fresh.element(withIdentifier: "addVehicle.modelYear.2023")

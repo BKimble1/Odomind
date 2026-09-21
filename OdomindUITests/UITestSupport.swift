@@ -173,7 +173,16 @@ extension XCUIApplication {
     /// "saw []", which was not a missing row but a Form with nothing visible
     /// at all underneath a keyboard nobody had dismissed.
     func dismissKeyboard() {
-        guard keyboards.element.exists else { return }
+        // The app's own Done button first. It is the only reliable target:
+        // tapping a navigation bar does not resign first responder in a
+        // Form, and the field that needed this most — the odometer — has a
+        // number pad with no return key to press instead.
+        let done = element(withIdentifier: "addVehicle.dismissKeyboard")
+        if done.exists, done.isHittable {
+            done.tap()
+            return
+        }
+        guard keyboards.element.exists, navigationBars.firstMatch.exists else { return }
         navigationBars.firstMatch.tap()
     }
 
