@@ -115,3 +115,9 @@ A gate nobody can pass stops being read. This one is set where it bites.
   the README as outstanding rather than claimed as tested.
 - Localisation beyond English. The formatting layer is locale-aware; the strings
   are not yet extracted.
+- Reading a VIN from a photo already in the library. The brief asks for this
+  "when practical"; what is built is live camera scanning plus typing, and
+  typing is the path every failure already falls back to. Adding it means
+  running `VNRecognizeTextRequest` over a `PhotosPicker` result and feeding the
+  same confirm-before-submit step the camera path uses — the review step is the
+  part that matters and it already exists.
