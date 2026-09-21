@@ -158,11 +158,11 @@ enum VehicleDrawing {
         let tyre = Path(
             ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2)
         )
-        context.fill(tyre, with: .color(Color(uiColor: UIColor(hex: 0x24292B))))
+        context.fill(tyre, with: .color(VehicleArt.tyre))
+        // Draws nothing in light mode, where the tyre needs no help against a
+        // pale panel. See `VehicleArt.tyreEdge`.
+        context.stroke(tyre, with: .color(VehicleArt.tyreEdge), lineWidth: 1.2)
 
-        // A fixed rim tone rather than a paint-derived one: wheels are wheels
-        // whatever colour the car is, and this is what keeps the garage
-        // looking like one set of drawings.
         let rimRadius = radius * (isSpare ? 0.42 : 0.55)
         let rim = Path(
             ellipseIn: CGRect(
@@ -170,7 +170,7 @@ enum VehicleDrawing {
                 width: rimRadius * 2, height: rimRadius * 2
             )
         )
-        context.fill(rim, with: .color(Color(uiColor: UIColor(hex: 0xB9C2C5))))
+        context.fill(rim, with: .color(VehicleArt.rim))
 
         let hubRadius = rimRadius * 0.34
         let hub = Path(
@@ -179,7 +179,7 @@ enum VehicleDrawing {
                 width: hubRadius * 2, height: hubRadius * 2
             )
         )
-        context.fill(hub, with: .color(Color(uiColor: UIColor(hex: 0x6E787B))))
+        context.fill(hub, with: .color(VehicleArt.hub))
     }
 
     private static func archPath(centreX: CGFloat, spec: SilhouetteSpec) -> Path {

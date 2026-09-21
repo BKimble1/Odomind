@@ -29,6 +29,31 @@ enum VehicleArt {
     static let wheelCenterY: CGFloat = 95 - 18
     static let frontWheelX: CGFloat = 55
     static let rearWheelX: CGFloat = 195
+
+    /// Wheels are wheels whatever colour the car is, so these are fixed
+    /// rather than derived from the paint. That is what keeps the garage
+    /// looking like one set of drawings.
+    static let tyre = Color(uiColor: UIColor(hex: 0x24292B))
+    static let rim = Color(uiColor: UIColor(hex: 0xB9C2C5))
+    static let hub = Color(uiColor: UIColor(hex: 0x6E787B))
+
+    /// A hairline around the tyre, and the one part of the wheel that does
+    /// change with the appearance.
+    ///
+    /// In dark mode the artwork panel is near-black and so is a tyre, which
+    /// measured about 1.1 to 1 against it — the car appeared to float on bare
+    /// rims with no tyres at all. Lightening the tyre is not the fix: every
+    /// tone light enough to separate from the panel is one the bodywork
+    /// already occupies, so the wheels would vanish into the car instead of
+    /// into the background. The outline separates them while the tyre itself
+    /// stays the darkest thing in the drawing, as it is in life.
+    ///
+    /// In light mode it is the tyre's own colour, so it draws nothing.
+    static let tyreEdge = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(hex: 0x747F84)
+            : UIColor(hex: 0x24292B)
+    })
 }
 
 /// The tones one paint colour is drawn in.
