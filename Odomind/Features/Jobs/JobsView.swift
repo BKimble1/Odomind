@@ -19,16 +19,30 @@ struct JobsView: View {
         @Bindable var router = router
 
         NavigationStack(path: $router.jobsPath) {
-            Group {
-                if let vehicle = model.selectedVehicle {
-                    list(for: vehicle)
-                } else {
-                    NoVehicleView()
+            VStack(alignment: .leading, spacing: 0) {
+                // Which car this is about, in the content rather than the
+                // navigation bar. A toolbar item gets one bar's height and
+                // one bar's share of its width, so it cannot wrap and cannot
+                // shrink — which is how a screenshot of this screen showed
+                // "Sa…" where the vehicle's name should be. Home was moved
+                // out for the same reason and this is the same fix.
+                if model.selectedVehicle != nil {
+                    VehiclePickerBar()
+                        .padding(.horizontal, Theme.Spacing.large)
+                        .padding(.bottom, Theme.Spacing.small)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Group {
+                    if let vehicle = model.selectedVehicle {
+                        list(for: vehicle)
+                    } else {
+                        NoVehicleView()
+                    }
                 }
             }
             .navigationTitle("Jobs")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { VehiclePickerBar() }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button {
@@ -125,14 +139,25 @@ struct JobsView: View {
 /// A job in the owner's plan.
 struct TrackedJobRow: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let result: JobSearchResult
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-            HStack(alignment: .firstTextBaseline) {
+            // Side by side normally; stacked once the text is large enough
+            // that they cannot share a line. At an accessibility size the
+            // row read "Engine oil / and filter" beside "Over- / due", with
+            // both halves hyphenated against each other. Stacked, each gets
+            // the full width and neither breaks mid-word.
+            if dynamicTypeSize.isAccessibilitySize {
                 Text(result.title)
-                Spacer(minLength: Theme.Spacing.small)
                 if let state = result.state { DueBadge(state: state) }
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(result.title)
+                    Spacer(minLength: Theme.Spacing.small)
+                    if let state = result.state { DueBadge(state: state) }
+                }
             }
             if let planItemID = result.planItemID,
                let evaluation = model.evaluation(planItemID: planItemID),

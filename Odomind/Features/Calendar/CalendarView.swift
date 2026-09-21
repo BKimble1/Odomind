@@ -22,17 +22,28 @@ struct CalendarView: View {
         @Bindable var router = router
 
         NavigationStack(path: $router.calendarPath) {
-            Group {
+            VStack(alignment: .leading, spacing: 0) {
+                // Out of the toolbar, for the same reason as Home and Jobs:
+                // a bar cannot give a vehicle's name two lines, so it gives
+                // it three characters instead.
                 if model.selectedVehicle != nil {
-                    content
-                } else {
-                    NoVehicleView()
+                    VehiclePickerBar()
+                        .padding(.horizontal, Theme.Spacing.large)
+                        .padding(.bottom, Theme.Spacing.small)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Group {
+                    if model.selectedVehicle != nil {
+                        content
+                    } else {
+                        NoVehicleView()
+                    }
                 }
             }
             .navigationTitle("Calendar")
+            .navigationBarTitleDisplayMode(.inline)
             .background(Theme.Palette.page)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { VehiclePickerBar() }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Button {
