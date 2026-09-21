@@ -41,60 +41,63 @@ extension VehicleDrawing {
     /// whole difference between this drawing and the one below it.
     static let jeepWranglerJKUnlimited = SilhouetteSpec(
         body: [
-            ArtPoint(24, 70, 2),
+            ArtPoint(23, 70, 2),
             ArtPoint(20, 43, 2),
-            ArtPoint(66, 41, 2),
-            ArtPoint(83, 16, 3),
-            ArtPoint(219, 16, 3),
-            ArtPoint(223, 66, 3),
-            ArtPoint(223, 70, 2)
+            ArtPoint(60, 41, 2),
+            ArtPoint(75, 16, 3),
+            ArtPoint(192, 16, 3),
+            ArtPoint(196, 66, 3),
+            ArtPoint(196, 70, 2)
         ],
         greenhouse: [
-            ArtPoint(69, 39, 1.5),
-            ArtPoint(86, 20, 2),
-            ArtPoint(206, 20, 2),
-            ArtPoint(206, 39, 1.5)
+            ArtPoint(62, 39, 1.5),
+            ArtPoint(77, 20, 2),
+            ArtPoint(181, 20, 2),
+            ArtPoint(181, 39, 1.5)
         ],
-        pillars: [94, 134, 174],
-        frontWheelX: 54,
-        rearWheelX: 198,
+        // Three panes, not four: a JKU has a front door window, a shorter
+        // rear door window and a small fixed quarter light behind it. Four
+        // equal panes were a large part of why this read as a limousine.
+        pillars: [110, 151],
+        frontWheelX: 49,
+        rearWheelX: 174,
         wheelRadius: 19,
         bodyBottomY: 70,
         beltlineY: 41,
         squareArches: true,
         roundHeadlight: true,
-        headlight: CGPoint(x: 28, y: 52),
-        spare: CGPoint(x: 233, y: 47)
+        headlight: CGPoint(x: 27, y: 52),
+        spare: CGPoint(x: 205, y: 47)
     )
 
     /// 2007–2018 Wrangler (JK), two doors. Same front, shorter body, two
     /// pillars — one long door window and a quarter light.
     static let jeepWranglerJKTwoDoor = SilhouetteSpec(
         body: [
-            ArtPoint(24, 70, 2),
+            ArtPoint(23, 70, 2),
             ArtPoint(20, 43, 2),
-            ArtPoint(66, 41, 2),
-            ArtPoint(83, 16, 3),
-            ArtPoint(196, 16, 3),
-            ArtPoint(200, 66, 3),
-            ArtPoint(200, 70, 2)
+            ArtPoint(59, 41, 2),
+            ArtPoint(74, 16, 3),
+            ArtPoint(170, 16, 3),
+            ArtPoint(173, 66, 3),
+            ArtPoint(173, 70, 2)
         ],
         greenhouse: [
-            ArtPoint(69, 39, 1.5),
-            ArtPoint(86, 20, 2),
-            ArtPoint(183, 20, 2),
-            ArtPoint(183, 39, 1.5)
+            ArtPoint(62, 39, 1.5),
+            ArtPoint(76, 20, 2),
+            ArtPoint(159, 20, 2),
+            ArtPoint(159, 39, 1.5)
         ],
-        pillars: [94, 152],
-        frontWheelX: 54,
-        rearWheelX: 176,
+        pillars: [122],
+        frontWheelX: 49,
+        rearWheelX: 153,
         wheelRadius: 19,
         bodyBottomY: 70,
         beltlineY: 41,
         squareArches: true,
         roundHeadlight: true,
-        headlight: CGPoint(x: 28, y: 52),
-        spare: CGPoint(x: 210, y: 47)
+        headlight: CGPoint(x: 27, y: 52),
+        spare: CGPoint(x: 182, y: 47)
     )
 
     // MARK: - Body styles
