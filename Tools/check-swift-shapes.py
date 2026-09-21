@@ -89,6 +89,15 @@ def check(path: pathlib.Path) -> list[str]:
     for match in re.finditer(r"id:\s*\\\.\d", source):
         problems.append(f"{path}:{at(match.start())}: key path into a tuple element")
 
+    # An attribute separated from what it decorates. Inserting a function
+    # above an existing one lands between `@ViewBuilder` and its `func` —
+    # the attribute silently moves to the new function and the old one stops
+    # being a view builder, which fails a long way from the edit.
+    for match in re.finditer(r"@(ViewBuilder|MainActor|discardableResult|Sendable)\s*\n\s*///", source):
+        problems.append(
+            f"{path}:{at(match.start())}: @{match.group(1)} is separated from its declaration by a doc comment"
+        )
+
     balanced = strip_for_balance(source)
     for opener, closer in (("{", "}"), ("(", ")"), ("[", "]")):
         delta = balanced.count(opener) - balanced.count(closer)

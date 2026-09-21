@@ -111,8 +111,6 @@ struct PartsView: View {
         .listStyle(.insetGrouped)
     }
 
-    /// The specifications that actually matter for what is being bought.
-    @ViewBuilder
     /// The specification worth putting in a retailer search.
     ///
     /// Build 2 built the query from year, make, model and the typed part and
@@ -141,6 +139,8 @@ struct PartsView: View {
         )
     }
 
+    /// The specifications that actually matter for what is being bought.
+    @ViewBuilder
     private func specificationsSection(for vehicle: Vehicle) -> some View {
         let kinds = relevantSpecificationKinds
         if !kinds.isEmpty {
