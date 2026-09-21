@@ -221,6 +221,36 @@ service's own menu now, the way it already did for model names.
 list read "Engine oil / and filter" beside "Over- / due". The title and the
 due badge stack at those sizes now.
 
+### The make-spelling fix, proved against the live services
+
+The validation matrix was asking fueleconomy.gov about `"Jeep"` — a spelling
+the app never uses — so it would have passed whether or not the bug existed.
+It asks with vPIC's own spelling now. Run `35667542913`, on `ef5a2bb`, against
+the real services:
+
+```
+fueleconomy.gov spells 'JEEP' as 'Jeep' — asking it verbatim returns an empty model menu
+  no exact name; this service spells it ['Wrangler 2WD', 'Wrangler 4WD']
+fueleconomy.gov lists 'Toyota' verbatim
+  exact name match: 'Camry'
+fueleconomy.gov lists 'Ford' verbatim
+  no exact name; this service spells it ['F150 Pickup 2WD', 'F150 Pickup 4WD', ... 20 names]
+```
+
+and the resulting coverage:
+
+| Vehicle | vPIC identity | fueleconomy.gov configurations | Commons photos with a licence | Part number |
+| --- | --- | --- | --- | --- |
+| 2010 JEEP Wrangler | confirmed | **2** | 5 / 5 | **BLOCKED** |
+| 2015 Toyota Camry | confirmed | **2** | 5 / 5 | **BLOCKED** |
+| 2018 Ford F-150 | confirmed | **13** | 5 / 5 | **BLOCKED** |
+
+Before the fix the Jeep row would have read `0`, and so would every RAM, MINI,
+BMW and GMC — vPIC capitalises a lot of marques. The two Wrangler rows are the
+2WD and 4WD variants offered side by side, which is the behaviour a probe
+caught earlier: the owner picks, rather than Odomind picking one of their cars
+for them.
+
 ### What the screenshots confirmed was right
 
 The yearless search returns "JEEP Wrangler" and "JEEP Wrangler JK" for
