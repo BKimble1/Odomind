@@ -112,15 +112,21 @@ jobs:
       matrix:
         screen:
           - light-00-onboarding
-          - light-01-today
-          - light-02-maintenance
-          - light-03-task-detail
+          - light-00b-find-vehicle
+          - light-01-home
+          - light-02-jobs
+          - light-03-job-detail
           - light-04-garage
           - light-05-vehicle
-          - light-06-specifications
-          - light-07-history
-          - dark-01-today
-          - large-text-01-today
+          - light-06-artwork
+          - light-07-specifications
+          - light-08-calendar
+          - light-09-settings
+          - light-10-pro
+          - dark-01-home
+          - dark-04-garage
+          - dark-08-calendar
+          - large-text-01-home
     steps:
       - name: Download the small copies
         uses: actions/download-artifact@v4

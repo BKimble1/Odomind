@@ -102,27 +102,9 @@ final class OdomindScreenshotTests: XCTestCase {
         }
     }
 
-    /// Onboarding, captured from a store with nothing in it.
-    ///
-    /// The first screen anybody sees is the one most worth looking at, and it
-    /// is the one the populated walk above can never reach.
-    private func captureOnboarding(_ prefix: String) {
-        let fresh = XCUIApplication()
-        fresh.launchArguments = ["-odomind-ui-testing", "-odomind-appearance", prefix]
-        fresh.launch()
-        if fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25) {
-            let screenshot = XCTAttachment(screenshot: fresh.screenshot())
-            screenshot.name = "\(prefix)-00-onboarding"
-            screenshot.lifetime = .keepAlways
-            add(screenshot)
-        }
-        fresh.terminate()
-    }
-
     func testCaptureLightAppearance() {
         XCUIDevice.shared.appearance = .light
         app.launchArguments += ["-odomind-appearance", "light"]
-        captureOnboarding("light")
         app.launch()
         walk("light")
     }
@@ -133,7 +115,6 @@ final class OdomindScreenshotTests: XCTestCase {
         // asked directly as well.
         XCUIDevice.shared.appearance = .dark
         app.launchArguments += ["-odomind-appearance", "dark"]
-        captureOnboarding("dark")
         app.launch()
         walk("dark")
     }
@@ -146,12 +127,12 @@ final class OdomindScreenshotTests: XCTestCase {
         ]
         app.launch()
 
-        XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear at a large text size")
-        capture("large-text-01-today")
+        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear at a large text size")
+        capture("large-text-01-home")
 
         app.tabBars.buttons["Jobs"].tap()
-        XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
-        capture("large-text-02-maintenance")
+        XCTAssertTrue(waitFor(app.navigationBars["Jobs"]))
+        capture("large-text-02-jobs")
     }
 
     func testCaptureOnboarding() {
@@ -166,10 +147,12 @@ final class OdomindScreenshotTests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
 
+        // The search step, which is the first thing anybody adding a car
+        // actually sees now.
         fresh.buttons["onboarding.addVehicle"].tap()
-        if fresh.textFields["addVehicle.year"].waitForExistence(timeout: 10) {
+        if fresh.textFields["addVehicle.search"].waitForExistence(timeout: 10) {
             let step = XCTAttachment(screenshot: fresh.screenshot())
-            step.name = "light-00b-add-vehicle"
+            step.name = "light-00b-find-vehicle"
             step.lifetime = .keepAlways
             add(step)
         }
