@@ -72,27 +72,41 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
 
     /// The powertrain this option's fuel description states, or `.unknown`.
     ///
-    /// Deliberately narrow. "Regular Gasoline" is gasoline; "Premium and
-    /// Electricity" is a plug-in hybrid only because that phrasing is the
-    /// provider's own way of saying so. Anything unrecognised is left unknown
-    /// and the owner is asked, which is the outcome Build 2 had for every
-    /// vehicle and is still the right one where a source is silent.
+    /// Deliberately narrow. "Regular" is gasoline — the service names the
+    /// grade rather than the fuel; "Premium and Electricity" is a plug-in
+    /// hybrid only because that phrasing is the provider's own way of saying
+    /// so. Anything unrecognised is left unknown and the owner is asked,
+    /// which is the outcome Build 2 had for every vehicle and is still the
+    /// right one where a source is silent.
+    ///
+    /// **Petrol is matched by its named grades, not by the substring "gas".**
+    /// The first version of this looked for "gas" and read "Compressed
+    /// Natural Gas" as a petrol car. A test written from the service's
+    /// published vocabulary caught it before it shipped, which is the only
+    /// reason it is not in the build.
     public var powertrain: PowertrainKind {
         let text = (fuelDescription ?? "").lowercased()
         guard !text.isEmpty else { return .unknown }
+
+        // "Gasoline or E85" and "Gasoline or propane" count: a bi-fuel
+        // vehicle still has a petrol engine, and everything Odomind decides
+        // from the powertrain — whether it takes engine oil, spark plugs, a
+        // coolant service — follows from that rather than from the second
+        // fuel.
+        let burnsPetrol = text.contains("gasoline") || text.contains("regular")
+            || text.contains("premium") || text.contains("midgrade") || text.contains("e85")
+        let burnsDiesel = text.contains("diesel")
+
         if text.contains("electricity") {
-            // "Premium and Electricity" / "Regular Gas and Electricity" are
-            // the plug-in wordings; "Electricity" alone is battery-electric.
-            let alsoBurnsFuel = text.contains("gas") || text.contains("premium")
-                || text.contains("regular") || text.contains("diesel")
-            return alsoBurnsFuel ? .pluginHybrid : .batteryElectric
+            if burnsPetrol || burnsDiesel { return .pluginHybrid }
+            // "Electricity" on its own is battery-electric. Anything else
+            // paired with electricity is a combination Odomind does not
+            // model, so it asks rather than picks.
+            return text.trimmingCharacters(in: .whitespaces) == "electricity" ? .batteryElectric : .unknown
         }
-        if text.contains("diesel") { return .diesel }
+        if burnsDiesel { return .diesel }
         if text.contains("hydrogen") { return .hydrogenFuelCell }
-        if text.contains("gas") || text.contains("premium") || text.contains("regular")
-            || text.contains("e85") || text.contains("midgrade") {
-            return .gasoline
-        }
+        if burnsPetrol { return .gasoline }
         return .unknown
     }
 

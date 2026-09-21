@@ -127,6 +127,12 @@ jobs:
           - dark-04-garage
           - dark-08-calendar
           - large-text-01-home
+          - build3-01-permissions
+          - build3-02-yearless-search
+          - build3-03-configuration
+          - build3-04-home
+          - build3-05-parts-from-a-job
+          - build3-06-location
     steps:
       - name: Download the small copies
         uses: actions/download-artifact@v4
@@ -149,3 +155,74 @@ jobs:
           echo "IMGSTART:${{ matrix.screen }}:$(wc -c < "$file" | tr -d ' ')"
           base64 -w 0 "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
           echo "IMGEND:${{ matrix.screen }}"
+
+  small-display:
+    name: Capture on the smallest iPhone
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: ./.github/scripts/select-xcode.sh
+
+      # The narrowest supported phone rather than the newest. Build 3's Home
+      # pins an action bar above the tab bar and puts a segmented control
+      # under the search field; both are the kind of thing that fits on a Pro
+      # and clips on an SE.
+      - name: Discover the smallest simulator
+        id: simulator
+        env:
+          SIMULATOR_SIZE: small
+        run: ./.github/scripts/select-simulator.sh
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tail -30
+
+      - name: Capture
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Odomind.xcodeproj \
+            -scheme Odomind \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindUITests/OdomindScreenshotTests \
+            -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tail -40
+
+      # Emitted from this job rather than through an artifact, because the
+      # only channel out of a runner this repository can read from is the log.
+      - name: Emit the screens most likely to clip
+        run: |
+          mkdir -p "$RUNNER_TEMP/screenshots" "$RUNNER_TEMP/small"
+          xcrun xcresulttool export attachments \
+            --path "$RUNNER_TEMP/screens.xcresult" \
+            --output-path "$RUNNER_TEMP/screenshots"
+          python3 .github/scripts/name-screenshots.py "$RUNNER_TEMP/screenshots"
+
+          for name in light-01-home build3-04-home light-04-garage build3-05-parts-from-a-job; do
+            source=$(find "$RUNNER_TEMP/screenshots" -maxdepth 1 -type f -name "$name*.png" | sort | head -1)
+            if [ -z "$source" ]; then
+              echo "IMGMISS:small-$name"
+              continue
+            fi
+            sips --resampleWidth "${{ inputs.width }}" \
+                 -s format jpeg \
+                 -s formatOptions "${{ inputs.quality }}" \
+                 "$source" --out "$RUNNER_TEMP/small/$name.jpg" >/dev/null
+            echo "IMGSTART:small-$name:$(wc -c < "$RUNNER_TEMP/small/$name.jpg" | tr -d ' ')"
+            base64 -b 0 "$RUNNER_TEMP/small/$name.jpg" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+            echo "IMGEND:small-$name"
+          done

@@ -112,8 +112,26 @@ final class VehicleConfigurationOptionTests: XCTestCase {
     }
 
     func testAnUnrecognisedFuelLeavesThePowertrainUnknown() {
+        // The bug this caught: matching the substring "gas" read
+        // "Compressed Natural Gas" as a petrol car. Petrol is matched by its
+        // named grades instead.
         XCTAssertEqual(option(fuel: "Compressed Natural Gas").powertrain, .unknown)
+        XCTAssertEqual(option(fuel: "CNG").powertrain, .unknown)
         XCTAssertEqual(option(fuel: nil).powertrain, .unknown)
+    }
+
+    func testABiFuelVehicleIsStillAPetrolOne() {
+        // "Gasoline or propane" is a real value in this vocabulary. It has a
+        // petrol engine, and everything Odomind decides from the powertrain —
+        // oil, spark plugs, coolant — follows from that rather than from the
+        // second fuel.
+        XCTAssertEqual(option(fuel: "Gasoline or propane").powertrain, .gasoline)
+        XCTAssertEqual(option(fuel: "Gasoline or natural gas").powertrain, .gasoline)
+    }
+
+    func testAnUnmodelledCombinationWithElectricityIsRefused() {
+        // Not a plug-in, because nothing here says it burns petrol or diesel.
+        XCTAssertEqual(option(fuel: "Hydrogen and Electricity").powertrain, .unknown)
     }
 
     // MARK: - Drivetrain

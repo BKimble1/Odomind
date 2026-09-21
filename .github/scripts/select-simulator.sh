@@ -13,11 +13,15 @@
 set -euo pipefail
 
 MIN_IOS_MAJOR="${MIN_IOS_MAJOR:-18}"
+# `small` picks the smallest iPhone available instead of a current one, for
+# checking that nothing is clipped on the narrowest supported display. Build 3
+# asks for a screenshot pass on one.
+SIMULATOR_SIZE="${SIMULATOR_SIZE:-default}"
 
 json="$(xcrun simctl list devices available --json)"
 
 destination="$(
-  MIN_IOS_MAJOR="$MIN_IOS_MAJOR" python3 - "$json" <<'PY'
+  MIN_IOS_MAJOR="$MIN_IOS_MAJOR" SIMULATOR_SIZE="$SIMULATOR_SIZE" python3 - "$json" <<'PY'
 import json
 import os
 import re
@@ -25,6 +29,7 @@ import sys
 
 data = json.loads(sys.argv[1])
 minimum = int(os.environ.get("MIN_IOS_MAJOR", "18"))
+prefer_small = os.environ.get("SIMULATOR_SIZE", "default") == "small"
 
 candidates = []
 for runtime, devices in data.get("devices", {}).items():
@@ -40,7 +45,8 @@ for runtime, devices in data.get("devices", {}).items():
         name = device.get("name", "")
         if not name.startswith("iPhone"):
             continue
-        # Prefer a plain, current iPhone over a Pro Max or an SE.
+        # Prefer a plain, current iPhone over a Pro Max or an SE — or, in
+        # small mode, exactly the opposite.
         preference = 0
         if "Pro Max" in name:
             preference = 2
@@ -48,6 +54,9 @@ for runtime, devices in data.get("devices", {}).items():
             preference = 1
         elif "SE" in name or "mini" in name or "Plus" in name:
             preference = 3
+        if prefer_small:
+            small = "SE" in name or "mini" in name
+            preference = 0 if small else 3
         candidates.append(((major, minor), -preference, name, device["udid"]))
 
 if not candidates:
@@ -56,7 +65,7 @@ if not candidates:
 
 candidates.sort(reverse=True)
 _, _, name, udid = candidates[0]
-sys.stderr.write("Selected simulator: %s (%s)\n" % (name, udid))
+sys.stderr.write("Selected simulator: %s (%s)%s\n" % (name, udid, " [small]" if prefer_small else ""))
 print("platform=iOS Simulator,id=%s" % udid)
 PY
 )"
