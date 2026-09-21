@@ -185,6 +185,10 @@ struct RemoteVehiclePhoto: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    // Present only when a photograph has actually been
+                    // fetched and drawn, so a capture run can tell a real
+                    // photo from the drawing that stands in for one.
+                    .accessibilityIdentifier("vehicle.photo")
                     .overlay(alignment: .bottomTrailing) {
                         // The licence is a condition of showing the picture,
                         // not a footnote, so it travels with the picture.

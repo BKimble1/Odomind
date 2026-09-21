@@ -255,6 +255,65 @@ final class OdomindJourneyUITests: XCTestCase {
         )
     }
 
+    func testAModelPickedWithNoYearIsAskedForOne() {
+        // Build 3 stopped demanding a year before it would search at all,
+        // which is what makes "wrangler" on its own work. It then never asked
+        // for the year anywhere else — so a vehicle found that way arrived at
+        // the confirmation step with none, and the configuration lookup,
+        // which is keyed on year, make and model, could only report that it
+        // needed one. The screen said so and offered nowhere to say it.
+        //
+        // No test could have caught that: every identifier was present and
+        // every element existed. It was found by looking at the screenshot.
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing"]
+        fresh.launch()
+
+        waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
+        let search = waitFor(fresh.textFields["addVehicle.search"], 10, "the search field is missing")
+
+        XCTAssertFalse(
+            fresh.element(withIdentifier: "addVehicle.modelYear.2023").exists,
+            "the year should not be asked before there is a vehicle to ask it about"
+        )
+
+        search.tap()
+        search.typeText("wrangler")
+
+        // Answered from the bundled index, so this is a real result rather
+        // than a wait on somebody else's service.
+        let result = fresh.element(withIdentifier: "addVehicle.result")
+        XCTAssertTrue(
+            result.waitForExistence(timeout: 15),
+            "a bare model name should find something with no year typed — saw \(fresh.visibleRowLabels())"
+        )
+        result.tap()
+
+        let year = fresh.element(withIdentifier: "addVehicle.modelYear.2023")
+        XCTAssertTrue(
+            fresh.scrollTo(year, hittable: true),
+            "picking a model with no year should ask for one — saw \(fresh.visibleRowLabels())"
+        )
+        year.tap()
+
+        // The trait, not the label. A chip reading "2023" is on screen either
+        // way, so asserting on the text would pass whether or not the tap did
+        // anything at all.
+        XCTAssertTrue(year.isSelected, "tapping a year should mark it as the chosen one")
+
+        waitFor(fresh.buttons["addVehicle.next"], 10, "the Next button is missing").tap()
+        XCTAssertTrue(
+            fresh.textFields["addVehicle.odometer"].waitForExistence(timeout: 10),
+            "the confirmation step did not appear"
+        )
+        // There is no year strip on this step, so the only thing that can be
+        // saying 2023 here is the vehicle Odomind is about to track.
+        XCTAssertTrue(
+            fresh.element(labelContaining: "2023").exists,
+            "the confirmation step should name the year that was chosen — saw \(fresh.visibleRowLabels())"
+        )
+    }
+
     func testBrowsingAnUntrackedJobOpensThatJobRatherThanTheLibrary() {
         // The brief: "Browsing an untracked job should open that job's details
         // directly, not a generic add-task form that loses the selection."

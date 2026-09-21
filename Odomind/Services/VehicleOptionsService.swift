@@ -66,7 +66,10 @@ final class VehicleOptionsService {
     func resolve(modelYear: Int?, make: String, model: String, force: Bool = false) {
         guard let key = Self.key(modelYear: modelYear, make: make, model: model) else {
             cancel()
-            status = .none("Odomind needs a year before it can look up which engines this was sold with.")
+            status = .none(
+                "Odomind needs a year before it can look up which engines this was sold with. "
+                    + "Go back a step to pick one."
+            )
             currentKey = nil
             return
         }

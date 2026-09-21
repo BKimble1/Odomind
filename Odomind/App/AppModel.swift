@@ -89,14 +89,13 @@ final class AppModel {
         self.exportService = ExportService()
         self.clock = clock
         self.entitlements = EntitlementService()
-        // In UI tests neither service may reach the network: a screenshot run
-        // must not depend on Commons being up, and a journey test must not
-        // wait on a location fix that will never come.
-        self.photos = VehiclePhotoService(enabled: !Self.isUITesting)
+        // Stubbed in UI tests by default: the pull-request gate must not go
+        // red because Commons or fueleconomy.gov is having an afternoon, and a
+        // journey test must not wait on a location fix that will never come.
+        // The screenshot pass opts back in by name — see `providersAreLive`.
+        self.photos = VehiclePhotoService(enabled: Self.providersAreLive)
         self.shoppingLocation = ShoppingLocationService()
-        // Off in UI tests for the same reason as the photo service: a
-        // screenshot run must not depend on somebody else's uptime.
-        self.vehicleOptions = VehicleOptionsService(enabled: !Self.isUITesting)
+        self.vehicleOptions = VehicleOptionsService(enabled: Self.providersAreLive)
     }
 
     /// Launch argument that makes the app run against a throwaway store.
@@ -116,6 +115,26 @@ final class AppModel {
 
     static var shouldSeedSample: Bool {
         isUITesting && ProcessInfo.processInfo.arguments.contains(seedSampleArgument)
+    }
+
+    /// Launch argument that lets a UI-test build reach the real providers.
+    ///
+    /// The default has to stay off. A pull-request gate that fails when
+    /// Wikimedia Commons is slow is a gate that gets ignored.
+    ///
+    /// The screenshot pass is the exception, and the brief says why: "Review
+    /// them visually; fixture-only screenshots do not prove a live provider
+    /// works." A capture of a recorded answer proves the layout and nothing
+    /// about the service, so the capture job opts in by name and takes the
+    /// consequence — if a provider is down when it runs, the screenshot shows
+    /// Odomind's honest fallback and is reported as such rather than retaken
+    /// until it looks better.
+    static let liveProvidersArgument = "-odomind-live-providers"
+
+    /// True outside UI tests, and inside one only when it asked for it.
+    static var providersAreLive: Bool {
+        guard isUITesting else { return true }
+        return ProcessInfo.processInfo.arguments.contains(liveProvidersArgument)
     }
 
     /// Launch argument that keeps the welcome permission step in a UI test.

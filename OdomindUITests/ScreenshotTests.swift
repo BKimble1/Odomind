@@ -156,6 +156,15 @@ final class OdomindScreenshotTests: XCTestCase {
         fresh.launchArguments = [
             "-odomind-ui-testing",
             "-odomind-exercise-permissions",
+            // The one capture allowed to reach the real providers. Every
+            // other UI test stays stubbed so the pull-request gate does not
+            // go red when somebody else's service is slow — but the brief is
+            // explicit that "fixture-only screenshots do not prove a live
+            // provider works", and a recorded answer photographs identically
+            // to a real one. If a provider is down when this runs, the
+            // screenshot shows Odomind's honest fallback and is reported as
+            // that rather than retaken until it looks better.
+            "-odomind-live-providers",
             "-odomind-appearance", "light",
         ]
         XCUIDevice.shared.appearance = .light
@@ -197,11 +206,23 @@ final class OdomindScreenshotTests: XCTestCase {
         )
         shot("build3-02-yearless-search")
 
-        // 3. The configuration step. In a UI-test build the options provider
-        //    is off — a screenshot run must not depend on somebody else's
-        //    uptime — so this captures the fallback questions. The
-        //    provider-backed variant is on the device-check list.
+        // 3. The year, asked after the vehicle rather than before it.
+        //
+        //    This is the half of the yearless search that was missing. A
+        //    model picked with no year typed reached the confirm step with no
+        //    year at all, and the configuration lookup — which is keyed on
+        //    year, make and model — could only report that it needed one, on
+        //    a screen that offered nowhere to give it. The first capture of
+        //    this screen is what showed it: every identifier was present and
+        //    every element existed, so nothing failed.
         firstResult.tap()
+
+        let year = fresh.element(withIdentifier: "addVehicle.modelYear.2023")
+        XCTAssertTrue(
+            fresh.scrollTo(year, hittable: true),
+            "the year strip should be reachable after choosing a model — saw \(fresh.visibleRowLabels())"
+        )
+        year.tap()
 
         // find -> confirm. The flow has three steps, not two; walking it as
         // though tapping a result finished the job is how this capture would
@@ -215,13 +236,27 @@ final class OdomindScreenshotTests: XCTestCase {
             fresh.textFields["addVehicle.odometer"].waitForExistence(timeout: 10),
             "choosing a result should reach the confirmation step"
         )
+
+        // Wait for the lookup to settle instead of photographing a spinner.
+        // Either outcome is a real screenshot: the configurations
+        // fueleconomy.gov publishes for a 2023 Wrangler, or Odomind saying it
+        // has no published list and asking the two questions instead.
+        let option = fresh.firstElement(withIdentifierPrefix: "confirm.option.")
+        let powertrain = fresh.element(withIdentifier: "confirm.powertrain")
+        let settled = fresh.waitUntil(timeout: 30) { option.exists || powertrain.exists }
+        XCTAssertTrue(
+            settled,
+            "the configuration step settled on neither published options nor the fallback questions"
+        )
+        fresh.scrollTo(option.exists ? option : powertrain)
         shot("build3-03-configuration")
 
-        // The options provider is off in a UI-test build — a screenshot run
-        // must not depend on somebody else's uptime — so this is the fallback
-        // question. Answering it is what makes the oil job exist, and the oil
-        // job is what the parts capture below is reached through.
-        //
+        // Whichever of the two appeared, the powertrain has to end up
+        // answered: it is what makes the engine oil job exist, and that job
+        // is how the parts capture below is reached.
+        if option.exists, fresh.scrollTo(option, hittable: true) {
+            option.tap()
+        }
         // Scrolled to, not waited for. On an iPhone SE this question sits
         // below the fold, and a row a Form has not realised is not in the
         // accessibility tree — so waiting skipped it, the powertrain went
@@ -229,20 +264,20 @@ final class OdomindScreenshotTests: XCTestCase {
         // plan. The failure read as "the oil job is missing" and the app was
         // right. This is the same mistake as the one in the journey helper,
         // made again in the test written alongside the fix for it.
-        let powertrain = fresh.element(withIdentifier: "confirm.powertrain")
-        XCTAssertTrue(
-            fresh.scrollTo(powertrain, hittable: true),
-            "the powertrain question should be reachable — saw \(fresh.visibleRowLabels())"
-        )
-        powertrain.tap()
-        let gasoline = fresh.buttons["Gasoline"]
-        XCTAssertTrue(gasoline.waitForExistence(timeout: 5), "Gasoline was not offered")
-        gasoline.tap()
+        //
+        // Conditional now, because a published configuration answers it and
+        // the question then correctly disappears.
+        if fresh.scrollTo(powertrain, hittable: true, maxSwipes: 6) {
+            powertrain.tap()
+            let gasoline = fresh.buttons["Gasoline"]
+            XCTAssertTrue(gasoline.waitForExistence(timeout: 5), "Gasoline was not offered")
+            gasoline.tap()
+        }
 
         let odometer = fresh.textFields["addVehicle.odometer"]
         XCTAssertTrue(fresh.scrollTo(odometer, hittable: true), "the odometer field is missing")
         odometer.tap()
-        odometer.typeText("120000")
+        odometer.typeText("58000")
 
         next.tap()          // confirm -> plan
         XCTAssertTrue(
@@ -257,7 +292,16 @@ final class OdomindScreenshotTests: XCTestCase {
         }
         shot("build3-04-home")
 
-        // 4. Parts, reached from a job rather than typed again.
+        // 4. The garage, with whatever Wikimedia Commons actually has for
+        //    this vehicle. Waited for, never asserted: Commons is a volunteer
+        //    archive and a miss is a real outcome the owner will see. Failing
+        //    the capture on it would only teach me to stop asking.
+        fresh.tabBars.buttons["Garage"].tap()
+        XCTAssertTrue(fresh.navigationBars["Garage"].waitForExistence(timeout: 15), "Garage did not open")
+        fresh.waitUntil(timeout: 25) { fresh.element(withIdentifier: "vehicle.photo").exists }
+        shot("build3-07-garage")
+
+        // 5. Parts, reached from a job rather than typed again.
         //
         // Queried by identifier rather than by element type throughout. A
         // NavigationLink in a List is reported as a button on one OS version
@@ -281,7 +325,7 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(fresh.navigationBars["Parts"].waitForExistence(timeout: 10), "Parts did not open")
         shot("build3-05-parts-from-a-job")
 
-        // 5. The shopping area control, and what it offers.
+        // 6. The shopping area control, and what it offers.
         let area = fresh.element(withIdentifier: "shopping.location")
         XCTAssertTrue(area.waitForExistence(timeout: 8), "the shopping area control is missing from Parts")
         area.tap()

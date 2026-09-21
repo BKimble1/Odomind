@@ -166,6 +166,23 @@ private struct FindVehicleStep: View {
 
             if draft.isReadyToSave {
                 Section {
+                    ModelYearStrip(
+                        years: modelYears,
+                        selected: draft.identity.modelYear
+                    ) { year in
+                        draft.identity.modelYear = year
+                    }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                } header: {
+                    Text("Which year?")
+                } footer: {
+                    Text(yearFooter)
+                }
+            }
+
+            if draft.isReadyToSave {
+                Section {
                     ValueRow(label: "Selected", value: draft.identity.displayName)
                     TextField("Nickname (optional)", text: $draft.nickname)
                         .autocorrectionDisabled()
@@ -224,6 +241,27 @@ private struct FindVehicleStep: View {
             await search?.loadIndex()
         }
         .onDisappear { search?.cancel() }
+    }
+
+    /// The years to offer, newest first.
+    ///
+    /// Next year is in the list because a model year ships ahead of the
+    /// calendar year it is named for, and 1981 is the floor because that is
+    /// where the seventeen-character VIN — and every year-keyed lookup
+    /// Odomind can make — begins. Anything older is still addable by typing
+    /// it in; it simply has no published configuration list to offer.
+    private var modelYears: [Int] {
+        let current = Calendar(identifier: .gregorian).component(.year, from: model.clock.now)
+        return Array(stride(from: current + 1, through: 1981, by: -1))
+    }
+
+    private var yearFooter: String {
+        guard draft.identity.modelYear == nil else {
+            return "Tap another year if that is not the one."
+        }
+        return "A year is what lets Odomind look up which engines this was sold with, "
+            + "instead of asking you to remember. You can skip it — the questions it "
+            + "would have answered get asked on the next screen instead."
     }
 
     @ViewBuilder
@@ -598,6 +636,60 @@ private struct ConfirmStep: View {
         guard !didPrepare else { return }
         didPrepare = true
         if let amount = draft.odometerAmount { odometerText = String(amount) }
+    }
+}
+
+/// The model year, asked after the vehicle instead of before it.
+///
+/// Build 3 removed the year from the *precondition* for searching, which is
+/// what made "wrangler" on its own work at all. It then never asked for it
+/// anywhere else, so a vehicle found that way reached the confirm step with no
+/// year — and the configuration lookup, which is keyed on year, make and
+/// model, could only report that it needed one. The screen said so and offered
+/// nowhere to say it. Found by looking at the screenshot, not by a test: every
+/// identifier was present and every element existed.
+private struct ModelYearStrip: View {
+    let years: [Int]
+    let selected: Int?
+    let onSelect: (Int) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Spacing.small) {
+                    ForEach(years, id: \.self) { year in
+                        Button {
+                            onSelect(year)
+                        } label: {
+                            Text(String(year))
+                                .font(.callout.weight(year == selected ? .semibold : .regular))
+                                .monospacedDigit()
+                                .padding(.horizontal, Theme.Spacing.medium)
+                                .padding(.vertical, Theme.Spacing.small)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: Theme.Radius.tile, style: .continuous)
+                                        .fill(year == selected ? Theme.Palette.accent : Theme.Palette.raised)
+                                )
+                                .foregroundStyle(year == selected ? Theme.Palette.onAccent : Theme.Palette.primaryText)
+                        }
+                        .buttonStyle(.plain)
+                        .id(year)
+                        .accessibilityIdentifier("addVehicle.modelYear.\(year)")
+                        .accessibilityAddTraits(year == selected ? [.isButton, .isSelected] : .isButton)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.large)
+                .padding(.vertical, Theme.Spacing.small)
+            }
+            .onAppear {
+                // A year already known — from a VIN decode, or from a query
+                // that carried one — starts in view rather than forty taps
+                // along a strip that opens on next year.
+                guard let selected else { return }
+                proxy.scrollTo(selected, anchor: .center)
+            }
+        }
     }
 }
 

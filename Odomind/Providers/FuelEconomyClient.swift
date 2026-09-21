@@ -81,7 +81,15 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
         // two vocabularies for the same car. A live probe caught this: the
         // first version of this client would have found nothing, for every
         // vehicle whose name is not spelled identically in both services.
-        let names = try await modelNames(modelYear: modelYear, make: make, model: model)
+        //
+        // And the same thing one level up, for the make. vPIC answers "JEEP",
+        // in capitals, and that is what Odomind carries on the vehicle
+        // because it is what the source said. This service's menu says
+        // "Jeep". Asking it about "JEEP" returns an empty model menu, which
+        // would have read as "no published configurations for this vehicle"
+        // — for every Jeep, every RAM and every MINI a search produced.
+        let providerMake = try await makeName(modelYear: modelYear, make: make)
+        let names = try await modelNames(modelYear: modelYear, make: providerMake, model: model)
         guard !names.isEmpty else { return [] }
 
         var options: [VehicleConfigurationOption] = []
@@ -93,7 +101,7 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
         for name in names {
             if Task.isCancelled { throw ProviderError.cancelled }
             guard options.count < maximumDetailed else { break }
-            let items = try await menu(modelYear: modelYear, make: make, model: name)
+            let items = try await menu(modelYear: modelYear, make: providerMake, model: name)
 
             for item in items {
                 if Task.isCancelled { throw ProviderError.cancelled }
@@ -143,6 +151,31 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
     /// Capped at four, because a model spelled twenty ways is a reason to ask
     /// the owner — which "None of these is mine" does — not to make sixty
     /// requests.
+    /// What *this* service calls the make.
+    ///
+    /// Falls back to what was asked for rather than throwing. A make this
+    /// service has genuinely never heard of should still produce a real
+    /// request and an honest empty answer, not an error about spelling.
+    private func makeName(modelYear: Int, make: String) async throws -> String {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("vehicle/menu/make"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [URLQueryItem(name: "year", value: String(modelYear))]
+        guard let url = components?.url else {
+            throw ProviderError.unreadableResponse("Could not build the make URL.")
+        }
+
+        let data = try await fetch(url)
+        guard let menu = try? JSONDecoder().decode(MenuEnvelope.self, from: data) else {
+            throw ProviderError.unreadableResponse("Unexpected make menu shape.")
+        }
+
+        let wanted = VehicleTextMatch.key(make)
+        guard !wanted.isEmpty else { return make }
+        return menu.items.map(\.value).first { VehicleTextMatch.key($0) == wanted } ?? make
+    }
+
     private func modelNames(modelYear: Int, make: String, model: String) async throws -> [String] {
         var components = URLComponents(
             url: baseURL.appendingPathComponent("vehicle/menu/model"),

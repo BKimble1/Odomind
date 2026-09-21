@@ -195,7 +195,7 @@ jobs:
             --output-path "$RUNNER_TEMP/screenshots"
           python3 .github/scripts/name-screenshots.py "$RUNNER_TEMP/screenshots"
 
-          for name in light-01-home build3-04-home light-04-garage build3-05-parts-from-a-job; do
+          for name in light-01-home build3-04-home light-04-garage build3-03-configuration build3-05-parts-from-a-job build3-07-garage; do
             source=$(find "$RUNNER_TEMP/screenshots" -maxdepth 1 -type f -name "$name*.png" | sort | head -1)
             if [ -z "$source" ]; then
               echo "IMGMISS:small-$name"

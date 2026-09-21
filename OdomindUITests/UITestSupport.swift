@@ -164,6 +164,24 @@ extension XCUIApplication {
         return condition()
     }
 
+    /// The first element whose identifier *begins with* `prefix`.
+    ///
+    /// For rows whose identifier carries a provider's own key — a
+    /// configuration option is `confirm.option.<fueleconomy.gov id>` — which a
+    /// test cannot know without hard-coding somebody else's database.
+    func firstElement(withIdentifierPrefix prefix: String) -> XCUIElement {
+        descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+            .firstMatch
+    }
+
+    /// Waits until `condition` holds, asking in Swift rather than through an
+    /// expectation, so a test can wait on "either of these two things".
+    @discardableResult
+    func waitUntil(timeout: TimeInterval = 20, _ condition: () -> Bool) -> Bool {
+        poll(timeout: timeout, until: condition)
+    }
+
     /// Any element whose accessibility label contains `text`.
     ///
     /// Rows combine their children for VoiceOver, so the individual labels
