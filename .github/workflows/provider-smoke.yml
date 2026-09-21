@@ -83,3 +83,27 @@ jobs:
             echo ""
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  index:
+    name: Build the vehicle suggestion index
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # Emits the index to the log, gzipped and base64-encoded, because a job
+      # log is the only channel out of a runner the authoring host can read.
+      # `.github/scripts/decode-index.py` reassembles it.
+      - name: Generate from vPIC
+        run: ./.github/scripts/build-vehicle-index.py
+
+      - name: Note
+        if: always()
+        run: |
+          {
+            echo "### Vehicle suggestion index"
+            echo ""
+            echo "Generated from vPIC's public make and model endpoints."
+            echo "Reassemble with \`.github/scripts/decode-index.py\`."
+          } >> "$GITHUB_STEP_SUMMARY"
