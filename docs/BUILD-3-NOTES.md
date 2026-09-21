@@ -177,6 +177,77 @@ shapes on Linux in seconds and runs before the Mac build. It is verified
 against a file containing each mistake rather than trusted because it reports
 zero.
 
+## What the first screenshots showed
+
+Thirty screens were captured on a simulator and looked at, one at a time,
+because the brief asks for exactly that: *"Review them visually; fixture-only
+screenshots do not prove a live provider works."* Five defects came out of it.
+**None of them could have failed a test.** In every case the accessibility
+identifier was present, the element existed, and the accessibility label read
+correctly — the only thing that could tell something was wrong was an eye.
+
+**A vehicle called "Sa…".** The single most important piece of context on
+Home — which car any of this is about — rendered as three characters on an
+iPhone SE, and as "JE…" on a full-size phone. Two toolbar items competing for
+one bar's width, and the leading one loses. Fixed on Home first, then found
+again on Jobs and on Calendar, which still had it in their toolbars: a toolbar
+item gets one bar's height, so neither `lineLimit(2)` nor a minimum scale
+factor can save it. All four tabs now carry the name in their content.
+
+**A location prompt nobody asked for.** Opening Parts from a job put the iOS
+location dialogue on screen, with Odomind's own permission string visible
+inside it saying the app uses your location *"only when you ask"*. Opening a
+screen is not asking. Parts now stops at the permission check and leaves the
+area empty until the owner taps "Use current location".
+
+**A year the search had stopped asking for.** The configuration step said
+"Vehicle: JEEP Wrangler" over "Odomind needs a year before it can look up
+which engines this was sold with" — and offered nowhere to give one. Removing
+the year from the *precondition* for searching is what makes "wrangler" work
+at all; nothing had been added to ask for it afterwards, so the headline path
+produced a vehicle the provider-backed lookup could never answer for. There is
+a year strip on the find step now.
+
+**"JEEP" is not "Jeep".** Chasing the above turned up a second one, the same
+shape as the model-name mismatch a probe caught earlier and one level up.
+vPIC answers `JEEP`, in capitals, and that is what Odomind carries because it
+is what the source said. fueleconomy.gov's menu says `Jeep`, and answers a
+make it does not recognise with an empty model menu — which would have read as
+"no published configurations for this vehicle", for every Jeep, every RAM and
+every MINI a search produced. The client resolves the make against the
+service's own menu now, the way it already did for model names.
+
+**A row hyphenated against itself.** At an accessibility text size the Jobs
+list read "Engine oil / and filter" beside "Over- / due". The title and the
+due badge stack at those sizes now.
+
+### What the screenshots confirmed was right
+
+The yearless search returns "JEEP Wrangler" and "JEEP Wrangler JK" for
+"wrangler" with no year typed, with "Type it in myself" visible without
+scrolling. The permission step asks two optional questions and prompts only
+after the matching tap, with "Not now" on each and "No account, and nothing
+about you is uploaded" underneath. The shopping-area screen offers a town or
+postal code when location is off, and says an area you pick stays selected.
+Garage draws the artwork flush to the card's top edge with no nested grey
+plate inside a white card, which was the brief's specific complaint. Dark mode
+and the large-text pass are legible throughout.
+
+### What they also showed, and is not a defect
+
+The job detail for an engine oil change lists three specifications and all
+three say **Not available**, each with a line saying where that value is
+printed on the car. That is honest and it is also the real coverage position:
+`odomind-catalog` run against a live runner reports `SPECIFICATIONS HELD (0)`
+and `MATCHED PROFILE: none` for all three validation vehicles. Odomind ships
+**no vehicle-specific fluid, tyre or pressure values at all** — every interval
+it offers is a general template, labelled `verified: false`, and says so on
+screen. Engine facts *are* vehicle-specific once a published configuration is
+chosen, and live on the Configuration screen; the Specifications screen is for
+the values that have no free, licence-clean source. Per the brief, this is
+reported as partial rather than complete, and inventing a viscosity to fill
+the row is the one thing that must not happen.
+
 ## Device checks this release needs
 
 CI cannot reach any of these.
@@ -187,6 +258,9 @@ CI cannot reach any of these.
    Confirm the new one carries none of the old one's VIN, trim or engine.
 3. **A real photograph.** Open Garage and confirm the car is a photo with a
    credit under it, and that the credit names an author for a CC licence.
+   The screenshot pass now reaches Commons for real under
+   `-odomind-live-providers`, so `build3-07-garage` is evidence too — but a
+   miss there is a real outcome, not a failure, and is reported as one.
 4. **Permissions, fresh install.** Confirm both questions are asked once,
    each after a tap, and that skipping both leaves the app usable.
 5. **Permissions, upgrade.** Install Build 2, add a vehicle, install Build 3.
