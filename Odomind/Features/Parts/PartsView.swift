@@ -46,6 +46,14 @@ struct PartsView: View {
             }
         }
         .navigationTitle("Parts")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { ShoppingLocationControl() }
+        }
+        .task {
+            // Opening Parts with an area already chosen should show shops,
+            // not a prompt to say where you are for the fourth time.
+            model.shoppingLocation.resolve()
+        }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: prefill)
     }

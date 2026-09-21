@@ -52,7 +52,10 @@ struct HomeView: View {
             .navigationTitle("Home")
             .background(Theme.Palette.page)
             .toolbar {
+                // Vehicle upper left, shopping area upper right — the two
+                // standing choices every screen below depends on.
                 ToolbarItem(placement: .topBarLeading) { VehiclePickerBar() }
+                ToolbarItem(placement: .topBarTrailing) { ShoppingLocationControl() }
             }
             .odomindDestinations()
             .sheet(isPresented: $showingMileageEntry) {
