@@ -54,9 +54,13 @@ Built by Idlery Services LLC. This repository is public for review; see
 | Ship manufacturers' fluid specs, capacities or tyre pressures | They could not be both verified and legally redistributed. A wrong oil capacity is worse than none. |
 | Infer tyre pressure from a sidewall maximum | That is the tyre's limit, not your vehicle's operating pressure. |
 | Turn an estimate into a fact | A projection can warn you early. It can never mark something overdue. |
-| Assume unrecorded work was recently done | "I don't know" is a real answer with its own place on the Today screen. |
-| Claim your car is healthy | It says "nothing currently due based on your records", which is the only claim it can support. |
+| Assume unrecorded work was recently done | "I don't know" is a real answer, kept visibly separate from work that was scheduled. |
+| Claim your car is healthy | With nothing recorded it says your plan is ready and offers the one thing that would make it useful — not an all-clear. |
 | Read your vehicle | Where the car's own oil-life monitor is the real schedule, Odomind asks you to record the message. |
+| Quote a price, or claim something is in stock | It links to retailers' own searches. It holds no prices and no inventory, and will not invent either. |
+| Promise a part fits | Year, make and model is a starting point. Trim, engine and factory options all change the answer. |
+| Call a calendar export a sync | It adds a copy. It cannot read your calendar, so it cannot update or remove what it added, and it says so. |
+| Present an illustration as a photograph | A body-style drawing says it is one. Even a matched drawing says it proves nothing about fitment. |
 
 "Verified" means one thing, enforced in code and gated in CI: a person checked
 the value against manufacturer documentation, recorded a citation, and recorded
