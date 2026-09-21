@@ -294,11 +294,10 @@ private struct PlanRow: View {
         guard let period = product.subscription?.subscriptionPeriod,
               period.unit == .year, period.value == 1
         else { return nil }
+        // Formatted with the product's own style, so the currency and its
+        // conventions come from the storefront rather than being assumed.
         let monthly = product.price / 12
-        let formatted = monthly.formatted(
-            .currency(code: product.priceFormatStyle.currencyCode).precision(.fractionLength(2))
-        )
-        return "Billed once a year · about \(formatted) a month"
+        return "Billed once a year · about \(monthly.formatted(product.priceFormatStyle)) a month"
     }
 }
 

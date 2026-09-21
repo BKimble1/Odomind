@@ -356,9 +356,9 @@ struct AgendaListView: View {
             }
         } else {
             List {
-                ForEach(grouped(entries), id: \.0) { month, items in
-                    Section(Format.monthAndYear(month, calendar: model.calendar)) {
-                        ForEach(items) { entry in
+                ForEach(grouped(entries)) { month in
+                    Section(Format.monthAndYear(month.start, calendar: model.calendar)) {
+                        ForEach(month.entries) { entry in
                             CalendarEntryRow(entry: entry, showsDate: true) { select(entry) }
                                 .listRowInsets(EdgeInsets())
                         }
@@ -369,13 +369,23 @@ struct AgendaListView: View {
         }
     }
 
-    private func grouped(_ entries: [CalendarEntry]) -> [(Date, [CalendarEntry])] {
+    private func grouped(_ entries: [CalendarEntry]) -> [CalendarMonthGroup] {
         var buckets: [Date: [CalendarEntry]] = [:]
         for entry in entries {
             let components = model.calendar.dateComponents([.year, .month], from: entry.date)
             guard let month = model.calendar.date(from: components) else { continue }
             buckets[month, default: []].append(entry)
         }
-        return buckets.keys.sorted(by: >).map { ($0, buckets[$0] ?? []) }
+        return buckets.keys.sorted(by: >).map {
+            CalendarMonthGroup(start: $0, entries: buckets[$0] ?? [])
+        }
     }
+}
+
+/// A month's worth of entries. A named type rather than a tuple, because
+/// `ForEach` needs an identity and Swift has no key path into a tuple element.
+struct CalendarMonthGroup: Identifiable, Hashable {
+    var id: Date { start }
+    var start: Date
+    var entries: [CalendarEntry]
 }

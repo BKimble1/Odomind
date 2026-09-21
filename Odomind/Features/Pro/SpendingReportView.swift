@@ -61,16 +61,16 @@ struct SpendingReportView: View {
 
             if !byJob(byCategory).isEmpty {
                 Section("By job") {
-                    ForEach(byJob(byCategory), id: \.0) { title, total in
-                        ValueRow(label: title, value: Format.moneyTotal(total))
+                    ForEach(byJob(byCategory)) { line in
+                        ValueRow(label: line.label, value: Format.moneyTotal(line.total))
                     }
                 }
             }
 
             if !byYear.isEmpty {
                 Section("By year") {
-                    ForEach(byYear, id: \.0) { year, total in
-                        ValueRow(label: String(year), value: Format.moneyTotal(total))
+                    ForEach(byYear) { line in
+                        ValueRow(label: line.label, value: Format.moneyTotal(line.total))
                     }
                 }
             }
@@ -99,19 +99,29 @@ struct SpendingReportView: View {
         return buckets
     }
 
-    private func byJob(_ buckets: [String: [Money]]) -> [(String, MoneyTotal)] {
+    private func byJob(_ buckets: [String: [Money]]) -> [SpendingLine] {
         buckets
-            .map { ($0.key, MoneyTotal.total(of: $0.value)) }
-            .sorted { $0.0.localizedCaseInsensitiveCompare($1.0) == .orderedAscending }
+            .map { SpendingLine(label: $0.key, total: MoneyTotal.total(of: $0.value)) }
+            .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
     }
 
-    private func spendByYear(_ records: [ServiceRecord]) -> [(Int, MoneyTotal)] {
+    private func spendByYear(_ records: [ServiceRecord]) -> [SpendingLine] {
         var buckets: [Int: [Money]] = [:]
         for record in records {
             guard let cost = record.totalCost else { continue }
             let year = model.calendar.component(.year, from: record.performedOn)
             buckets[year, default: []].append(cost)
         }
-        return buckets.keys.sorted(by: >).map { ($0, MoneyTotal.total(of: buckets[$0] ?? [])) }
+        return buckets.keys.sorted(by: >).map {
+            SpendingLine(label: String($0), total: MoneyTotal.total(of: buckets[$0] ?? []))
+        }
     }
+}
+
+/// One row of a spending breakdown. A named type rather than a tuple, because
+/// `ForEach` needs an identity and Swift has no key path into a tuple element.
+struct SpendingLine: Identifiable, Hashable {
+    var id: String { label }
+    var label: String
+    var total: MoneyTotal
 }
