@@ -6,6 +6,7 @@ import OdomindCore
 struct OdomindApp: App {
     @State private var launch: LaunchState = .loading
     @State private var router = NavigationRouter()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -34,6 +35,21 @@ struct OdomindApp: App {
                 }
             }
             .odomindAppearance(appearance)
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, case .ready(let model) = launch else { return }
+                Task {
+                    // Re-reading StoreKit on return catches a renewal, a
+                    // refund or a cancellation made in the App Store while
+                    // Odomind was in the background.
+                    await model.entitlements.refreshEntitlement()
+                    // Never at launch, at most once a day, and only if the
+                    // owner turned it on. A catalog check has no business on
+                    // the path to the first screen.
+                    if model.isAutomaticCatalogCheckDue {
+                        _ = await model.checkForCatalogUpdate()
+                    }
+                }
+            }
         }
     }
 

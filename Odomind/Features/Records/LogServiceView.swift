@@ -9,6 +9,7 @@ import OdomindCore
 /// what makes the spending figures in History mean anything.
 struct LogServiceView: View {
     @Environment(AppModel.self) private var model
+    @Environment(NavigationRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
     let vehicle: Vehicle
@@ -20,6 +21,7 @@ struct LogServiceView: View {
     @State private var isShop = false
     @State private var showingExtraTasks = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var showingReceiptScan = false
     @State private var odometerText = ""
     @State private var didPrepare = false
 
@@ -139,6 +141,27 @@ struct LogServiceView: View {
                         Label("Add a photo or receipt", systemImage: "paperclip")
                     }
 
+                    // Pro, and gated here rather than hidden: somebody who
+                    // does not have it should be able to see what it does.
+                    Button {
+                        if model.isPro {
+                            showingReceiptScan = true
+                        } else {
+                            router.presentPaywall = true
+                        }
+                    } label: {
+                        LabeledContent {
+                            if !model.isPro {
+                                Text("Pro")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Theme.Palette.accent)
+                            }
+                        } label: {
+                            Label("Scan a receipt", systemImage: "doc.text.viewfinder")
+                        }
+                    }
+                    .accessibilityIdentifier("logService.scanReceipt")
+
                     ForEach(draft.attachmentIDs, id: \.self) { id in
                         HStack {
                             Image(systemName: "doc")
@@ -173,6 +196,22 @@ struct LogServiceView: View {
                     Button("Save") { save() }
                         .disabled(!draft.hasSelection || !blocking.isEmpty)
                         .accessibilityIdentifier("logService.save")
+                }
+            }
+            .sheet(isPresented: $showingReceiptScan) {
+                ReceiptScanSheet { reading, attachmentID in
+                    // Fills the form in. Nothing is recorded until the owner
+                    // taps Save on this screen, exactly as if they had typed
+                    // it — a scan is a shortcut, not a second way to commit.
+                    if let date = reading.date { draft.performedOn = date }
+                    if let total = reading.total {
+                        draft.totalCostText = NSDecimalNumber(decimal: total).stringValue
+                    }
+                    if let merchant = reading.merchant {
+                        draft.performer = .shop(name: merchant)
+                        isShop = true
+                    }
+                    if let attachmentID { draft.attachmentIDs.append(attachmentID) }
                 }
             }
             .sheet(isPresented: $showingExtraTasks) {
