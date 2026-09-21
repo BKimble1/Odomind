@@ -372,7 +372,11 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.navigationBars["Garage"], 10, "the Garage tab did not open")
         waitFor(app.element(withIdentifier: "garage.vehicle"), 10, "the vehicle row is missing").tap()
 
-        let specifications = app.buttons["vehicle.specifications"]
+        // Addressed by identifier rather than as a button: which element type
+        // a NavigationLink row resolves to is SwiftUI's business, and pinning
+        // the query to one makes "wrong type" and "not scrolled to yet" look
+        // like the same failure.
+        let specifications = app.element(withIdentifier: "vehicle.specifications")
         XCTAssertTrue(
             app.scrollTo(specifications, hittable: true),
             "the specifications link is missing — saw \(app.visibleRowLabels())"

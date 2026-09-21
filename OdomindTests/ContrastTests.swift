@@ -62,6 +62,26 @@ final class ContrastTests: XCTestCase {
         }
     }
 
+    /// Everything below depends on a token still being dynamic after the
+    /// round trip through `Color`. If SwiftUI ever flattens it to whichever
+    /// appearance the test process happens to be in, every ratio would be
+    /// measured against the wrong background and the failures would name
+    /// contrast rather than the actual cause. This says the actual cause.
+    func testTokensStayDynamicThroughTheRoundTripToColor() {
+        for (name, token) in [
+            ("page", Theme.Palette.page),
+            ("primaryText", Theme.Palette.primaryText),
+            ("accent", Theme.Palette.accent),
+        ] {
+            let light = resolve(token, .light)
+            let dark = resolve(token, .dark)
+            XCTAssertNotEqual(
+                light, dark,
+                "\(name) resolves to the same colour in both appearances — the dynamic provider was lost converting Color back to UIColor, so nothing below is measuring what it says it is"
+            )
+        }
+    }
+
     // MARK: - Surfaces
 
     private var surfaces: [(String, Color)] {

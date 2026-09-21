@@ -398,3 +398,72 @@ extension ButtonStyle where Self == TappableTextButtonStyle {
     /// A text button with a 44-point minimum target, all of it tappable.
     static var tappableText: TappableTextButtonStyle { TappableTextButtonStyle() }
 }
+
+/// Lays its children out in a row, wrapping to the next line when the next
+/// one would not fit.
+///
+/// An `HStack` cannot do this: it compresses its children until their labels
+/// truncate, which is how the calendar legend came to report "Appointment"
+/// and "Estimated" as clipped. A legend, a row of chips or a set of tags has
+/// to stay readable at every text size, and at accessibility sizes that means
+/// more than one line.
+struct WrappingHStack: Layout {
+    var horizontalSpacing: CGFloat = Theme.Spacing.medium
+    var verticalSpacing: CGFloat = Theme.Spacing.small
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let limit = proposal.width ?? .infinity
+        let rows = arrange(subviews: subviews, in: limit)
+        let height = rows.reduce(0) { $0 + $1.height }
+            + verticalSpacing * CGFloat(max(0, rows.count - 1))
+        let width = rows.map(\.width).max() ?? 0
+        return CGSize(width: min(width, limit), height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews: subviews, in: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                // Centred within the row, so a taller item does not drag the
+                // shorter ones off their baseline.
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                    proposal: ProposedViewSize(size)
+                )
+                x += size.width + horizontalSpacing
+            }
+            y += row.height + verticalSpacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    /// Children are measured unconstrained, so each keeps the width it wants
+    /// and the wrap happens between items rather than inside one.
+    private func arrange(subviews: Subviews, in limit: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let extended = current.indices.isEmpty
+                ? size.width
+                : current.width + horizontalSpacing + size.width
+            if !current.indices.isEmpty, extended > limit {
+                rows.append(current)
+                current = Row(indices: [index], width: size.width, height: size.height)
+            } else {
+                current.indices.append(index)
+                current.width = extended
+                current.height = max(current.height, size.height)
+            }
+        }
+        if !current.indices.isEmpty { rows.append(current) }
+        return rows
+    }
+}

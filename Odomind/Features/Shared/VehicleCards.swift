@@ -175,6 +175,10 @@ struct GarageVehicleCard: View {
                             .labelStyle(.titleAndIcon)
                             .font(.caption.weight(.medium))
                             .foregroundStyle(Theme.Palette.accent)
+                            // Keeps its width against a long vehicle name;
+                            // the name is the one that should wrap, and a
+                            // truncated "Selec…" is what the audit saw.
+                            .fixedSize()
                     }
                 }
 

@@ -58,22 +58,31 @@ final class OdomindScreenshotTests: XCTestCase {
 
             // The picture is the part most likely to be wrong and least
             // likely to be caught by a test, so it gets its own capture.
-            let artwork = app.buttons["vehicle.artwork"]
-            if waitFor(artwork, 8) {
+            //
+            // Both links are below the fold on this screen, and a List does
+            // not realise a row until it is near the viewport — waiting on
+            // one without moving the list is how a capture comes back
+            // missing rather than wrong, which is the harder kind to notice.
+            let artwork = app.element(withIdentifier: "vehicle.artwork")
+            if app.scrollTo(artwork, hittable: true) {
                 artwork.tap()
                 if waitFor(app.navigationBars["Picture"], 8) {
                     capture("\(prefix)-06-artwork")
                 }
                 app.navigationBars.buttons.element(boundBy: 0).tap()
+            } else {
+                XCTFail("the artwork link was not reachable — saw \(app.visibleRowLabels())")
             }
 
-            let specifications = app.buttons["vehicle.specifications"]
-            if waitFor(specifications, 8) {
+            let specifications = app.element(withIdentifier: "vehicle.specifications")
+            if app.scrollTo(specifications, hittable: true) {
                 specifications.tap()
                 if waitFor(app.navigationBars["Specifications"], 8) {
                     capture("\(prefix)-07-specifications")
                 }
                 app.navigationBars.buttons.element(boundBy: 0).tap()
+            } else {
+                XCTFail("the specifications link was not reachable — saw \(app.visibleRowLabels())")
             }
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
@@ -90,7 +99,7 @@ final class OdomindScreenshotTests: XCTestCase {
             if waitFor(app.navigationBars["Settings"], 8) {
                 capture("\(prefix)-09-settings")
                 let pro = app.element(withIdentifier: "settings.pro")
-                if waitFor(pro, 8) {
+                if app.scrollTo(pro, hittable: true) {
                     pro.tap()
                     if waitFor(app.navigationBars["Odomind Pro"], 8) {
                         capture("\(prefix)-10-pro")

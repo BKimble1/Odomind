@@ -260,7 +260,11 @@ struct CalendarView: View {
 /// The legend. Icons and words, never colour alone.
 struct CalendarLegend: View {
     var body: some View {
-        HStack(spacing: Theme.Spacing.medium) {
+        // Wrapping rather than an HStack: four labelled kinds do not fit on
+        // one line on a narrow phone, and an HStack answers that by
+        // truncating the words — which is exactly the signal that keeps this
+        // legend from being colour alone.
+        WrappingHStack {
             ForEach(CalendarEntryKind.allCases, id: \.self) { kind in
                 HStack(spacing: Theme.Spacing.tight) {
                     Image(systemName: kind.symbolName)
@@ -269,9 +273,11 @@ struct CalendarLegend: View {
                     Text(kind.displayName)
                         .font(.caption)
                         .foregroundStyle(Theme.Palette.secondaryText)
+                        .fixedSize()
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text("Legend: done, appointment, due, estimated."))
     }

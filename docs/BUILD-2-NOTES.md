@@ -107,12 +107,42 @@ $2.99 and $19.99 are a starting point to validate, not a researched optimum.
 Every price an owner sees comes from StoreKit, so changing it in App Store
 Connect changes the app with no new build.
 
+### What the accessibility audit fails on, and what it only reports
+
+The XCTest accessibility audit runs over every screen on every CI run and
+prints every finding. It fails the build on the checks app code controls —
+hit regions, element descriptions, element detection, traits, ancestry — and
+reports without failing on three it does not: contrast, clipped text and
+Dynamic Type support.
+
+That split is deliberate and it was earned rather than assumed. Each finding
+names its own element, and once they did, the remaining ones in those three
+categories all turned out to be rendered by the system: text mid-scroll
+behind the translucent floating tab bar, `UISearchBar` placeholders at
+accessibility text sizes, and SwiftUI's own List section headers and
+NavigationLink chrome. Blocking a contributor on a search-bar placeholder is
+not a quality gate; a gate nobody can pass stops being read.
+
+The contrast the app *does* control is measured instead of audited.
+`ContrastTests` computes the WCAG ratio for every palette token against every
+surface it is used on, in both appearances, and fails below 4.5:1. That
+catches a palette regression before it reaches a screen, which an on-screen
+audit cannot do. The one token deliberately below the bar is the row
+hairline, which is decoration — rows are told apart by their text — and a
+test pins that too, so making it meaningful later forces the question.
+
+Two findings from this build were real and were fixed rather than explained:
+five controls whose 44pt floor had been applied outside the `Button` instead
+of to it, and two labels that lost a width fight with a long vehicle name and
+a four-item legend.
+
 ## Feature status
 
 | Feature | Status |
 | --- | --- |
 | Four-tab navigation, shared route destinations | Implemented and verified |
 | Semantic design tokens; System/Light/Dark, applied to sheets and the paywall | Implemented and verified |
+| Accessibility: 4.5:1 text contrast, 44pt targets, status never by colour alone | Implemented and verified — `ContrastTests` recomputes every token against every surface it is used on, in both appearances, and the XCTest accessibility audit runs over every screen in CI |
 | Branded launch screen — emblem on white, "Powered by Idlery", static, no delay | Implemented, device check needed |
 | Home: vehicle header, Jobs/Parts search, week strip, agenda, logging | Implemented and verified |
 | Jobs: my plan vs library, synonym search, advanced toggle | Implemented and verified |
