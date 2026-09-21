@@ -131,10 +131,38 @@ audit cannot do. The one token deliberately below the bar is the row
 hairline, which is decoration — rows are told apart by their text — and a
 test pins that too, so making it meaningful later forces the question.
 
-Two findings from this build were real and were fixed rather than explained:
-five controls whose 44pt floor had been applied outside the `Button` instead
-of to it, and two labels that lost a width fight with a long vehicle name and
-a four-item legend.
+Three findings from this build were real and were fixed rather than
+explained: five controls whose 44pt floor had been applied outside the
+`Button` instead of to it, two labels that lost a width fight with a long
+vehicle name and a four-item legend, and a Dynamic Type finding on the week
+strip that I had filed with SwiftUI's own chrome. That last one was correct
+and I was wrong about it — see below.
+
+### What looking at the screenshots caught that nothing else did
+
+The brief asks for rendered images to be inspected rather than for a
+screenshot command to be run, and the difference turned out to be four
+defects, none of which any test or audit failed on:
+
+- **The Jeep was drawn as a limousine.** 2.9 to 1 where a real JK Unlimited
+  is 2.44, and drawn at a larger scale than the minivan despite being 27
+  inches shorter. Every test passed, because the tests pin which drawing a
+  vehicle resolves to, not what it looks like.
+- **The specification hints said "the door placard"** for engine oil
+  viscosity and oil capacity — the exact defect the brief named, on the
+  screen most likely to be read, while `SpecificationKind.sourceHint` had the
+  right answer for every field and only the parts screen used it.
+- **The tyres disappeared in dark mode.** A near-black tyre on a near-black
+  panel measures about 1.1 to 1, so the car floated on bare rims.
+- **Every date truncated to an ellipsis at AccessibilityL**, including
+  today's inside the filled circle, because the day number sat in a hard
+  30-point circle while its font scaled to about 34.
+
+The audit had reported the last one under "Dynamic Type font sizes are
+partially unsupported" and it had been dismissed as SwiftUI List chrome
+along with the genuine ones. The finding was real; it was naming the
+weekday initials rather than the numbers underneath them, which is why it
+read as chrome. A report-only check is still worth reading.
 
 ## Feature status
 
