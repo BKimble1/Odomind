@@ -217,6 +217,10 @@ final class OdomindScreenshotTests: XCTestCase {
         //    every element existed, so nothing failed.
         firstResult.tap()
 
+        // Nothing below the fold is reachable while the keyboard from the
+        // query is still covering it.
+        fresh.dismissKeyboard()
+
         let year = fresh.element(withIdentifier: "addVehicle.modelYear.2023")
         XCTAssertTrue(
             fresh.scrollTo(year, hittable: true),
@@ -236,6 +240,21 @@ final class OdomindScreenshotTests: XCTestCase {
             fresh.textFields["addVehicle.odometer"].waitForExistence(timeout: 10),
             "choosing a result should reach the confirmation step"
         )
+
+        // The mileage first, before anything below pushes it off the top.
+        //
+        // `scrollTo` only ever scrolls *down*, because a List's unrealised
+        // rows are below the viewport — a row above it is a different problem
+        // and not one this helper can solve. Typing the reading last worked
+        // while the confirmation step was short enough to fit on one screen.
+        // The moment a live provider put three configurations on it, scrolling
+        // to those put the odometer above the fold, and "the odometer field is
+        // missing" cost this capture four screens.
+        let odometer = fresh.textFields["addVehicle.odometer"]
+        XCTAssertTrue(fresh.scrollTo(odometer, hittable: true), "the odometer field is missing")
+        odometer.tap()
+        odometer.typeText("58000")
+        fresh.dismissKeyboard()
 
         // Wait for the lookup to settle instead of photographing a spinner.
         // Either outcome is a real screenshot: the configurations
@@ -273,11 +292,6 @@ final class OdomindScreenshotTests: XCTestCase {
             XCTAssertTrue(gasoline.waitForExistence(timeout: 5), "Gasoline was not offered")
             gasoline.tap()
         }
-
-        let odometer = fresh.textFields["addVehicle.odometer"]
-        XCTAssertTrue(fresh.scrollTo(odometer, hittable: true), "the odometer field is missing")
-        odometer.tap()
-        odometer.typeText("58000")
 
         next.tap()          // confirm -> plan
         XCTAssertTrue(

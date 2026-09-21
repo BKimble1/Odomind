@@ -164,6 +164,19 @@ extension XCUIApplication {
         return condition()
     }
 
+    /// Puts the keyboard away.
+    ///
+    /// Tapping a navigation bar's title is inert and closes it. Worth having
+    /// as its own step: a number pad has no return key at all, and on an
+    /// iPhone SE a keyboard covers more than half the screen — including rows
+    /// a later step is about to look for. A capture run failed with
+    /// "saw []", which was not a missing row but a Form with nothing visible
+    /// at all underneath a keyboard nobody had dismissed.
+    func dismissKeyboard() {
+        guard keyboards.element.exists else { return }
+        navigationBars.firstMatch.tap()
+    }
+
     /// The first element whose identifier *begins with* `prefix`.
     ///
     /// For rows whose identifier carries a provider's own key — a
