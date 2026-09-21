@@ -339,7 +339,10 @@ struct TaskDetailView: View {
                         }
                         .padding(.vertical, 2)
                     } else {
-                        UnavailableValueRow(label: kind.displayName)
+                        UnavailableValueRow(
+                            label: kind.displayName,
+                            explanation: kind.sourceHint
+                        )
                     }
                 }
             } header: {

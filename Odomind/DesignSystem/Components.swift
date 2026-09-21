@@ -169,7 +169,16 @@ struct ValueRow: View {
 /// not have a value it can stand behind, with a way to supply the real one.
 struct UnavailableValueRow: View {
     let label: String
-    var explanation: String = "Add it from your owner's manual or the door placard."
+    /// Where this particular value is actually written on the vehicle.
+    ///
+    /// Deliberately has no default. It used to default to "your owner's
+    /// manual or the door placard", and two of the three screens that show
+    /// these rows simply never passed anything — so the job screen told
+    /// people to read an oil capacity off the door placard, which does not
+    /// carry one. `SpecificationKind.sourceHint` knows the answer per field;
+    /// requiring the argument is what stops a screen quietly going generic
+    /// again.
+    let explanation: String
     var action: (() -> Void)?
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize

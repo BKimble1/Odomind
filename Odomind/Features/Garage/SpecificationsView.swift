@@ -83,7 +83,7 @@ struct SpecificationsView: View {
                             } else {
                                 UnavailableValueRow(
                                     label: kind.displayName,
-                                    explanation: explanation(for: kind)
+                                    explanation: kind.sourceHint
                                 ) {
                                     editingKind = SpecificationEdit(kind: kind)
                                 }
@@ -124,14 +124,6 @@ struct SpecificationsView: View {
             }
     }
 
-    private func explanation(for kind: SpecificationKind) -> String {
-        // The row already says "Not available" beside the name; repeating it
-        // here just made every row say it twice.
-        if kind.isVehiclePlacardOnly {
-            return "Read it from the placard in your driver's door opening — never from the tire sidewall."
-        }
-        return "Add it from your owner's manual."
-    }
 }
 
 /// Identifies which specification the editor sheet is editing, without
