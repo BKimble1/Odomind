@@ -122,7 +122,7 @@ struct PaywallView: View {
                     }
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
-                    .frame(minHeight: Theme.minimumTapTarget)
+                    .buttonStyle(.tappableText)
                     .accessibilityIdentifier("paywall.retry")
                 }
             }
@@ -151,7 +151,7 @@ struct PaywallView: View {
                 }
                 .font(.subheadline)
                 .foregroundStyle(Theme.Palette.accent)
-                .frame(minHeight: Theme.minimumTapTarget)
+                .buttonStyle(.tappableText)
                 .accessibilityIdentifier("paywall.restore")
             }
         }
@@ -170,13 +170,13 @@ struct PaywallView: View {
                 Link("Manage subscription", destination: url)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
-                    .frame(minHeight: Theme.minimumTapTarget)
+                    .buttonStyle(.tappableText)
                     .accessibilityIdentifier("paywall.manage")
             }
             Button("Restore purchases") { Task { await restore() } }
                 .font(.subheadline)
                 .foregroundStyle(Theme.Palette.accent)
-                .frame(minHeight: Theme.minimumTapTarget)
+                .buttonStyle(.tappableText)
         }
     }
 

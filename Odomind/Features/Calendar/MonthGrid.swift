@@ -71,7 +71,7 @@ struct MonthGrid: View {
             }
             .font(.subheadline.weight(.medium))
             .foregroundStyle(Theme.Palette.accent)
-            .frame(minHeight: Theme.minimumTapTarget)
+            .buttonStyle(.tappableText)
             .accessibilityIdentifier("calendar.today")
         }
         .padding(Theme.Spacing.medium)

@@ -131,10 +131,13 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
             return XCTFail("the vehicle row is missing")
         }
         app.element(withIdentifier: "garage.vehicle").tap()
-        guard waitFor(app.buttons["vehicle.specifications"], 10) else {
-            return XCTFail("the specifications link is missing")
+        // Below the portrait, the name field and the identity rows, so the
+        // list has to be moved before the link is in the tree at all.
+        let specifications = app.buttons["vehicle.specifications"]
+        guard app.scrollTo(specifications, hittable: true) else {
+            return XCTFail("the specifications link is missing — saw \(app.visibleRowLabels())")
         }
-        app.buttons["vehicle.specifications"].tap()
+        specifications.tap()
         XCTAssertTrue(waitFor(app.navigationBars["Specifications"]))
         audit("Specifications")
     }

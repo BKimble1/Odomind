@@ -202,13 +202,16 @@ final class OdomindJourneyUITests: XCTestCase {
             "the task detail should explain that there is no history yet"
         )
         // The schedule and its provenance are reference rather than action,
-        // so they are collapsed. That is the point of the change — the button
-        // that records the work is above them — but they still have to be one
-        // tap away and still have to say where the interval came from.
-        let disclosure = waitFor(
-            app.element(withIdentifier: "task.scheduleDisclosure"),
-            10,
-            "the schedule should be reachable from the job screen"
+        // so they sit below the fold and collapsed. That is the point of the
+        // change — the button that records the work is above them — but they
+        // still have to be reachable and still have to say where the interval
+        // came from. Scrolling is part of the assertion: a `List` does not
+        // realise a row until it is near the viewport, so waiting on this one
+        // without moving the list would never find it.
+        let disclosure = app.element(withIdentifier: "task.scheduleDisclosure")
+        XCTAssertTrue(
+            app.scrollTo(disclosure, hittable: true),
+            "the schedule should be reachable from the job screen — saw \(app.visibleRowLabels())"
         )
         disclosure.tap()
         XCTAssertTrue(
@@ -248,10 +251,13 @@ final class OdomindJourneyUITests: XCTestCase {
         app.tabBars.buttons["Jobs"].tap()
         waitFor(app.element(withIdentifier: "jobs.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
 
-        // Serviced at 120,000 with a 5,000-mile interval.
+        // Serviced at 120,000 with a 5,000-mile interval. "Next due" is
+        // reference detail below the status block and the action, so the list
+        // has to be moved before the row exists to be asserted on.
+        let nextDue = app.element(labelContaining: "125,000")
         XCTAssertTrue(
-            app.element(labelContaining: "125,000").waitForExistence(timeout: 10),
-            "the next due odometer should be shown after logging the service"
+            app.scrollTo(nextDue),
+            "the next due odometer should be shown after logging the service — saw \(app.visibleRowLabels())"
         )
     }
 
@@ -366,7 +372,12 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.navigationBars["Garage"], 10, "the Garage tab did not open")
         waitFor(app.element(withIdentifier: "garage.vehicle"), 10, "the vehicle row is missing").tap()
 
-        waitFor(app.buttons["vehicle.specifications"], 10, "the specifications link is missing").tap()
+        let specifications = app.buttons["vehicle.specifications"]
+        XCTAssertTrue(
+            app.scrollTo(specifications, hittable: true),
+            "the specifications link is missing — saw \(app.visibleRowLabels())"
+        )
+        specifications.tap()
         waitFor(app.navigationBars["Specifications"], 10, "the specifications screen did not open")
 
         // The honest empty state: Odomind ships no fluid values, and says so.

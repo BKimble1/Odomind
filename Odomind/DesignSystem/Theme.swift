@@ -30,20 +30,33 @@ enum Theme {
 
     /// The brand and surface palette.
     ///
-    /// Contrast ratios below were computed against the surfaces each token is
-    /// actually used on, not assumed. Normal text clears 4.5:1 and large text
-    /// and meaningful boundaries clear 3:1 in both appearances:
+    /// Every text token clears 4.5:1 against each surface it is used on, in
+    /// both appearances:
     ///
     /// | Token | on page (light / dark) | on raised (light / dark) |
     /// | --- | --- | --- |
-    /// | `primaryText` | 16.2 / 17.2 | 17.5 / 14.8 |
+    /// | `primaryText` | 16.2 / 17.2 | 17.4 / 14.8 |
     /// | `secondaryText` | 6.0 / 9.4 | 6.4 / 8.1 |
     /// | `accent` | 5.7 / 8.2 | 6.1 / 7.1 |
-    /// | `onAccent` over `accent` | 6.1 / 8.2 | — |
+    /// | `onAccent` over `accent` | 6.1 / 8.5 | — |
     ///
-    /// These are computed values for the tokens as defined. They are not a
-    /// substitute for looking at a rendered screen, which is why the
-    /// accessibility audit still runs over every screen in CI.
+    /// `ContrastTests` recomputes this table from the tokens themselves and
+    /// fails if any pair drops below its bar, so the numbers here cannot
+    /// quietly go stale the way a comment normally does.
+    ///
+    /// `separator` is the one token deliberately below 3:1 — about 1.4:1
+    /// either way. It draws the hairline between rows, which is decoration:
+    /// rows are told apart by their own text, and nothing is lost if the line
+    /// is not seen. WCAG's 3:1 non-text bar covers boundaries you need in
+    /// order to understand or operate the content, and the places this app
+    /// has those — a selected paint swatch, a focused field — carry `accent`
+    /// and a matching accessibility trait rather than a hairline. Darkening a
+    /// row divider to 3:1 would not help anyone read a row; it would just
+    /// draw a grid.
+    ///
+    /// Computed ratios are not a substitute for looking at a rendered screen,
+    /// which is why the accessibility audit still runs over every screen in
+    /// CI and why light and dark screenshots are inspected before a release.
     enum Palette {
         /// The page behind everything.
         static let page = dynamic(light: 0xF6F7F7, dark: 0x101416)

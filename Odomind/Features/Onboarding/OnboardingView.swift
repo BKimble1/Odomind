@@ -72,8 +72,9 @@ struct OnboardingView: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.Palette.accent)
                 // A plain Button is about 20 points tall, which the audit
-                // flagged as an unreachable target. The floor fixes it.
-                .frame(minHeight: Theme.minimumTapTarget)
+                // flagged as an unreachable target. The style gives the
+                // button itself a 44pt body; a frame around it does not.
+                .buttonStyle(.tappableText)
                 .accessibilityIdentifier("onboarding.sample")
             }
 
@@ -123,14 +124,14 @@ struct OnboardingView: View {
                         }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.Palette.accent)
-                        .frame(minHeight: Theme.minimumTapTarget)
+                        .buttonStyle(.tappableText)
                         .disabled(isRequestingReminders)
                         .accessibilityIdentifier("onboarding.enableReminders")
 
                         Button("Not now") { remindersDecided = true }
                             .font(.subheadline)
                             .foregroundStyle(Theme.Palette.secondaryText)
-                            .frame(minHeight: Theme.minimumTapTarget)
+                            .buttonStyle(.tappableText)
                             .accessibilityIdentifier("onboarding.notNow")
                     }
                 }

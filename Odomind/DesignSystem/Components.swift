@@ -292,15 +292,20 @@ struct PrimaryActionButton: View {
             .font(.body.weight(.medium))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
+            // The floor, the fill and the touch shape all belong to the
+            // label, so the pill you can see is exactly the area that
+            // responds. Seventeen-point text with ten points of padding is
+            // about forty tall — under the minimum — and a frame wrapped
+            // around the Button would only have reserved the difference as
+            // dead space beside a control that stayed forty points tall.
+            .frame(minHeight: Theme.minimumTapTarget)
+            .background(
+                isProminent ? AnyShapeStyle(Theme.Palette.accent) : AnyShapeStyle(Theme.Palette.recessed),
+                in: RoundedRectangle(cornerRadius: Theme.Radius.tile)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.tile))
         }
         .foregroundStyle(isProminent ? Theme.Palette.onAccent : Theme.Palette.accent)
-        .background(
-            isProminent ? AnyShapeStyle(Theme.Palette.accent) : AnyShapeStyle(Theme.Palette.recessed),
-            in: RoundedRectangle(cornerRadius: Theme.Radius.tile)
-        )
-        // A control this size is comfortably over the 44pt minimum at default
-        // text sizes; the floor keeps it there when the label is one short word.
-        .frame(minHeight: Theme.minimumTapTarget)
     }
 }
 
@@ -353,4 +358,43 @@ struct QuietNote: View {
         }
         .accessibilityElement(children: .combine)
     }
+}
+
+/// A plain text button whose whole 44-point target actually responds.
+///
+/// `.frame(minHeight:)` applied *outside* a `Button` reserves the space but
+/// does not give it to the control: the button's own geometry — and with it
+/// the hit region the accessibility audit measures, and the area a finger can
+/// land on — stays the height of its text, which for a subheadline label is
+/// about twenty points. The accessibility audit caught five of these across
+/// onboarding, Today and the calendar; the pattern was in a dozen more places
+/// that simply were not on an audited screen.
+///
+/// Sizing inside `makeBody` makes the target belong to the button, because
+/// what a `ButtonStyle` returns *is* the button's body.
+struct TappableTextButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        SizedLabel(configuration: configuration)
+    }
+
+    /// A nested view so `isEnabled` can be read from the environment, which
+    /// `makeBody` itself cannot do. Not named `Body`: `ButtonStyle` already
+    /// has an associated type by that name, and a nested type would be picked
+    /// up as its witness.
+    private struct SizedLabel: View {
+        let configuration: ButtonStyleConfiguration
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .frame(minWidth: Theme.minimumTapTarget, minHeight: Theme.minimumTapTarget)
+                .contentShape(Rectangle())
+                .opacity(isEnabled ? (configuration.isPressed ? 0.5 : 1) : 0.4)
+        }
+    }
+}
+
+extension ButtonStyle where Self == TappableTextButtonStyle {
+    /// A text button with a 44-point minimum target, all of it tappable.
+    static var tappableText: TappableTextButtonStyle { TappableTextButtonStyle() }
 }

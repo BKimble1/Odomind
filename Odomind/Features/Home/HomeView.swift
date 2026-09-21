@@ -165,7 +165,7 @@ struct HomeView: View {
                     Button("Create a custom job") { router.homePath.append(JobRoute.customTask) }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.Palette.accent)
-                        .frame(minHeight: Theme.minimumTapTarget)
+                        .buttonStyle(.tappableText)
                 }
             }
         } else {
@@ -218,7 +218,7 @@ struct HomeView: View {
                 }
                 .font(.subheadline)
                 .foregroundStyle(Theme.Palette.accent)
-                .frame(minHeight: Theme.minimumTapTarget)
+                .buttonStyle(.tappableText)
                 .accessibilityIdentifier("home.openCalendar")
             }
 
@@ -277,7 +277,7 @@ struct HomeView: View {
                     Button("See all") { router.selectedTab = .calendar }
                         .font(.subheadline)
                         .foregroundStyle(Theme.Palette.accent)
-                        .frame(minHeight: Theme.minimumTapTarget)
+                        .buttonStyle(.tappableText)
                 }
                 VStack(spacing: 0) {
                     ForEach(records) { record in
@@ -323,7 +323,7 @@ struct UpNextEmptyState: View {
                 Button("Browse jobs", action: browseJobs)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
-                    .frame(minHeight: Theme.minimumTapTarget)
+                    .buttonStyle(.tappableText)
             } else if !unknown.isEmpty {
                 Text("Your plan is ready")
                     .font(.subheadline.weight(.medium))
@@ -334,7 +334,7 @@ struct UpNextEmptyState: View {
                 Button("Set a starting point", action: browseJobs)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
-                    .frame(minHeight: Theme.minimumTapTarget)
+                    .buttonStyle(.tappableText)
                     .accessibilityIdentifier("home.setStartingPoint")
             } else {
                 Text("Nothing due from your records")
