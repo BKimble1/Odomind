@@ -267,20 +267,14 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.element(withIdentifier: "maintenance.addFromCatalog"), 10, "the add menu did not open").tap()
         waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
 
-        let toggle = waitFor(
-            app.element(withIdentifier: "addTask.showAdvanced"),
-            10,
-            "the advanced toggle is missing"
+        // Addressed as a switch, and waited on. Tapping whatever a query
+        // across every descendant returns first hits the row, not the
+        // control: the switch stayed off, the catalog stayed filtered, and
+        // the failure surfaced two steps later as a row that was "not there".
+        XCTAssertTrue(
+            app.setSwitch("addTask.showAdvanced", on: true),
+            "the advanced toggle did not turn on, so the catalog is still filtered"
         )
-        toggle.tap()
-
-        // Check the toggle actually moved before blaming the list. A tap that
-        // fails to flip it leaves the catalog filtered, and the failure then
-        // reads as "the row is not there" — a scroll timeout standing in for
-        // a switch that never turned on.
-        let advanced = app.switches["addTask.showAdvanced"]
-        XCTAssertTrue(advanced.waitForExistence(timeout: 5), "the advanced toggle should surface as a switch")
-        XCTAssertEqual(advanced.value as? String, "1", "tapping the advanced toggle did not turn it on")
 
         let add = app.element(withIdentifier: "addTask.add.\(taskID)")
         XCTAssertTrue(

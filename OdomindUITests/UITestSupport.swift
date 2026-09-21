@@ -91,6 +91,37 @@ extension XCUIApplication {
         return cells.isEmpty ? descendants(matching: .staticText).allElementsBoundByIndex : cells
     }
 
+    /// Sets a switch and waits for it to say it changed.
+    ///
+    /// Two things this gets right that a bare `tap()` does not.
+    ///
+    /// The control has to be addressed *as a switch*. SwiftUI puts an
+    /// identifier on the List row as well as on the control inside it, and a
+    /// query across every descendant returns the row first — tapping that
+    /// delivers a touch that changes nothing. That cost two full CI runs: the
+    /// catalog test reported "the row is not there" and swiped through a list
+    /// that was still filtered, because the toggle meant to unfilter it had
+    /// never moved.
+    ///
+    /// And `tap()` returns when the touch is delivered, not when the app has
+    /// acted on it, so the new value is waited for rather than read straight
+    /// back off a busy runner.
+    @discardableResult
+    func setSwitch(_ identifier: String, on: Bool, timeout: TimeInterval = 10) -> Bool {
+        let control = switches[identifier]
+        guard control.waitForExistence(timeout: timeout) else { return false }
+
+        let wanted = on ? "1" : "0"
+        if control.value as? String == wanted { return true }
+        control.tap()
+
+        let settled = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", wanted),
+            object: control
+        )
+        return XCTWaiter().wait(for: [settled], timeout: timeout) == .completed
+    }
+
     /// Any element whose accessibility label contains `text`.
     ///
     /// Rows combine their children for VoiceOver, so the individual labels

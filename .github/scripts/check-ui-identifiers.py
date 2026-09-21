@@ -23,6 +23,10 @@ REFERENCED = (
         r'app\.(?:buttons|textFields|secureTextFields|switches|otherElements'
         r'|staticTexts|cells|images|menuItems)\["([^"]+)"\]'
     ),
+    # Helpers that take an identifier rather than returning an element. Without
+    # these the check silently stops covering an identifier the moment a test
+    # is refactored to go through one.
+    re.compile(r'setSwitch\(\s*"([^"]+)"'),
 )
 NAV_TITLE = re.compile(r'navigationBars\["([^"]+)"\]')
 
