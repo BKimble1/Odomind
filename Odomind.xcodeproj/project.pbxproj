@@ -79,6 +79,7 @@
 		B57535A09612DA845B50C3DB /* CalendarService.swift in app */ = {isa = PBXBuildFile; fileRef = E30D3977110E451C2F08505D /* CalendarService.swift */; };
 		B578A758248B6E6D66B29D85 /* AppointmentEditor.swift in app */ = {isa = PBXBuildFile; fileRef = 339E1005DD4667FC75B7A546 /* AppointmentEditor.swift */; };
 		C3D1F8E7454CB1E034A28371 /* AttachmentStore.swift in app */ = {isa = PBXBuildFile; fileRef = 24854BA5A01F362F12A242A4 /* AttachmentStore.swift */; };
+		C3F0D2F1C35A1FC410DE9811 /* ShoppingLocationService.swift in app */ = {isa = PBXBuildFile; fileRef = 6DDBB5B1E5258AB4D591C050 /* ShoppingLocationService.swift */; };
 		C48D968D23E451B563E192A8 /* CalendarView.swift in app */ = {isa = PBXBuildFile; fileRef = A37930A93BA453D2A281E305 /* CalendarView.swift */; };
 		C592E4ACC9E8AB20D860D14F /* SpecificationEditor.swift in app */ = {isa = PBXBuildFile; fileRef = 586F8781F5C8E288759D7C11 /* SpecificationEditor.swift */; };
 		CA41F174D01659561778DE8D /* NavigationRouter.swift in app */ = {isa = PBXBuildFile; fileRef = F5502659B94E56513DA036BA /* NavigationRouter.swift */; };
@@ -96,6 +97,7 @@
 		EA5BACEF9D4986788ACADECA /* BuildTwoSettings.swift in app */ = {isa = PBXBuildFile; fileRef = 5015F6CBBDE3380A30B0C19C /* BuildTwoSettings.swift */; };
 		EABF56AD7EC081DC74EB240A /* Entitlements.swift in app */ = {isa = PBXBuildFile; fileRef = 5CA1D97532CC9314DF85B097 /* Entitlements.swift */; };
 		EC5614CA6251458B4A0450FC /* ReceiptScanSheet.swift in app */ = {isa = PBXBuildFile; fileRef = 254C4968A10D60C0C6FDD40C /* ReceiptScanSheet.swift */; };
+		ED88CA9436D4011FAA0B063A /* DeviceLocationProvider.swift in app */ = {isa = PBXBuildFile; fileRef = D0892B0C7599BB6D81B23F26 /* DeviceLocationProvider.swift */; };
 		EF3EAC200C0CF1F8868C2DE5 /* StoredModels.swift in app */ = {isa = PBXBuildFile; fileRef = 6AAA0CBD128EAEB32771C616 /* StoredModels.swift */; };
 		F3C5318B0E59DF99B42CA079 /* VehiclePhotoService.swift in app */ = {isa = PBXBuildFile; fileRef = 081968DA0C1BC0C330F436B9 /* VehiclePhotoService.swift */; };
 		F49E6D610ED74861DCF730E4 /* ScreenshotTests.swift in ui */ = {isa = PBXBuildFile; fileRef = 88CDE1B128AD99B377A95D61 /* ScreenshotTests.swift */; };
@@ -207,11 +209,13 @@
 		E30D3977110E451C2F08505D /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarService.swift; sourceTree = "<group>"; };
 		E2E1E8D43D76AD78926807BF /* CatalogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogService.swift; sourceTree = "<group>"; };
 		518571479BDCBA8A438F5BA9 /* CatalogUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogUpdateService.swift; sourceTree = "<group>"; };
+		D0892B0C7599BB6D81B23F26 /* DeviceLocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceLocationProvider.swift; sourceTree = "<group>"; };
 		147740C6CB10C0764329B8A2 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		BCEA6FBB9B873969E79CCC30 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
 		59C7329632464778C52BB154 /* NotificationScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduling.swift; sourceTree = "<group>"; };
 		EAF94A37187DA2AC2058FD9B /* ReceiptScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptScanner.swift; sourceTree = "<group>"; };
 		3D893D1FC4C41CE9C06CEACB /* ReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCoordinator.swift; sourceTree = "<group>"; };
+		6DDBB5B1E5258AB4D591C050 /* ShoppingLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingLocationService.swift; sourceTree = "<group>"; };
 		081968DA0C1BC0C330F436B9 /* VehiclePhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehiclePhotoService.swift; sourceTree = "<group>"; };
 		B14166184739F71CE3EA0D41 /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
 		1A36F37ED9CB3CE32E166AC2 /* AppTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTestSupport.swift; sourceTree = "<group>"; };
@@ -464,11 +468,13 @@
 				E30D3977110E451C2F08505D,
 				E2E1E8D43D76AD78926807BF,
 				518571479BDCBA8A438F5BA9,
+				D0892B0C7599BB6D81B23F26,
 				147740C6CB10C0764329B8A2,
 				BCEA6FBB9B873969E79CCC30,
 				59C7329632464778C52BB154,
 				EAF94A37187DA2AC2058FD9B,
 				3D893D1FC4C41CE9C06CEACB,
+				6DDBB5B1E5258AB4D591C050,
 				081968DA0C1BC0C330F436B9,
 			);
 			path = Services;
@@ -763,11 +769,13 @@
 				B57535A09612DA845B50C3DB /* CalendarService.swift */,
 				D617D6645CC1CE320637A4AB /* CatalogService.swift */,
 				2A0B0FA1310BD04771296E44 /* CatalogUpdateService.swift */,
+				ED88CA9436D4011FAA0B063A /* DeviceLocationProvider.swift */,
 				8F5C89017207CD53727112E1 /* ExportService.swift */,
 				B09B7A6B5E737DFB6CA74795 /* ImageProcessing.swift */,
 				725C96D67D94EE809FC4C738 /* NotificationScheduling.swift */,
 				412B9B8EB76F9CC874932743 /* ReceiptScanner.swift */,
 				91279ADA58133B0F3F510CF0 /* ReminderCoordinator.swift */,
+				C3F0D2F1C35A1FC410DE9811 /* ShoppingLocationService.swift */,
 				F3C5318B0E59DF99B42CA079 /* VehiclePhotoService.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

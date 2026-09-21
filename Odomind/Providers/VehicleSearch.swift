@@ -200,8 +200,13 @@ final class VehicleSearchModel {
 
         if names == nil {
             do {
-                names = try await year.map { try await provider.models(make: make, modelYear: $0) }
-                    ?? provider.models(make: make)
+                // Written out rather than through `Optional.map`, whose
+                // closure is synchronous and cannot carry an await.
+                if let year {
+                    names = try await provider.models(make: make, modelYear: year)
+                } else {
+                    names = try await provider.models(make: make)
+                }
             } catch let error as ProviderError {
                 guard generation == mine else { return }
                 if error == .cancelled { return }
