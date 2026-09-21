@@ -84,19 +84,76 @@ struct DataSourcesView: View {
 
             Section {
                 Text("""
-                Odomind sends nothing anywhere unless you ask it to. The one external request it can make is a \
-                VIN lookup to \(model.identificationProvider.contactedHost), and it asks before the first one. \
-                Everything else — your mileage, your history, your receipts — stays on this device.
+                Odomind sends nothing anywhere unless you do something that asks it to. There are five \
+                requests it can make, and each one is listed below with what it carries.
                 """)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
+
+                outboundRequest(
+                    "Vehicle model lookup",
+                    when: "You type a year and make into the search field",
+                    sends: "The year and the make, to \(model.identificationProvider.contactedHost)"
+                )
+                outboundRequest(
+                    "VIN decode",
+                    when: "You ask for one, after a disclosure naming where it goes",
+                    sends: "The VIN, to \(model.identificationProvider.contactedHost)"
+                )
+                outboundRequest(
+                    "Nearby parts shops",
+                    when: "You tap Near me, or type a postal code",
+                    sends: "A coarse location or the postal code, to Apple's map search"
+                )
+                outboundRequest(
+                    "Opening a retailer",
+                    when: "You tap a retailer",
+                    sends: "Nothing from Odomind — your browser opens their own search for the year, make, model and part"
+                )
+                outboundRequest(
+                    "Maintenance catalog update",
+                    when: "You tap Check now, or turn on automatic checks",
+                    sends: "Nothing about you or your vehicle"
+                )
+
+                Text("""
+                Your mileage, your service history, your receipts, your photos and your notes stay on this \
+                device. App Store purchases go through Apple, which is the only party that ever sees payment \
+                information.
+                """)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             } header: {
-                Text("Vehicle identification")
+                Text("What leaves this device")
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Data sources")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// One outbound request, named with what triggers it and what it carries.
+    ///
+    /// Listed rather than summarised because a summary is where an absolute
+    /// creeps in: this screen used to say a VIN lookup was the only request
+    /// Odomind could make, and by Build 2 that was no longer true.
+    @ViewBuilder
+    private func outboundRequest(_ title: String, when: String, sends: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.callout.weight(.medium))
+            Text(when)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(sends)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
@@ -120,21 +177,38 @@ struct PrivacyView: View {
             Section {
                 Text("""
                 Odomind keeps your records on your device. There is no account, no sign-in, no analytics and no \
-                advertising SDK. Nothing about your vehicles is uploaded.
+                advertising SDK. Your service history, your mileage, your receipts, your photos and your notes \
+                are never uploaded.
                 """)
                 .fixedSize(horizontal: false, vertical: true)
             }
 
             Section {
                 Text("""
-                If you decode a VIN, that VIN is sent to \(model.identificationProvider.contactedHost) — the U.S. \
-                National Highway Traffic Safety Administration's public vehicle catalog — to look up what the \
-                vehicle is. Odomind asks before the first lookup and you can always add a vehicle by hand instead. \
-                Nothing else is sent with it: no name, no account, no other vehicle details.
+                Every one of them is started by something you did, and none of them carries your history or your \
+                identity. Data sources lists each one with exactly what it sends.
                 """)
                 .fixedSize(horizontal: false, vertical: true)
+
+                Text("""
+                Looking up a vehicle sends the year and make, or the VIN if you ask for a VIN decode, to \
+                \(model.identificationProvider.contactedHost) — the U.S. National Highway Traffic Safety \
+                Administration's public vehicle catalog. Odomind asks before the first lookup and you can always \
+                add a vehicle by hand instead. Finding nearby parts shops sends a coarse location, or the postal \
+                code you type, to Apple's map search. Checking for a maintenance catalog update sends nothing \
+                about you or your vehicles.
+                """)
+                .font(.callout)
+                .fixedSize(horizontal: false, vertical: true)
+
+                Text("""
+                Tapping a retailer opens their own search in your browser, for the year, make, model and part. \
+                Odomind sends them nothing itself, and never your VIN, your mileage or your service history.
+                """)
+                .font(.callout)
+                .fixedSize(horizontal: false, vertical: true)
             } header: {
-                Text("The one request Odomind makes")
+                Text("The requests Odomind can make")
             }
 
             Section {
@@ -160,9 +234,17 @@ struct PrivacyView: View {
 
             Section {
                 Text("""
-                Notification permission is requested when you turn a reminder on, not at launch. Camera access is \
-                requested when you scan a VIN, not before. Odomind never asks for calendar access: the system's own \
-                event editor handles adding an event, outside Odomind's process.
+                Every permission is asked for at the moment it is needed, never at launch. Notifications when you \
+                turn a reminder on. Camera when you scan a VIN. Location only if you ask for parts shops near \
+                you, and you can type a postal code instead.
+                """)
+                .fixedSize(horizontal: false, vertical: true)
+
+                Text("""
+                Adding a single item to Apple Calendar asks for nothing at all: the system's own event editor \
+                runs outside Odomind's process. Adding several at once does need calendar access, and Odomind \
+                asks for the write-only kind — enough to add the items you reviewed, not enough to read what is \
+                already in your calendar.
                 """)
                 .fixedSize(horizontal: false, vertical: true)
             } header: {

@@ -71,6 +71,13 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Odomind attaches photos of receipts to your service records. They stay on this device.</string>
 
+	<!-- Only if the owner asks for parts shops near them, and never for
+	     maintenance itself: typing a postal code does the same job. Requested
+	     at kilometre accuracy, because the nearest shops are all this needs
+	     and a street-level fix is more than it should hold. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Odomind uses your approximate location only to list parts shops near you, and only when you ask. You can type a postal code instead, and nothing about your vehicle is sent with it.</string>
+
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
