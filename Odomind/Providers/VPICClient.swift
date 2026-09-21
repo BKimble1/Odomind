@@ -108,6 +108,28 @@ struct VPICClient: VehicleIdentificationProvider {
         return Array(Set(names)).sorted()
     }
 
+    /// Every model for a make, no year. vPIC answers this directly.
+    func models(make: String) async throws -> [String] {
+        let trimmedMake = make.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMake.isEmpty else { return [] }
+
+        var components = URLComponents(
+            url: baseURL
+                .appendingPathComponent("getmodelsformake")
+                .appendingPathComponent(trimmedMake),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [URLQueryItem(name: "format", value: "json")]
+
+        guard let url = components?.url else { return [] }
+        let data = try await fetch(url)
+        guard let envelope = try? JSONDecoder().decode(VPICEnvelope.self, from: data) else {
+            throw ProviderError.unreadableResponse("Unexpected response shape.")
+        }
+        let names = envelope.results.compactMap { $0["Model_Name"]?.stringValue }
+        return Array(Set(names)).sorted()
+    }
+
     // MARK: - Transport
 
     /// One request with bounded retry.

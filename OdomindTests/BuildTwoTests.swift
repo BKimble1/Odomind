@@ -78,29 +78,10 @@ final class BuildTwoTests: XCTestCase {
     }
 
     // MARK: - Search parsing
-
-    func testAQueryIsParsedWhicheverOrderItIsTypedIn() {
-        let reference = Date(timeIntervalSince1970: 1_790_000_000)
-        for text in ["2010 Jeep Wrangler", "jeep wrangler 2010", "Wrangler 2010 JEEP"] {
-            let parsed = ParsedVehicleQuery.parse(text, now: reference)
-            XCTAssertEqual(parsed.modelYear, 2010, "failed on \(text)")
-            XCTAssertEqual(parsed.make, "Jeep", "failed on \(text)")
-            XCTAssertEqual(parsed.remainder.lowercased(), "wrangler", "failed on \(text)")
-        }
-    }
-
-    func testALongMakeNameWinsOverASubstringOfIt() {
-        let parsed = ParsedVehicleQuery.parse("2018 Land Rover Discovery")
-        XCTAssertEqual(parsed.make, "Land Rover")
-        XCTAssertEqual(parsed.remainder.lowercased(), "discovery")
-    }
-
-    func testAnImplausibleYearIsNotTreatedAsOne() {
-        // A part number should not be mistaken for a model year.
-        let reference = Date(timeIntervalSince1970: 1_790_000_000)
-        let parsed = ParsedVehicleQuery.parse("Jeep filter 2099", now: reference)
-        XCTAssertNil(parsed.modelYear)
-    }
+    //
+    // The planner replaced ParsedVehicleQuery. Its behaviour is covered in
+    // depth by OdomindCore's VehicleSearchMatchingTests, which run against the
+    // real generated index; what is kept here is the app-level shape.
 
     // MARK: - Receipt reading
 
@@ -413,35 +394,106 @@ final class BuildTwoTests: XCTestCase {
 @MainActor
 final class VehicleSearchTests: XCTestCase {
 
+    /// A model with the real bundled index loaded, because an empty index
+    /// exercises a different path than the app ever takes.
+    private func makeSearch(_ provider: VehicleIdentificationProvider) async -> VehicleSearchModel {
+        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+        await search.loadIndex()
+        return search
+    }
+
+    // MARK: - The thing Build 3 exists to fix
+
+    func testAModelNameAloneReachesTheProviderWithoutAYear() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        // No year, no make. Build 2 answered this with "type more".
+        search.search("wrangler", debounce: .zero)
+
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called, "a bare model name must reach the provider")
+
+        await provider.answer(make: "JEEP", with: ["Wrangler", "Wrangler JK", "Cherokee"])
+        try await waitUntil { if case .results = search.state { return true }; return false }
+
+        guard case .results(let results) = search.state else {
+            return XCTFail("expected results, got \(search.state)")
+        }
+        XCTAssertEqual(results.first?.model, "Wrangler")
+        XCTAssertNil(results.first?.modelYear, "the year is asked for after selection, not before searching")
+    }
+
+    func testExtraTrimWordsNarrowRatherThanEliminate() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("2010 Jeep Wrangler Unlimited Sport", debounce: .zero)
+        _ = await provider.waitForCall(make: "JEEP")
+        await provider.answer(make: "JEEP", with: ["Wrangler", "Cherokee", "Compass"])
+        try await waitUntil { if case .results = search.state { return true }; return false }
+
+        guard case .results(let results) = search.state else {
+            return XCTFail("expected results, got \(search.state)")
+        }
+        XCTAssertEqual(results.first?.model, "Wrangler", "the trim words must not delete the model")
+        XCTAssertEqual(results.first?.modelYear, 2010)
+        XCTAssertEqual(search.trimHint, "unlimited sport", "the extra words become a refinement")
+    }
+
+    func testAMakeAloneListsWhatItBuilds() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("Jeep", debounce: .zero)
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called)
+    }
+
+    func testShorthandResolvesToTheRealMake() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("chevy", debounce: .zero)
+        let called = await provider.waitForCall(make: "CHEVROLET")
+        XCTAssertTrue(called, "chevy should be asked about as Chevrolet")
+    }
+
+    func testPartOfAMakeSuggestsWithoutAskingTheProvider() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("jee", debounce: .zero)
+        try await Task.sleep(nanoseconds: 150_000_000)
+
+        guard case .makeSuggestions(let makes) = search.state else {
+            return XCTFail("expected make suggestions, got \(search.state)")
+        }
+        XCTAssertTrue(makes.contains("JEEP"))
+        let count = await provider.callCount()
+        XCTAssertEqual(count, 0, "suggesting a make needs no request")
+    }
+
+    // MARK: - Races
+
     func testASlowAnswerForAnEarlierQueryIsDiscarded() async throws {
         let provider = ScriptedModelProvider()
-        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+        let search = await makeSearch(provider)
 
-        // First query, for Jeep. Let it reach the provider, then leave it
-        // hanging — this is the "jee" typed a moment ago.
         search.search("2010 Jeep", debounce: .zero)
-        let jeepCalled = await provider.waitForCall(make: "Jeep")
-        XCTAssertTrue(jeepCalled, "the first search should have reached the provider")
+        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
 
-        // Second query, for Ford. This is what the owner actually wants.
         search.search("2010 Ford", debounce: .zero)
-        let fordCalled = await provider.waitForCall(make: "Ford")
-        XCTAssertTrue(fordCalled, "the second search should have reached the provider")
+        XCTAssertTrue(await provider.waitForCall(make: "FORD"))
 
-        // Now the newer one answers first, then the stale one answers late.
-        await provider.answer(make: "Ford", with: ["F-150", "Explorer"])
+        await provider.answer(make: "FORD", with: ["F-150", "Explorer"])
         try await waitUntil { if case .results = search.state { return true }; return false }
-        guard case .results(let ford) = search.state else {
-            return XCTFail("expected Ford results, got \(search.state)")
-        }
-        XCTAssertEqual(ford.map(\.model), ["Explorer", "F-150"])
 
-        await provider.answer(make: "Jeep", with: ["Wrangler"])
-        // Give the stale answer every chance to land.
+        await provider.answer(make: "JEEP", with: ["Wrangler"])
         try await Task.sleep(nanoseconds: 300_000_000)
 
         guard case .results(let still) = search.state else {
-            return XCTFail("the state should still hold the newer results, got \(search.state)")
+            return XCTFail("expected the newer results to stand, got \(search.state)")
         }
         XCTAssertEqual(
             still.map(\.model), ["Explorer", "F-150"],
@@ -449,16 +501,69 @@ final class VehicleSearchTests: XCTestCase {
         )
     }
 
-    func testTheSameMakeAndYearIsAskedForOnce() async throws {
+    func testClearingTheFieldInvalidatesWhatIsInFlight() async throws {
+        // The Build 2 defect: the sequence number advanced only once a query
+        // was complete enough to act on, so clearing the field left the older
+        // request eligible to land on an empty screen.
         let provider = ScriptedModelProvider()
-        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+        let search = await makeSearch(provider)
+
+        search.search("2010 Jeep", debounce: .zero)
+        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+
+        search.search("", debounce: .zero)
+        await provider.answer(make: "JEEP", with: ["Wrangler"])
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        if case .results = search.state {
+            XCTFail("a cleared field must not be filled in by an older answer")
+        }
+    }
+
+    func testBackspacingIntoAnIncompleteQueryInvalidatesToo() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("2010 Jeep", debounce: .zero)
+        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+
+        // Down to something that only suggests makes and makes no request.
+        search.search("j", debounce: .zero)
+        await provider.answer(make: "JEEP", with: ["Wrangler"])
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        if case .results = search.state {
+            XCTFail("an older answer must not land on an incomplete query")
+        }
+    }
+
+    func testLeavingTheScreenInvalidatesWhatIsInFlight() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("2010 Jeep", debounce: .zero)
+        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+
+        search.cancel()
+        await provider.answer(make: "JEEP", with: ["Wrangler"])
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        if case .results = search.state {
+            XCTFail("a dismissed screen must not be updated by a late answer")
+        }
+    }
+
+    // MARK: - Caching and failure
+
+    func testTheSameMakeIsAskedForOnce() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
 
         search.search("2010 Jeep Wr", debounce: .zero)
-        _ = await provider.waitForCall(make: "Jeep")
-        await provider.answer(make: "Jeep", with: ["Wrangler", "Grand Cherokee"])
+        _ = await provider.waitForCall(make: "JEEP")
+        await provider.answer(make: "JEEP", with: ["Wrangler", "Grand Cherokee"])
         try await waitUntil { if case .results = search.state { return true }; return false }
 
-        // Narrowing the query filters the cached list rather than asking again.
         search.search("2010 Jeep Wrangler", debounce: .zero)
         try await waitUntil {
             if case .results(let r) = search.state { return r.count == 1 }
@@ -468,18 +573,32 @@ final class VehicleSearchTests: XCTestCase {
         XCTAssertEqual(count, 1, "a make and year should be asked for once per session")
     }
 
-    func testAQueryWithoutAYearAndMakeNeverReachesTheProvider() async throws {
-        let provider = ScriptedModelProvider()
-        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+    func testAProviderOutageIsReportedAsOneRatherThanAsNoMatch() async throws {
+        // Distinguishing "no such model" from "the service is down" is the
+        // difference between a useful message and a wrong one.
+        let provider = StubIdentificationProvider(error: .notConnected)
+        let search = await makeSearch(provider)
 
-        search.search("wrangler", debounce: .zero)
-        try await Task.sleep(nanoseconds: 200_000_000)
+        search.search("2010 Jeep Wrangler", debounce: .zero)
+        try await waitUntil { if case .offline = search.state { return true }; return false }
 
-        guard case .needsMoreDetail = search.state else {
-            return XCTFail("expected a prompt for more detail, got \(search.state)")
+        guard case .offline = search.state else {
+            return XCTFail("expected an offline state, got \(search.state)")
         }
-        let count = await provider.callCount()
-        XCTAssertEqual(count, 0, "an incomplete query must not produce a request")
+    }
+
+    func testAnEmptyProviderAnswerIsReportedAsNoMatch() async throws {
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("2010 Jeep Wrangler", debounce: .zero)
+        _ = await provider.waitForCall(make: "JEEP")
+        await provider.answer(make: "JEEP", with: [])
+        try await waitUntil { if case .empty = search.state { return true }; return false }
+
+        guard case .empty = search.state else {
+            return XCTFail("expected an empty state, got \(search.state)")
+        }
     }
 
     /// Polls a condition on the main actor, so a test never sleeps longer than

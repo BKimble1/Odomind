@@ -72,4 +72,19 @@ protocol VehicleIdentificationProvider: Sendable {
 
     func decode(vin: String, modelYear: Int?) async throws -> VehicleDecodeResult
     func models(make: String, modelYear: Int) async throws -> [String]
+
+    /// Every model a make has built, with no year supplied.
+    ///
+    /// This is what lets somebody type "Wrangler" and get somewhere. Build 2
+    /// had no such call, which is why it demanded a year before it would ask
+    /// the provider anything — a requirement that turned out to be
+    /// unnecessary rather than unavoidable: vPIC's GetModelsForMake answers
+    /// without one, and a live probe returned 24 Jeep models that way.
+    func models(make: String) async throws -> [String]
+}
+
+extension VehicleIdentificationProvider {
+    /// Providers written before the yearless call existed still compile; they
+    /// simply offer nothing rather than breaking the search.
+    func models(make: String) async throws -> [String] { [] }
 }

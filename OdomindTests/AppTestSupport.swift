@@ -98,6 +98,13 @@ struct StubIdentificationProvider: VehicleIdentificationProvider {
         if let error { throw error }
         return []
     }
+
+    /// Also throws. Without this the yearless path would quietly take the
+    /// protocol's default and an outage would look like "no such model".
+    func models(make: String) async throws -> [String] {
+        if let error { throw error }
+        return []
+    }
 }
 
 /// Serves recorded responses to `URLSession` so provider tests never touch the
@@ -182,6 +189,12 @@ actor ScriptedModelProvider: VehicleIdentificationProvider {
     }
 
     nonisolated func models(make: String, modelYear: Int) async throws -> [String] {
+        try await park(make: make)
+    }
+
+    /// The yearless call Build 3 added. Parked under the same key, because
+    /// which make was asked about is what a test is steering.
+    nonisolated func models(make: String) async throws -> [String] {
         try await park(make: make)
     }
 

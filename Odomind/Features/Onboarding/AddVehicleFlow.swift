@@ -145,7 +145,7 @@ private struct FindVehicleStep: View {
     var body: some View {
         Form {
             Section {
-                TextField("Try “2010 Jeep Wrangler”", text: $query)
+                TextField("Search make or model", text: $query)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.words)
                     .accessibilityIdentifier("addVehicle.search")
@@ -158,7 +158,7 @@ private struct FindVehicleStep: View {
                 // One quiet line, once — not a consent modal per keystroke.
                 // The VIN path keeps its own explicit disclosure, because a
                 // VIN identifies a specific vehicle and a model name does not.
-                Text("Searching sends the year and make to \(model.identificationProvider.displayName) (\(model.identificationProvider.contactedHost)) to list its models. Nothing about you is sent.")
+                Text("Searching sends the make to \(model.identificationProvider.displayName) (\(model.identificationProvider.contactedHost)) to list its models, and the year too if you typed one. Nothing about you is sent.")
             }
 
             if let search { resultsSection(search) }
@@ -214,10 +214,13 @@ private struct FindVehicleStep: View {
         .sheet(isPresented: $showingVINEntry) {
             VINEntryView { result in apply(result) }
         }
-        .onAppear {
+        .task {
             if search == nil {
                 search = VehicleSearchModel(provider: model.identificationProvider, clock: model.clock)
             }
+            // Off the main actor, and never blocking the field: searching
+            // works before this lands, against the provider alone.
+            await search?.loadIndex()
         }
         .onDisappear { search?.cancel() }
     }
@@ -227,8 +230,28 @@ private struct FindVehicleStep: View {
         switch search.state {
         case .idle:
             EmptyView()
-        case .needsMoreDetail(let hint):
-            Section { QuietNote(text: hint, symbolName: "text.magnifyingglass") }
+        case .makeSuggestions(let makes):
+            Section {
+                ForEach(makes, id: \.self) { make in
+                    Button {
+                        query = make.capitalized
+                        search.search(query)
+                    } label: {
+                        HStack {
+                            Text(make.capitalized).foregroundStyle(Theme.Palette.primaryText)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(Theme.Palette.secondaryText)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("addVehicle.makeSuggestion")
+                }
+            } header: {
+                Text("Makes")
+            }
         case .searching:
             Section {
                 HStack {
@@ -259,7 +282,7 @@ private struct FindVehicleStep: View {
                                 .foregroundStyle(Theme.Palette.primaryText)
                             Spacer()
                             if draft.identity.model == result.model,
-                               draft.identity.modelYear == result.modelYear {
+                               result.modelYear == nil || draft.identity.modelYear == result.modelYear {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Theme.Palette.accent)
                             }
@@ -275,13 +298,32 @@ private struct FindVehicleStep: View {
         }
     }
 
+    /// Replaces the whole identity, and drops everything that described the
+    /// vehicle that is no longer selected.
+    ///
+    /// Build 2 carried the previous VIN and trim across, and left
+    /// `configuration` — engine, drivetrain, transmission from an earlier VIN
+    /// decode — entirely untouched. Choose a Wrangler by VIN, change your mind
+    /// and pick a Camry, and the Camry inherited the Jeep's VIN and its 3.8
+    /// litre four-wheel drive. A trim belongs to the model it was typed for;
+    /// so does a VIN; so does everything a decode produced.
     private func select(_ result: VehicleSearchResult) {
-        var identity = result.identity
-        // Anything the owner had already supplied that the search does not
-        // carry — a trim they typed — is kept.
-        identity.trim = draft.identity.trim
-        identity.vin = draft.identity.vin
-        draft.identity = identity
+        let sameVehicle = draft.identity.make.caseInsensitiveCompare(result.make) == .orderedSame
+            && draft.identity.model.caseInsensitiveCompare(result.model) == .orderedSame
+
+        guard !sameVehicle else {
+            // Re-tapping the same row should not discard what the owner has
+            // already confirmed about it.
+            draft.identity.modelYear = result.modelYear ?? draft.identity.modelYear
+            return
+        }
+
+        draft.identity = result.identity
+        draft.configuration = VehicleConfiguration()
+        draft.decodeResult = nil
+        // A trim word the search carried is a hint about *this* model, and is
+        // applied by the confirm step rather than inherited from the last one.
+        draft.identity.trim = nil
     }
 
     private func apply(_ result: VehicleDecodeResult) {
