@@ -162,9 +162,23 @@ private struct FindVehicleStep: View {
                 Text("Searching sends the make to \(model.identificationProvider.displayName) (\(model.identificationProvider.contactedHost)) to list its models, and the year too if you typed one. Nothing about you is sent.")
             }
 
-            if let search { resultsSection(search) }
-
+            // What was picked, and what Odomind still needs about it, above
+            // the list it was picked from. A query like "wrangler" brings
+            // back up to twenty-five models; once one of them is chosen, the
+            // other twenty-four are no longer the most important thing on the
+            // screen, and the next question should not be underneath them.
             if draft.isReadyToSave {
+                Section {
+                    ValueRow(label: "Selected", value: draft.identity.displayName)
+                    TextField("Nickname (optional)", text: $draft.nickname)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("addVehicle.nickname")
+                } header: {
+                    Text("Your vehicle")
+                } footer: {
+                    Text("A nickname like \"the Jeep\" is shown instead of the year, make and model.")
+                }
+
                 Section {
                     ModelYearStrip(
                         years: modelYears,
@@ -181,18 +195,7 @@ private struct FindVehicleStep: View {
                 }
             }
 
-            if draft.isReadyToSave {
-                Section {
-                    ValueRow(label: "Selected", value: draft.identity.displayName)
-                    TextField("Nickname (optional)", text: $draft.nickname)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("addVehicle.nickname")
-                } header: {
-                    Text("Your vehicle")
-                } footer: {
-                    Text("A nickname like \"the Jeep\" is shown instead of the year, make and model.")
-                }
-            }
+            if let search { resultsSection(search) }
 
             Section {
                 Button {
