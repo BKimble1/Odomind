@@ -419,6 +419,9 @@ struct WeekStrip: View {
     @Environment(AppModel.self) private var model
     let select: (Date) -> Void
 
+    /// See the note beside the day number below.
+    @ScaledMetric(relativeTo: .subheadline) private var dayCircle: CGFloat = 30
+
     var body: some View {
         let today = model.calendar.startOfDay(for: model.clock.now)
         let days = (0..<7).compactMap { model.calendar.date(byAdding: .day, value: $0, to: today) }
@@ -437,7 +440,18 @@ struct WeekStrip: View {
                         Text(Format.dayNumber(day, calendar: model.calendar))
                             .font(.subheadline.weight(isToday ? .bold : .regular))
                             .foregroundStyle(isToday ? Theme.Palette.onAccent : Theme.Palette.primaryText)
-                            .frame(width: 30, height: 30)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            // Scales with the text and stops at a size seven of
+                            // them still fit across a phone; the number shrinks
+                            // inside it rather than truncating. At AccessibilityL a
+                            // subheadline is about 34pt, so a fixed 30pt circle
+                            // turned every date on the week strip into an ellipsis —
+                            // including today's, inside the filled circle.
+                            .frame(
+                                width: min(dayCircle, Theme.minimumTapTarget),
+                                height: min(dayCircle, Theme.minimumTapTarget)
+                            )
                             .background(
                                 isToday ? AnyShapeStyle(Theme.Palette.accent) : AnyShapeStyle(Color.clear),
                                 in: Circle()

@@ -120,6 +120,8 @@ private struct DayCell: View {
     let select: () -> Void
 
     @Environment(AppModel.self) private var model
+    /// See the note beside the day number below.
+    @ScaledMetric(relativeTo: .subheadline) private var dayCircle: CGFloat = 30
 
     var body: some View {
         Button(action: select) {
@@ -127,7 +129,18 @@ private struct DayCell: View {
                 Text(Format.dayNumber(day, calendar: model.calendar))
                     .font(.subheadline.weight(isToday ? .bold : .regular))
                     .foregroundStyle(numberColour)
-                    .frame(width: 30, height: 30)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    // Scales with the text and stops at a size seven of
+                    // them still fit across a phone; the number shrinks
+                    // inside it rather than truncating. At AccessibilityL a
+                    // subheadline is about 34pt, so a fixed 30pt circle
+                    // turned every date on the week strip into an ellipsis —
+                    // including today's, inside the filled circle.
+                    .frame(
+                        width: min(dayCircle, Theme.minimumTapTarget),
+                        height: min(dayCircle, Theme.minimumTapTarget)
+                    )
                     .background(background, in: Circle())
                     .overlay {
                         // Today keeps a ring even when another day is
