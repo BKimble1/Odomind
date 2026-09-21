@@ -23,7 +23,8 @@ extension StoredVehicle {
             configurationData: try StoreCoding.encode(vehicle.configuration),
             replacementsData: try StoreCoding.encode(vehicle.odometerReplacements),
             declaredTypicalDistanceAmount: declaredTypicalDistance?.amount,
-            declaredTypicalDistanceUnitRaw: declaredTypicalDistance?.unit.rawValue
+            declaredTypicalDistanceUnitRaw: declaredTypicalDistance?.unit.rawValue,
+            artworkData: try StoreCoding.encodeOptional(vehicle.artwork)
         )
     }
 
@@ -40,6 +41,7 @@ extension StoredVehicle {
         replacementsData = try StoreCoding.encode(vehicle.odometerReplacements)
         declaredTypicalDistanceAmount = declaredTypicalDistance?.amount
         declaredTypicalDistanceUnitRaw = declaredTypicalDistance?.unit.rawValue
+        artworkData = try StoreCoding.encodeOptional(vehicle.artwork)
     }
 
     func toDomain(problems: inout [StoreProblem]) -> Vehicle {
@@ -64,6 +66,12 @@ extension StoredVehicle {
             context: "Vehicle \(id) odometer replacements",
             problems: &problems
         )
+        let artwork = StoreCoding.decodeOptionalOrFallback(
+            VehicleArtworkPreference.self,
+            from: artworkData,
+            context: "Vehicle \(id) artwork",
+            problems: &problems
+        )
         return Vehicle(
             id: id,
             nickname: nickname,
@@ -74,6 +82,7 @@ extension StoredVehicle {
             inServiceOn: inServiceOn,
             odometerReplacements: replacements,
             photoAttachmentID: photoAttachmentID,
+            artwork: artwork,
             isDemo: isDemo,
             createdAt: createdAt,
             sortIndex: sortIndex

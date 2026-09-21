@@ -36,6 +36,9 @@ final class StoredVehicle {
     var configurationData: Data = Data()
     /// `[OdometerReplacement]` as JSON.
     var replacementsData: Data = Data()
+    /// `VehicleArtworkPreference` as JSON. Added in Build 2; defaulted, so a
+    /// Build 1 store opens with it empty and the owner gets the defaults.
+    var artworkData: Data = Data()
 
     /// Owner's stated typical distance per month, used for estimates when their
     /// readings are too sparse.
@@ -56,7 +59,8 @@ final class StoredVehicle {
         configurationData: Data,
         replacementsData: Data,
         declaredTypicalDistanceAmount: Int?,
-        declaredTypicalDistanceUnitRaw: String?
+        declaredTypicalDistanceUnitRaw: String?,
+        artworkData: Data = Data()
     ) {
         self.id = id
         self.nickname = nickname
@@ -72,6 +76,7 @@ final class StoredVehicle {
         self.replacementsData = replacementsData
         self.declaredTypicalDistanceAmount = declaredTypicalDistanceAmount
         self.declaredTypicalDistanceUnitRaw = declaredTypicalDistanceUnitRaw
+        self.artworkData = artworkData
     }
 }
 
@@ -295,6 +300,14 @@ final class StoredSettings {
     var catalogVersionLastSeen: String?
     /// `ReminderSettings` as JSON.
     var reminderSettingsData: Data = Data()
+    /// `AppPreferences` as JSON.
+    ///
+    /// Added in Build 2. It carries a default, which is what makes this an
+    /// additive change SwiftData can infer: a Build 1 store opens with an
+    /// empty value here and `AppPreferences` decodes an empty column to its
+    /// defaults. No stage in `OdomindMigrationPlan` is needed, and none was
+    /// added — a stage that reshapes nothing is a place for a mistake to hide.
+    var preferencesData: Data = Data()
 
     static let singletonID = UUID(uuidString: "0D0E0D0E-0000-4000-8000-000000000001")!
 
@@ -303,12 +316,14 @@ final class StoredSettings {
         selectedVehicleID: UUID?,
         hasCompletedOnboarding: Bool,
         catalogVersionLastSeen: String?,
-        reminderSettingsData: Data
+        reminderSettingsData: Data,
+        preferencesData: Data = Data()
     ) {
         self.id = id
         self.selectedVehicleID = selectedVehicleID
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.catalogVersionLastSeen = catalogVersionLastSeen
         self.reminderSettingsData = reminderSettingsData
+        self.preferencesData = preferencesData
     }
 }

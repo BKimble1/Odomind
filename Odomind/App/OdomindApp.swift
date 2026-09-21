@@ -12,7 +12,7 @@ struct OdomindApp: App {
             Group {
                 switch launch {
                 case .loading:
-                    LaunchProgressView()
+                    LaunchBrandingView()
                 case .ready(let model):
                     RootView()
                         .environment(model)
@@ -33,8 +33,19 @@ struct OdomindApp: App {
                     router.follow(link)
                 }
             }
-            .preferredColorScheme(Self.forcedColorScheme)
+            .odomindAppearance(appearance)
         }
+    }
+
+    /// The appearance actually in force.
+    ///
+    /// The owner's stored choice once there is a model to read it from, the
+    /// system default before that, and the UI-testing override above
+    /// everything so the screenshot pass can capture both appearances.
+    private var appearance: AppearancePreference {
+        if let forced = Self.forcedAppearance { return forced }
+        guard case .ready(let model) = launch else { return .system }
+        return model.snapshot.settings.preferences.appearance
     }
 
     /// Honours `-odomind-appearance dark` (or `light`) under UI testing.
@@ -45,8 +56,8 @@ struct OdomindApp: App {
     /// one, which is a quiet way to ship an unverified dark mode. Asking the
     /// app directly cannot silently do nothing.
     ///
-    /// `nil` everywhere else, so the app follows the system as it should.
-    private static var forcedColorScheme: ColorScheme? {
+    /// `nil` everywhere else, so the app follows the owner's own choice.
+    private static var forcedAppearance: AppearancePreference? {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains(AppModel.uiTestingArgument),
               let index = arguments.firstIndex(of: "-odomind-appearance"),
@@ -85,16 +96,47 @@ enum LaunchState {
     case failed(String)
 }
 
-private struct LaunchProgressView: View {
+/// The app's own copy of the launch screen.
+///
+/// Deliberately identical to the static one in `Info.plist` — same emblem,
+/// same white, same position — so the handover is invisible. It adds the one
+/// thing a `UILaunchScreen` cannot draw: the line of text at the bottom.
+///
+/// There is no progress indicator, no percentage and no timer. This is on
+/// screen for exactly as long as opening the local store takes, and the app
+/// enters the moment that finishes. A branded screen that outstays the work it
+/// is covering is an advertisement, not a launch.
+private struct LaunchBrandingView: View {
     var body: some View {
-        VStack(spacing: Theme.Spacing.large) {
-            ProgressView()
-            Text("Opening your garage…")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        ZStack {
+            // Named rather than the generated asset symbol: this project's
+            // build settings do not turn on Swift asset symbol generation, and
+            // a missing symbol is a build break rather than a missing image.
+            Color("LaunchBackground")
+                .ignoresSafeArea()
+
+            Image("LaunchEmblem")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 168)
+                .accessibilityHidden(true)
+
+            VStack {
+                Spacer()
+                Text("Powered by Idlery")
+                    .font(.footnote)
+                    // Fixed against the white launch background rather than
+                    // semantic, because this screen is white in both
+                    // appearances and `.secondary` would invert with the
+                    // system setting and vanish.
+                    .foregroundStyle(Color(uiColor: UIColor(hex: 0x536166)))
+                    .padding(.bottom, Theme.Spacing.section)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
+        // One element, read once. The emblem is decoration and the sentence is
+        // the content.
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Odomind. Powered by Idlery."))
     }
 }
 

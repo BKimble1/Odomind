@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 import OdomindCore
 
 /// Where the app should be.
@@ -11,90 +12,152 @@ import OdomindCore
 /// initializer. SwiftUI only ever reads and writes it from the main actor.
 @Observable
 final class NavigationRouter {
+    /// Build 2's four tabs.
+    ///
+    /// History folded into Calendar: past work and future work are the same
+    /// question asked in two directions, and keeping them apart meant a
+    /// screen of filters over an empty state.
     enum Tab: String, Hashable, CaseIterable {
-        case today
-        case maintenance
+        case home
+        case jobs
         case garage
-        case history
+        case calendar
 
         var title: String {
             switch self {
-            case .today: return "Today"
-            case .maintenance: return "Maintenance"
+            case .home: return "Home"
+            case .jobs: return "Jobs"
             case .garage: return "Garage"
-            case .history: return "History"
+            case .calendar: return "Calendar"
             }
         }
 
         var symbolName: String {
             switch self {
-            case .today: return "car.side"
-            case .maintenance: return "wrench.and.screwdriver"
-            case .garage: return "building.columns"
-            case .history: return "clock.arrow.circlepath"
+            case .home: return "house"
+            case .jobs: return "wrench.and.screwdriver"
+            // Not `building.columns`. A bank is not a garage, and the brief
+            // was right that it made the screen read as an admin section.
+            case .garage: return "car.2"
+            case .calendar: return "calendar"
             }
         }
     }
 
-    var selectedTab: Tab = .today
-    var maintenancePath: [MaintenanceRoute] = []
-    var garagePath: [GarageRoute] = []
-    var historyPath: [HistoryRoute] = []
+    var selectedTab: Tab = .home
 
-    /// Requested by a deep link; the Today screen picks it up and presents.
+    // One path per tab. `NavigationPath` rather than a typed array because a
+    // stack routinely mixes kinds — a job opened from Home leads to a vehicle's
+    // specifications, and Settings can be reached from two different tabs.
+    var homePath = NavigationPath()
+    var jobsPath = NavigationPath()
+    var garagePath = NavigationPath()
+    var calendarPath = NavigationPath()
+
+    /// Requested by a deep link; `RootView` picks it up and selects.
     var pendingVehicleSelection: UUID?
     var presentMileageEntry = false
     var presentServiceLog = false
+    /// Set when something should open the paywall — a gated action, or the
+    /// Pro row in Settings.
+    var presentPaywall = false
 
     func follow(_ link: DeepLink) {
         switch link {
         case .vehicle(let id):
             pendingVehicleSelection = id
-            selectedTab = .today
+            selectedTab = .garage
+            garagePath = NavigationPath()
+            garagePath.append(VehicleRoute.vehicle(id))
         case .task(let vehicleID, let planItemID):
             pendingVehicleSelection = vehicleID
-            selectedTab = .maintenance
-            maintenancePath = [.task(planItemID)]
+            selectedTab = .jobs
+            jobsPath = NavigationPath()
+            jobsPath.append(JobRoute.task(planItemID))
         case .updateMileage(let vehicleID):
             pendingVehicleSelection = vehicleID
-            selectedTab = .today
+            selectedTab = .home
             presentMileageEntry = true
         case .logService(let vehicleID):
             pendingVehicleSelection = vehicleID
-            selectedTab = .today
+            selectedTab = .home
             presentServiceLog = true
         }
     }
 
+    /// Opens a job from anywhere, in the tab the owner is already looking at.
+    ///
+    /// Pushing onto the current stack rather than jumping to Jobs keeps the
+    /// back button meaning what it looks like it means.
+    func openJob(_ planItemID: UUID) {
+        let route = JobRoute.task(planItemID)
+        switch selectedTab {
+        case .home: homePath.append(route)
+        case .jobs: jobsPath.append(route)
+        case .garage: garagePath.append(route)
+        case .calendar: calendarPath.append(route)
+        }
+    }
+
+    func openSettings() {
+        selectedTab = .calendar
+        calendarPath.append(SettingsRoute.settings)
+    }
+
+    func openProposals() {
+        selectedTab = .jobs
+        jobsPath.append(JobRoute.proposals)
+    }
+
     func resetPaths() {
-        maintenancePath = []
-        garagePath = []
-        historyPath = []
+        homePath = NavigationPath()
+        jobsPath = NavigationPath()
+        garagePath = NavigationPath()
+        calendarPath = NavigationPath()
     }
 }
 
-enum MaintenanceRoute: Hashable {
+/// Maintenance work, reachable from every tab.
+enum JobRoute: Hashable {
     case task(UUID)
     case addTask
     case customTask
     case proposals
+    /// The parts side of a job, or the standalone Parts search.
+    case parts(UUID?)
 }
 
-enum GarageRoute: Hashable {
+/// A vehicle and the screens that belong to it.
+enum VehicleRoute: Hashable {
     case vehicle(UUID)
     case specifications(UUID)
     case configuration(UUID)
     case odometerHistory(UUID)
+    case artwork(UUID)
+}
+
+/// Recorded work.
+enum RecordRoute: Hashable {
+    case record(UUID)
+    case export
+}
+
+/// Everything under the gear.
+///
+/// A single enum used by whichever stack presents Settings, so the rows inside
+/// it do not have to know which tab they were opened from.
+enum SettingsRoute: Hashable {
     case settings
     case reminders
+    case appearance
+    case calendar
+    case units
     case dataSources
     case backup
     case about
     case privacy
     case diagnostics
-}
-
-enum HistoryRoute: Hashable {
-    case record(UUID)
-    case export
+    case pro
+    case sampleData
+    case catalogUpdates
 }

@@ -8,12 +8,16 @@ struct AppSettings: Hashable, Sendable {
     var hasCompletedOnboarding: Bool
     var catalogVersionLastSeen: String?
     var reminders: ReminderSettings
+    /// Everything Build 2 added, carried as one tolerant JSON blob. See
+    /// `AppPreferences` for why it is shaped that way.
+    var preferences: AppPreferences
 
     static let initial = AppSettings(
         selectedVehicleID: nil,
         hasCompletedOnboarding: false,
         catalogVersionLastSeen: nil,
-        reminders: .default
+        reminders: .default,
+        preferences: .default
     )
 }
 
@@ -170,6 +174,15 @@ final class OdomindStore {
                 from: row.reminderSettingsData,
                 fallback: .default,
                 context: "Reminder settings",
+                problems: &problems
+            ),
+            // A Build 1 store has no value here at all, which decodes to the
+            // defaults rather than reporting a problem.
+            preferences: StoreCoding.decodeOrFallback(
+                AppPreferences.self,
+                from: row.preferencesData,
+                fallback: .default,
+                context: "App preferences",
                 problems: &problems
             )
         )
@@ -387,11 +400,13 @@ final class OdomindStore {
     func save(settings: AppSettings) throws {
         let row = try fetch(StoredSettings.self).first
         let data = try StoreCoding.encode(settings.reminders)
+        let preferencesData = try StoreCoding.encode(settings.preferences)
         if let row {
             row.selectedVehicleID = settings.selectedVehicleID
             row.hasCompletedOnboarding = settings.hasCompletedOnboarding
             row.catalogVersionLastSeen = settings.catalogVersionLastSeen
             row.reminderSettingsData = data
+            row.preferencesData = preferencesData
         } else {
             context.insert(
                 StoredSettings(
@@ -399,7 +414,8 @@ final class OdomindStore {
                     selectedVehicleID: settings.selectedVehicleID,
                     hasCompletedOnboarding: settings.hasCompletedOnboarding,
                     catalogVersionLastSeen: settings.catalogVersionLastSeen,
-                    reminderSettingsData: data
+                    reminderSettingsData: data,
+                    preferencesData: preferencesData
                 )
             )
         }

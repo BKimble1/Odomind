@@ -14,44 +14,14 @@ struct RootView: View {
                 OnboardingView()
             } else {
                 TabView(selection: $router.selectedTab) {
-                    TodayView()
-                        .tabItem {
-                            Label(
-                                NavigationRouter.Tab.today.title,
-                                systemImage: NavigationRouter.Tab.today.symbolName
-                            )
-                        }
-                        .tag(NavigationRouter.Tab.today)
-
-                    MaintenanceView()
-                        .tabItem {
-                            Label(
-                                NavigationRouter.Tab.maintenance.title,
-                                systemImage: NavigationRouter.Tab.maintenance.symbolName
-                            )
-                        }
-                        .tag(NavigationRouter.Tab.maintenance)
-
-                    GarageView()
-                        .tabItem {
-                            Label(
-                                NavigationRouter.Tab.garage.title,
-                                systemImage: NavigationRouter.Tab.garage.symbolName
-                            )
-                        }
-                        .tag(NavigationRouter.Tab.garage)
-
-                    HistoryView()
-                        .tabItem {
-                            Label(
-                                NavigationRouter.Tab.history.title,
-                                systemImage: NavigationRouter.Tab.history.symbolName
-                            )
-                        }
-                        .tag(NavigationRouter.Tab.history)
+                    tab(.home) { HomeView() }
+                    tab(.jobs) { JobsView() }
+                    tab(.garage) { GarageView() }
+                    tab(.calendar) { CalendarView() }
                 }
             }
         }
+        .tint(Theme.Palette.accent)
         .alert(
             model.alert?.title ?? "",
             isPresented: Binding(
@@ -64,23 +34,100 @@ struct RootView: View {
         } message: { alert in
             Text([alert.message, alert.recoverySuggestion].compactMap { $0 }.joined(separator: "\n\n"))
         }
+        .sheet(isPresented: $router.presentPaywall) {
+            PaywallView()
+        }
         .onChange(of: router.pendingVehicleSelection) { _, newValue in
             guard let newValue, model.snapshot.vehicle(id: newValue) != nil else { return }
             model.selectVehicle(newValue)
             router.pendingVehicleSelection = nil
         }
     }
+
+    private func tab<Content: View>(
+        _ tab: NavigationRouter.Tab,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .tabItem { Label(tab.title, systemImage: tab.symbolName) }
+            .tag(tab)
+    }
 }
 
-/// The picker used at the top of Today, Maintenance and History.
+/// Every destination any stack can reach, registered in one place.
 ///
-/// Hidden entirely when there is one vehicle, so single-vehicle use never pays
-/// for multi-vehicle support.
+/// Settings is reachable from Calendar's gear and from a Pro prompt raised on
+/// another tab, and a job opens from Home, Jobs and Calendar alike. Registering
+/// the same set on each stack means a route value works wherever it is pushed,
+/// rather than silently doing nothing because the stack it landed in had never
+/// heard of it.
+struct OdomindDestinations: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(for: JobRoute.self) { route in
+                switch route {
+                case .task(let id): TaskDetailView(planItemID: id)
+                case .addTask: AddTaskView()
+                case .customTask: CustomTaskEditor()
+                case .proposals: ProposalsView()
+                case .parts(let planItemID): PartsView(planItemID: planItemID)
+                }
+            }
+            .navigationDestination(for: VehicleRoute.self) { route in
+                switch route {
+                case .vehicle(let id): VehicleDetailView(vehicleID: id)
+                case .specifications(let id): SpecificationsView(vehicleID: id)
+                case .configuration(let id): ConfigurationEditor(vehicleID: id)
+                case .odometerHistory(let id): OdometerHistoryView(vehicleID: id)
+                case .artwork(let id): VehicleArtworkPicker(vehicleID: id)
+                }
+            }
+            .navigationDestination(for: RecordRoute.self) { route in
+                switch route {
+                case .record(let id): ServiceRecordDetailView(recordID: id)
+                case .export: ExportView()
+                }
+            }
+            .navigationDestination(for: SettingsRoute.self) { route in
+                switch route {
+                case .settings: SettingsView()
+                case .reminders: ReminderSettingsView()
+                case .appearance: AppearanceSettingsView()
+                case .calendar: CalendarSettingsView()
+                case .units: UnitsSettingsView()
+                case .dataSources: DataSourcesView()
+                case .backup: BackupView()
+                case .about: AboutView()
+                case .privacy: PrivacyView()
+                case .diagnostics: DiagnosticsView()
+                case .pro: ProSettingsView()
+                case .sampleData: SampleDataView()
+                case .catalogUpdates: CatalogUpdateSettingsView()
+                }
+            }
+    }
+}
+
+extension View {
+    func odomindDestinations() -> some View {
+        modifier(OdomindDestinations())
+    }
+}
+
+/// The vehicle switcher shown at the top of Home, Jobs and Calendar.
+///
+/// Hidden entirely when there is one real vehicle, so single-vehicle use never
+/// pays for multi-vehicle support. The sample vehicle does not count towards
+/// that: seeding a demo must not conjure a picker the owner did not need.
 struct VehiclePickerBar: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        if model.snapshot.vehicles.count > 1, let selected = model.selectedVehicle {
+        // More than one vehicle the owner actually added, or the sample is
+        // the one selected — otherwise there is nothing to switch between and
+        // the control is a decoy.
+        if let selected = model.selectedVehicle,
+           model.snapshot.vehicles.filter { !$0.isDemo }.count > 1 || selected.isDemo {
             Menu {
                 ForEach(model.snapshot.vehicles) { vehicle in
                     Button {
@@ -102,6 +149,7 @@ struct VehiclePickerBar: View {
                 }
             }
             .accessibilityLabel(Text("Selected vehicle: \(selected.displayName). Double tap to switch."))
+            .accessibilityIdentifier("vehiclePicker")
         }
     }
 }

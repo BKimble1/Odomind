@@ -150,6 +150,9 @@ public struct Vehicle: Codable, Hashable, Sendable, Identifiable {
     public var inServiceOn: Date?
     public var odometerReplacements: [OdometerReplacement]
     public var photoAttachmentID: UUID?
+    /// How this vehicle should be pictured. Optional so a store or backup
+    /// written before Build 2 decodes unchanged; see `VehicleArtworkPreference`.
+    public var artwork: VehicleArtworkPreference?
     public var isDemo: Bool
     public var createdAt: Date
     public var sortIndex: Int
@@ -164,6 +167,7 @@ public struct Vehicle: Codable, Hashable, Sendable, Identifiable {
         inServiceOn: Date? = nil,
         odometerReplacements: [OdometerReplacement] = [],
         photoAttachmentID: UUID? = nil,
+        artwork: VehicleArtworkPreference? = nil,
         isDemo: Bool = false,
         createdAt: Date = Date(),
         sortIndex: Int = 0
@@ -177,6 +181,7 @@ public struct Vehicle: Codable, Hashable, Sendable, Identifiable {
         self.inServiceOn = inServiceOn
         self.odometerReplacements = odometerReplacements
         self.photoAttachmentID = photoAttachmentID
+        self.artwork = artwork
         self.isDemo = isDemo
         self.createdAt = createdAt
         self.sortIndex = sortIndex

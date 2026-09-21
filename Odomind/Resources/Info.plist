@@ -22,10 +22,19 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- The branded launch screen: the emblem on white, centred, static.
+	     No progress bar, no animation, no network. The app's own
+	     LaunchBrandingView reproduces this exactly while the local store
+	     opens, adding the "Powered by Idlery" line the native launch screen
+	     has no way to draw, and hands over the moment state is ready. -->
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
-		<string></string>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchEmblem</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
 	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
