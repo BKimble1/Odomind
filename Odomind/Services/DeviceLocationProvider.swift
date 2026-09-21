@@ -1,6 +1,49 @@
 import CoreLocation
 import Foundation
 
+/// What a screen needs from the device's location, and nothing more.
+///
+/// A protocol exists here for one reason: without it `ShoppingLocationService`
+/// could not be tested. `DeviceLocationProvider` is final and wraps a real
+/// `CLLocationManager`, so every rule about this service — denial told apart
+/// from a temporary error, a timeout that is not a refusal, a second tap that
+/// does not strand the first, an area switched while a fix is still in flight
+/// — was asserted only by reading the code. The brief asks for those to be
+/// tested; this is what makes that possible.
+@MainActor
+protocol LocationFixProviding: AnyObject {
+    var authorizationStatus: CLAuthorizationStatus { get }
+    var isAuthorized: Bool { get }
+    @discardableResult
+    func requestAuthorization(timeout: Duration) async -> CLAuthorizationStatus
+    func fix(maxAge: TimeInterval, timeout: Duration) async -> Result<CLLocation, LocationFailure>
+}
+
+extension LocationFixProviding {
+    @discardableResult
+    func requestAuthorization() async -> CLAuthorizationStatus {
+        await requestAuthorization(timeout: .seconds(60))
+    }
+
+    func fix() async -> Result<CLLocation, LocationFailure> {
+        await fix(maxAge: 300, timeout: .seconds(15))
+    }
+}
+
+/// Why a location could not be had.
+///
+/// At file scope rather than nested, so a test double can name it without
+/// naming the concrete provider.
+enum LocationFailure: Error, Equatable {
+    /// The owner refused. The remedy is Settings, not trying again.
+    case denied
+    case restricted
+    case timedOut
+    /// Something went wrong that is not a refusal — no signal, an airplane
+    /// mode, a transient CoreLocation error. Trying again is reasonable.
+    case unavailable
+}
+
 /// A location request that can be waited on more than once, given up on, and
 /// cancelled.
 ///
@@ -15,14 +58,11 @@ import Foundation
 /// Each waiter here is held under its own token and resumed exactly once, by
 /// whichever comes first: the delegate, the timeout, or cancellation.
 @MainActor
-final class DeviceLocationProvider: NSObject {
+final class DeviceLocationProvider: NSObject, LocationFixProviding {
 
-    enum Failure: Error, Equatable {
-        case denied
-        case restricted
-        case timedOut
-        case unavailable
-    }
+    /// Kept as a name for the file-scope type, so existing call sites and
+    /// `catch` clauses that say `DeviceLocationProvider.Failure` still read.
+    typealias Failure = LocationFailure
 
     private let manager: CLLocationManager
     private var authorizationWaiters: [UUID: CheckedContinuation<CLAuthorizationStatus, Never>] = [:]

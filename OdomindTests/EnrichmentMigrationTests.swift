@@ -82,8 +82,61 @@ final class EnrichmentMigrationTests: XCTestCase {
         let after = try XCTUnwrap(
             model.evaluations(for: vehicleID).first { $0.definitionID == "engine-oil-and-filter" }
         )
-        XCTAssertEqual(after.lastCompletedOdometer, Distance(120_000, .miles))
-        XCTAssertNotNil(after.nextDueOdometer, "the due calculation must still run")
+        XCTAssertEqual(
+            after.lastCompletedOdometer, Distance(120_000, .miles),
+            "the history is recorded whatever else is missing"
+        )
+        XCTAssertEqual(model.serviceRecords(for: vehicleID).count, 1)
+    }
+
+    func testTheDueDateWaitsForTheConfigurationRatherThanBeingGuessed() throws {
+        // I wrote this the other way round first and CI was right to refuse
+        // it. Odomind will not put a due point on an oil change for a vehicle
+        // that has not said it burns fuel — an electric car never needs one,
+        // and inventing a five-thousand-mile interval for a car it knows
+        // nothing about is the guess this whole design exists to avoid. The
+        // job is tracked, the completion is recorded, and the schedule waits
+        // for one answer.
+        let model = try makeModel()
+        let vehicleID = try XCTUnwrap(model.addVehicle(from: bareDraft()))
+        let oil = try XCTUnwrap(
+            model.evaluations(for: vehicleID).first { $0.definitionID == "engine-oil-and-filter" }
+        )
+
+        var draft = ServiceDraft(
+            vehicleID: vehicleID,
+            performedOn: appDate(2026, 6, 15),
+            odometerAmount: 120_000,
+            currencyCode: "USD"
+        )
+        draft.selectedPlanItemIDs = [oil.planItemID]
+        _ = model.saveService(draft)
+
+        let unconfigured = try XCTUnwrap(
+            model.evaluations(for: vehicleID).first { $0.definitionID == "engine-oil-and-filter" }
+        )
+        XCTAssertNil(
+            unconfigured.nextDueOdometer,
+            "no due point until Odomind knows the vehicle burns fuel"
+        )
+
+        // Now the owner answers — or an enrichment provider does. The same
+        // history, and a schedule appears without anything being re-entered.
+        var vehicle = try XCTUnwrap(model.snapshot.vehicle(id: vehicleID))
+        vehicle.configuration.powertrain = .gasoline
+        model.updateVehicle(vehicle)
+
+        let configured = try XCTUnwrap(
+            model.evaluations(for: vehicleID).first { $0.definitionID == "engine-oil-and-filter" }
+        )
+        XCTAssertEqual(
+            configured.lastCompletedOdometer, Distance(120_000, .miles),
+            "the completion survives the answer"
+        )
+        XCTAssertEqual(
+            configured.nextDueOdometer, Distance(125_000, .miles),
+            "and the due point follows from it"
+        )
     }
 
     func testAProviderOutageDoesNotPreventLoggingService() throws {

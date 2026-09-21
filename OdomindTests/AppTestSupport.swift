@@ -239,10 +239,20 @@ struct StubConfigurationOptionProvider: VehicleConfigurationOptionProvider {
     /// Set to hold the answer until the gate is opened, so a test can move on
     /// to a different vehicle while the first request is still in flight.
     var gate: AsyncGate?
+    /// When set, only this make is answered and everything else comes back
+    /// empty.
+    ///
+    /// Without it a staleness test cannot tell a leak from a correct answer:
+    /// a stub that hands the same list to every question makes the second
+    /// vehicle's own reply look exactly like the first vehicle's arriving
+    /// late. That is how the first version of this passed for the wrong
+    /// reason — or rather, failed for one.
+    var onlyForMake: String?
 
     func options(modelYear: Int, make: String, model: String) async throws -> [VehicleConfigurationOption] {
         if let gate { await gate.wait() }
         if let error { throw error }
+        if let onlyForMake, make.caseInsensitiveCompare(onlyForMake) != .orderedSame { return [] }
         return answer
     }
 }

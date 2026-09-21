@@ -98,6 +98,9 @@ final class VehicleOptionsTests: XCTestCase {
         let gate = AsyncGate()
         var provider = StubConfigurationOptionProvider()
         provider.gate = gate
+        // Only the Jeep is answered, so anything that turns up for the Camry
+        // can only have come from the Jeep's request.
+        provider.onlyForMake = "Jeep"
         provider.answer = [option(id: "jeep-1", label: "3.8 L, 6 cyl, Automatic 4-spd")]
         let service = VehicleOptionsService(provider: provider)
 

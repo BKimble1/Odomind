@@ -54,7 +54,7 @@ final class ShoppingLocationService {
     private(set) var area: Area = .currentLocation
     private(set) var resolution: Resolution = .none
 
-    private let provider: DeviceLocationProvider
+    private let provider: any LocationFixProviding
     private let geocoder = CLGeocoder()
     private let defaults: UserDefaults
     private var resolveTask: Task<Void, Never>?
@@ -64,7 +64,7 @@ final class ShoppingLocationService {
     /// The provider is built here rather than defaulted in the signature: it
     /// is main-actor isolated, and a default argument is evaluated outside
     /// that isolation.
-    init(provider: DeviceLocationProvider? = nil, defaults: UserDefaults = .standard) {
+    init(provider: (any LocationFixProviding)? = nil, defaults: UserDefaults = .standard) {
         self.provider = provider ?? DeviceLocationProvider()
         self.defaults = defaults
         restore()

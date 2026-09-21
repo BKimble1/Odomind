@@ -78,6 +78,7 @@
 		A28029E565BC42B0F9DA2E26 /* ContrastTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 77443B2701737D36556ED06B /* ContrastTests.swift */; };
 		A3154ABCC21BA915F542F25A /* DataSourcesView.swift in app */ = {isa = PBXBuildFile; fileRef = 912A91CC7745E84468B53AFA /* DataSourcesView.swift */; };
 		A40C7EB797FAD794B355784A /* VehicleOptionsTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 1ED782813AA1F44D7C88490C /* VehicleOptionsTests.swift */; };
+		AAC1BEF58821EDDE3251D4F2 /* ShoppingLocationTests.swift in unit */ = {isa = PBXBuildFile; fileRef = BA1E57C492143D9AEDD7B1B1 /* ShoppingLocationTests.swift */; };
 		AFCED5A3A4BA9E26046C7191 /* ShoppingLocationControl.swift in app */ = {isa = PBXBuildFile; fileRef = CA780E690B17F65A7956345B /* ShoppingLocationControl.swift */; };
 		B0659432DE3852D430F5C655 /* CalendarAndTransactionTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 319CE8630D9091BC0F826FF2 /* CalendarAndTransactionTests.swift */; };
 		B0695222D8AED2EEF57E59A6 /* RootView.swift in app */ = {isa = PBXBuildFile; fileRef = 71BAABA7DBFA2C122221D775 /* RootView.swift */; };
@@ -244,6 +245,7 @@
 		7899705A20F0C5975D740017 /* PartsQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartsQueryTests.swift; sourceTree = "<group>"; };
 		260C9AC5F34853A02A52E37C /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
 		BF29A6AF4DE7245A2BBDC5E1 /* ReminderAndBackupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderAndBackupTests.swift; sourceTree = "<group>"; };
+		BA1E57C492143D9AEDD7B1B1 /* ShoppingLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingLocationTests.swift; sourceTree = "<group>"; };
 		BE0CA80060ADD54B17D87FCE /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
 		6586D1E5AF9422DE817C2C81 /* VehicleIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleIdentityTests.swift; sourceTree = "<group>"; };
 		1ED782813AA1F44D7C88490C /* VehicleOptionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleOptionsTests.swift; sourceTree = "<group>"; };
@@ -541,6 +543,7 @@
 				7899705A20F0C5975D740017,
 				260C9AC5F34853A02A52E37C,
 				BF29A6AF4DE7245A2BBDC5E1,
+				BA1E57C492143D9AEDD7B1B1,
 				BE0CA80060ADD54B17D87FCE,
 				6586D1E5AF9422DE817C2C81,
 				1ED782813AA1F44D7C88490C,
@@ -826,6 +829,7 @@
 				F250EE33134ECC955B1C34CD /* PartsQueryTests.swift */,
 				60714382A7B5FBD79867FF25 /* ProviderTests.swift */,
 				4012BE4586A980F0220D1D43 /* ReminderAndBackupTests.swift */,
+				AAC1BEF58821EDDE3251D4F2 /* ShoppingLocationTests.swift */,
 				90D97B4A49492F6E005C69B2 /* StoreTests.swift */,
 				D3EBCCEA2D62FA180375C3F7 /* VehicleIdentityTests.swift */,
 				A40C7EB797FAD794B355784A /* VehicleOptionsTests.swift */,
