@@ -127,21 +127,53 @@ jobs:
             | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Check the signing inputs agree
+        id: signing
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${APPLE_TEAM_ID}" ]; then
-            echo "::error::APPLE_TEAM_ID is not set. It is the 10-character Team ID from https://developer.apple.com/account -> Membership."
-            exit 1
-          fi
+
+          # Which secrets are present, as booleans. Never their values — but
+          # "is it even set" is the first question every signing failure asks,
+          # and answering it in the log beats another round trip.
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY APPLE_TEAM_ID; do
+            if [ -n "${!name:-}" ]; then
+              echo "  $name: set"
+            else
+              echo "  $name: NOT SET"
+            fi
+          done
+
           project_bundle_id="$(sed -n 's/^BUNDLE_ID = "\(.*\)"/\1/p' Tools/generate-xcodeproj.py)"
           if [ "$project_bundle_id" != "$BUNDLE_ID" ]; then
             echo "::error::the project builds $project_bundle_id but this workflow targets $BUNDLE_ID."
             exit 1
           fi
           echo "Bundle identifier: $project_bundle_id"
-          echo "Team ID: ${APPLE_TEAM_ID:0:3}******* (masked)"
+
+          # Apple already knows the team. The bundle ID record carries the
+          # seed ID, which is the Team ID used for signing, so a missing or
+          # mistyped APPLE_TEAM_ID secret does not have to stop a deploy for
+          # a value that can simply be looked up.
+          team="${APPLE_TEAM_ID:-}"
+          source="APPLE_TEAM_ID secret"
+          if [ -z "$team" ]; then
+            echo "APPLE_TEAM_ID is not set; asking App Store Connect for the team seed ID…"
+            team="$("$ASC_PYTHON" .github/scripts/asc.py team-id --bundle-id "$BUNDLE_ID")"
+            source="App Store Connect bundle ID record"
+          fi
+
+          if [ -z "$team" ]; then
+            echo "::error::no Apple Developer Team ID. Set the APPLE_TEAM_ID secret to the 10-character Team ID from https://developer.apple.com/account -> Membership details."
+            exit 1
+          fi
+
+          echo "::add-mask::$team"
+          echo "team=$team" >> "$GITHUB_OUTPUT"
+          echo "Team ID resolved from the $source."
 
       - name: Work out the version and build number
         id: version
@@ -241,7 +273,7 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ steps.signing.outputs.team }}
           KEY_PATH: ${{ steps.key.outputs.path }}
           MARKETING: ${{ steps.version.outputs.marketing }}
           BUILD: ${{ steps.version.outputs.build }}
@@ -297,7 +329,7 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ steps.signing.outputs.team }}
           KEY_PATH: ${{ steps.key.outputs.path }}
         run: |
           set -o pipefail

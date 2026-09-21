@@ -176,6 +176,33 @@ def cmd_preflight(args):
     return 0
 
 
+def cmd_team_id(args):
+    """The team's seed ID, which is the Team ID used for signing.
+
+    Saves the deploy depending on a hand-copied secret for a value Apple
+    already knows and will tell us.
+    """
+    token = bearer()
+    payload = get(
+        "/bundleIds",
+        {"filter[identifier]": args.bundle_id, "limit": 200},
+        token,
+    )
+    for record in payload.get("data", []):
+        attributes = record["attributes"]
+        if attributes.get("identifier") != args.bundle_id:
+            continue
+        seed = attributes.get("seedId")
+        if seed:
+            print(seed)
+            return 0
+    die(
+        f"could not read a team seed ID for {args.bundle_id}. Set the "
+        "APPLE_TEAM_ID secret to the 10-character Team ID from "
+        "https://developer.apple.com/account -> Membership details."
+    )
+
+
 def cmd_next_build_number(args):
     fallback = os.environ.get("GITHUB_RUN_NUMBER", "1")
     try:
@@ -263,6 +290,10 @@ def main(argv=None):
     check = sub.add_parser("preflight")
     check.add_argument("--bundle-id", required=True)
     check.set_defaults(func=cmd_preflight)
+
+    team = sub.add_parser("team-id")
+    team.add_argument("--bundle-id", required=True)
+    team.set_defaults(func=cmd_team_id)
 
     nxt = sub.add_parser("next-build-number")
     nxt.add_argument("--bundle-id", required=True)
