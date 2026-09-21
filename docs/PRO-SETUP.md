@@ -79,7 +79,7 @@ paid screens:
 
 > Odomind Pro is reachable without an account. Open the app, tap **Calendar**,
 > then the gear in the top right, then **Odomind Pro**. The same screen appears
-> from **Garage → Add a vehicle** once two vehicles exist.
+> from **Garage → Add a vehicle** once one vehicle exists.
 >
 > The app requires no sign-in. All records are stored locally. Restoring
 > purchases is on the Pro screen and on the paywall.
@@ -111,7 +111,7 @@ mileage tracking, and live nationwide price comparison. See
 
 ## The free allowance, and existing users
 
-New installs get two vehicles. Anyone upgrading from Build 1 gets whatever they
+New installs get one vehicle. Anyone upgrading from Build 1 gets whatever they
 already had: on the first Build 2 launch, `recordGrandfatheredAllowanceIfNeeded`
 records the garage size once and latches it, so a later deletion cannot shrink
 it. That is covered by `testTheAllowanceIsRecordedOnceAndNeverShrinks`.

@@ -232,6 +232,34 @@ final class BuildTwoTests: XCTestCase {
         let model = try AppFixture.makeModel().model
         model.recordGrandfatheredAllowanceIfNeeded()
         XCTAssertEqual(model.freeVehicleAllowance, ProPolicy.freeVehicleAllowance)
+        XCTAssertEqual(ProPolicy.freeVehicleAllowance, 1)
+    }
+
+    func testTheAllowanceIsNotMentionedUntilItMatters() throws {
+        let model = try AppFixture.makeModel().model
+        model.recordGrandfatheredAllowanceIfNeeded()
+        // Nothing in the garage: no reason to bring up a limit.
+        XCTAssertNil(model.vehicleAllowanceNotice)
+    }
+
+    func testAnExistingOwnerIsNeverGatedBelowWhatTheyHad() throws {
+        let model = try AppFixture.makeModel().model
+        for index in 0..<3 {
+            _ = model.addVehicle(from: AppFixture.draft(make: "Make\(index)"))
+        }
+        model.recordGrandfatheredAllowanceIfNeeded()
+
+        // Three vehicles, a free plan of one, and no subscription. The
+        // grandfathered allowance is the whole reason this is not a lockout.
+        XCTAssertFalse(model.isPro)
+        XCTAssertEqual(model.freeVehicleAllowance, 3)
+        XCTAssertEqual(model.ownedVehicles.count, 3)
+        for vehicle in model.ownedVehicles {
+            XCTAssertNotNil(
+                model.snapshot.vehicle(id: vehicle.id),
+                "a vehicle recorded before the limit existed must stay reachable"
+            )
+        }
     }
 
     // MARK: - Appointments

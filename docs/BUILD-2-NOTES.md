@@ -138,6 +138,7 @@ Connect changes the app with no new build.
 | Manufacturer specification values for the 2010 Jeep Wrangler JK | **External dependency** — see `docs/DATA-SOURCES.md`. No value was invented |
 | Pro entitlement: purchase, pending, cancel, restore, renewal, revocation, grace | Implemented, **device check needed** — sandbox and TestFlight purchases are unverified |
 | App Store Connect products and agreements | **External dependency** — owner-only. `docs/PRO-SETUP.md` has the exact values |
+| Free plan is one vehicle; Pro removes the limit | Implemented and verified |
 | Grandfathered vehicle allowance for Build 1 users | Implemented and verified |
 | On-device receipt text extraction with a review step | Implemented, device check needed (parsing is unit-tested; Vision OCR is not exercised on a simulator) |
 | Spending trends and service dossier | Implemented and verified |

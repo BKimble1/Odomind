@@ -5,7 +5,7 @@ extension AppModel {
 
     /// How many vehicles this owner may keep without Pro.
     ///
-    /// Two for anyone starting fresh. For anyone who was already using
+    /// One for anyone starting fresh. For anyone who was already using
     /// Odomind, whatever they had when the limit appeared — because a limit
     /// introduced in an update must never make a vehicle they already entered
     /// unreachable.
@@ -26,12 +26,18 @@ extension AppModel {
     }
 
     /// The line under Add a vehicle, when there is something worth saying.
+    ///
+    /// Silent until it is relevant. Someone who has not reached the limit does
+    /// not need to be told about it every time they open the garage.
     var vehicleAllowanceNotice: String? {
         guard !isPro, entitlements.status != .unknown else { return nil }
         let used = ownedVehicles.count
         let allowance = freeVehicleAllowance
+        guard used > 0 else { return nil }
+
         if used >= allowance {
-            return "You are using \(used) of \(allowance) vehicles. Odomind Pro removes the limit. Everything already here stays, whatever you decide."
+            let noun = allowance == 1 ? "vehicle" : "vehicles"
+            return "The free plan covers \(allowance) \(noun), and you are using \(used). Odomind Pro removes the limit. Everything already here stays either way."
         }
         if allowance - used == 1 {
             return "One more vehicle on the free plan."
@@ -91,7 +97,12 @@ enum ProFeature: String, CaseIterable, Hashable {
 
 enum ProPolicy {
     /// The free allowance for someone starting today.
-    static let freeVehicleAllowance = 2
+    ///
+    /// One. Everything a single-car owner needs is free and stays free; a
+    /// second vehicle is the point where Odomind is doing ongoing work for a
+    /// household rather than a person. Anyone who already had more keeps them:
+    /// see `AppModel.freeVehicleAllowance`.
+    static let freeVehicleAllowance = 1
 
     /// What Odomind promises about records when a subscription ends.
     ///
