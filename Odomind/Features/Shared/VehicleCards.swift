@@ -81,6 +81,15 @@ struct VehicleThumbnail: View {
     @State private var photo: UIImage?
 
     var body: some View {
+        // Deliberately the drawing, or the owner's own picture — never a
+        // provider's photograph.
+        //
+        // A CC BY-SA image may be shown only with its author credited, and a
+        // credit is not legible at fifty-two points. Showing it anyway and
+        // arguing the attribution appears elsewhere is the sort of corner
+        // this project does not cut, so the small slot uses Odomind's own
+        // artwork instead. The owner's own photo has no such condition and
+        // still appears here.
         let resolution = VehicleArtworkLoader.resolution(for: vehicle, model: model)
         VehicleArtworkView(
             resolution: resolution,

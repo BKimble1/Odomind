@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import OdomindCore
 
@@ -165,7 +166,17 @@ final class PhotoCache: @unchecked Sendable {
     private func url(vehicleID: UUID, revision: String) -> URL {
         // The revision is in the file name, so a vehicle that changes does not
         // read back the previous car's photograph.
-        let digest = String(format: "%08x", UInt32(truncatingIfNeeded: revision.hashValue))
+        //
+        // SHA-256 rather than `hashValue`: Swift seeds string hashing per
+        // process, so a `hashValue` in a file name is a different name on
+        // every launch. The cache would never once have hit, every photo
+        // would have been re-fetched from Commons on every cold start, and
+        // the abandoned files would have accumulated with nothing able to
+        // find them again.
+        let digest = SHA256.hash(data: Data(revision.utf8))
+            .prefix(8)
+            .map { String(format: "%02x", $0) }
+            .joined()
         return directory.appendingPathComponent("\(vehicleID.uuidString)-\(digest).json")
     }
 
