@@ -113,12 +113,6 @@ struct TodayView: View {
                     .listRowBackground(Color.clear)
             }
 
-            if vehicle.isDemo, let disclaimer = model.demoDisclaimer {
-                Section {
-                    InlineNotice(kind: .caution, message: disclaimer)
-                }
-            }
-
             if model.openProposalCount > 0 {
                 Section {
                     Button {
@@ -197,6 +191,17 @@ struct TodayView: View {
                     }
                 } footer: {
                     Text(group.state.groupExplanation)
+                }
+            }
+
+            // Below the work, not above it. The vehicle card at the top
+            // already carries a SAMPLE badge, and this paragraph sitting
+            // between the actions and the task list pushed whatever was
+            // overdue off the first screen — on the screen someone sees
+            // immediately after choosing to look around with a sample.
+            if vehicle.isDemo, let disclaimer = model.demoDisclaimer {
+                Section {
+                    InlineNotice(kind: .caution, message: disclaimer)
                 }
             }
         }
