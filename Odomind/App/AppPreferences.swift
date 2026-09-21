@@ -165,19 +165,28 @@ struct AppPreferences: Codable, Hashable, Sendable {
     var pro: ProPreferences
     /// The one-time note about where History went. Skippable, shown once.
     var hasSeenCalendarIntroduction: Bool
+    /// Whether the welcome sequence's permission questions have been put.
+    ///
+    /// Tracked separately from whether permission was *granted*, so a refusal
+    /// is remembered as an answer rather than re-asked at every launch. An
+    /// existing owner upgrading from Build 2 has this false and is offered a
+    /// short optional catch-up, not the whole flow again.
+    var hasSeenPermissionSetup: Bool
 
     init(
         appearance: AppearancePreference = .system,
         calendar: CalendarPreferences = .default,
         catalogUpdates: CatalogUpdatePreferences = .default,
         pro: ProPreferences = .default,
-        hasSeenCalendarIntroduction: Bool = false
+        hasSeenCalendarIntroduction: Bool = false,
+        hasSeenPermissionSetup: Bool = false
     ) {
         self.appearance = appearance
         self.calendar = calendar
         self.catalogUpdates = catalogUpdates
         self.pro = pro
         self.hasSeenCalendarIntroduction = hasSeenCalendarIntroduction
+        self.hasSeenPermissionSetup = hasSeenPermissionSetup
     }
 
     static let `default` = AppPreferences()
@@ -189,7 +198,8 @@ struct AppPreferences: Codable, Hashable, Sendable {
             calendar: try container.decodeIfPresent(CalendarPreferences.self, forKey: .calendar) ?? .default,
             catalogUpdates: try container.decodeIfPresent(CatalogUpdatePreferences.self, forKey: .catalogUpdates) ?? .default,
             pro: try container.decodeIfPresent(ProPreferences.self, forKey: .pro) ?? .default,
-            hasSeenCalendarIntroduction: try container.decodeIfPresent(Bool.self, forKey: .hasSeenCalendarIntroduction) ?? false
+            hasSeenCalendarIntroduction: try container.decodeIfPresent(Bool.self, forKey: .hasSeenCalendarIntroduction) ?? false,
+            hasSeenPermissionSetup: try container.decodeIfPresent(Bool.self, forKey: .hasSeenPermissionSetup) ?? false
         )
     }
 }

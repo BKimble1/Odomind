@@ -13,6 +13,10 @@ import OdomindCore
 /// What is gone: the green all-clear shown while fifteen tasks had no history,
 /// and the fifteen setup alerts underneath it.
 struct HomeView: View {
+    /// Shown only to somebody who already had a garage before these questions
+    /// existed. See `AppModel.shouldOfferPermissionCatchUp`.
+    @State private var showingPermissionCatchUp = false
+
     @Environment(AppModel.self) private var model
     @Environment(NavigationRouter.self) private var router
 
@@ -54,6 +58,12 @@ struct HomeView: View {
             .sheet(isPresented: $showingMileageEntry) {
                 if let vehicle = model.selectedVehicle { MileageEntrySheet(vehicle: vehicle) }
             }
+            .sheet(isPresented: $showingPermissionCatchUp) {
+                PermissionSetupView {
+                    model.markPermissionSetupSeen()
+                    showingPermissionCatchUp = false
+                }
+            }
             .sheet(isPresented: $showingServiceLog) {
                 if let vehicle = model.selectedVehicle { LogServiceView(vehicle: vehicle) }
             }
@@ -94,6 +104,40 @@ struct HomeView: View {
                 if vehicle.isDemo, let disclaimer = model.demoDisclaimer {
                     QuietNote(text: disclaimer, symbolName: "exclamationmark.triangle")
                         .padding(.horizontal, Theme.Spacing.tight)
+                }
+
+                // Somebody upgrading already has a garage and has never been
+                // asked these. One quiet row, dismissed for good either way —
+                // not the whole welcome sequence replayed at them.
+                if model.shouldOfferPermissionCatchUp {
+                    Button {
+                        showingPermissionCatchUp = true
+                    } label: {
+                        HStack(spacing: Theme.Spacing.medium) {
+                            Image(systemName: "bell.badge")
+                                .foregroundStyle(Theme.Palette.accent)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Finish setting up")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Theme.Palette.primaryText)
+                                Text("Reminders and nearby shops are still off.")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.Palette.secondaryText)
+                            }
+                            Spacer(minLength: Theme.Spacing.small)
+                            Button("Not now") { model.markPermissionSetupSeen() }
+                                .font(.caption)
+                                .foregroundStyle(Theme.Palette.secondaryText)
+                                .buttonStyle(.tappableText)
+                                .accessibilityIdentifier("home.permissionsDismiss")
+                        }
+                        .padding(Theme.Spacing.medium)
+                        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("home.permissionsCatchUp")
                 }
             }
             .padding(Theme.Spacing.large)

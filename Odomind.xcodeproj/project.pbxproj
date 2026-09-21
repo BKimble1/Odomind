@@ -22,6 +22,7 @@
 		215E875DFB7F81818AFAD2BF /* VehicleIdentificationProvider.swift in app */ = {isa = PBXBuildFile; fileRef = EBE1C200ED995AE8B9F001DA /* VehicleIdentificationProvider.swift */; };
 		226493C8E491D33DAAF29DEE /* vpic-wrangler-2010.json in unit */ = {isa = PBXBuildFile; fileRef = DE7CA5A5084E5925CE843403 /* vpic-wrangler-2010.json */; };
 		2302ED7343B5D391BD969E5E /* PartsView.swift in app */ = {isa = PBXBuildFile; fileRef = 1397AAACDF599B39EB66A58D /* PartsView.swift */; };
+		24B6565C5A7155C52DDBD977 /* PermissionSetupView.swift in app */ = {isa = PBXBuildFile; fileRef = 95AA89E5DC676C1A13F6D54A /* PermissionSetupView.swift */; };
 		28A7586F5BD5FCD9C788DC62 /* AppModel+Maintenance.swift in app */ = {isa = PBXBuildFile; fileRef = 1A7BBB67937F2CA20AC0D728 /* AppModel+Maintenance.swift */; };
 		296224B37A967D2040838C3D /* TaskSelectionStep.swift in app */ = {isa = PBXBuildFile; fileRef = 48FA238AE539A7D1C2F4F148 /* TaskSelectionStep.swift */; };
 		2A0B0FA1310BD04771296E44 /* CatalogUpdateService.swift in app */ = {isa = PBXBuildFile; fileRef = 518571479BDCBA8A438F5BA9 /* CatalogUpdateService.swift */; };
@@ -170,6 +171,7 @@
 		BE815F42D63CACA52D126B6F /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 		86BA43D228F9E97FE93E41E2 /* AddVehicleFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddVehicleFlow.swift; sourceTree = "<group>"; };
 		4B947C0F3383ADA35D8B5D65 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		95AA89E5DC676C1A13F6D54A /* PermissionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSetupView.swift; sourceTree = "<group>"; };
 		48FA238AE539A7D1C2F4F148 /* TaskSelectionStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskSelectionStep.swift; sourceTree = "<group>"; };
 		C16556B6C47E9B524242C745 /* VINEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINEntryView.swift; sourceTree = "<group>"; };
 		6D8B06430311A382733D1A65 /* NearbyStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyStores.swift; sourceTree = "<group>"; };
@@ -350,6 +352,7 @@
 			children = (
 				86BA43D228F9E97FE93E41E2,
 				4B947C0F3383ADA35D8B5D65,
+				95AA89E5DC676C1A13F6D54A,
 				48FA238AE539A7D1C2F4F148,
 				C16556B6C47E9B524242C745,
 			);
@@ -733,6 +736,7 @@
 				7E116B82EEAF79AEF248BA2A /* TaskDetailView.swift */,
 				360A4E1898F3FDC29ADF4CEE /* AddVehicleFlow.swift */,
 				0140E6EA0B791BD27DB11F73 /* OnboardingView.swift */,
+				24B6565C5A7155C52DDBD977 /* PermissionSetupView.swift */,
 				296224B37A967D2040838C3D /* TaskSelectionStep.swift */,
 				660C75693E6D3A78BAC64D8A /* VINEntryView.swift */,
 				0DEC395434A8AF241002F8A7 /* NearbyStores.swift */,

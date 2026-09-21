@@ -13,6 +13,10 @@ struct OnboardingView: View {
     @State private var showingAddVehicle = false
     @State private var remindersDecided = false
     @State private var isRequestingReminders = false
+    /// The permission questions come before the vehicle flow, which is the
+    /// owner's stated preference and also the better order: both are about
+    /// what the app may do, and neither depends on knowing the car.
+    @State private var showingPermissions = false
 
     /// A fixed point size does not grow with the owner's text setting, which
     /// XCTest's accessibility audit reports as partially unsupported Dynamic
@@ -36,6 +40,23 @@ struct OnboardingView: View {
         .sheet(isPresented: $showingAddVehicle) {
             AddVehicleFlow()
         }
+        .sheet(isPresented: $showingPermissions) {
+            PermissionSetupView {
+                model.markPermissionSetupSeen()
+                showingPermissions = false
+                showingAddVehicle = true
+            }
+            .interactiveDismissDisabled(false)
+        }
+    }
+
+    /// Whether to put the permission questions before the vehicle flow.
+    ///
+    /// Only once. Somebody who said no is not asked again on the next launch —
+    /// a refusal is an answer, and re-asking is how an app becomes something
+    /// people dismiss reflexively.
+    private var shouldOfferPermissions: Bool {
+        !model.preferences.hasSeenPermissionSetup
     }
 
     private var content: some View {
@@ -62,7 +83,11 @@ struct OnboardingView: View {
 
             VStack(spacing: Theme.Spacing.medium) {
                 PrimaryActionButton(title: "Add my vehicle") {
-                    showingAddVehicle = true
+                    if shouldOfferPermissions {
+                        showingPermissions = true
+                    } else {
+                        showingAddVehicle = true
+                    }
                 }
                 .accessibilityIdentifier("onboarding.addVehicle")
 

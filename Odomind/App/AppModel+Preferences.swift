@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import OdomindCore
 
@@ -16,6 +17,28 @@ extension AppModel {
 
     func setAppearance(_ appearance: AppearancePreference) {
         updatePreferences { $0.appearance = appearance }
+    }
+
+    /// Records that the welcome permission questions have been put.
+    ///
+    /// Set whether or not anything was granted: a refusal is an answer, and
+    /// asking again next launch is how an app trains people to dismiss it.
+    func markPermissionSetupSeen() {
+        guard !preferences.hasSeenPermissionSetup else { return }
+        updatePreferences { $0.hasSeenPermissionSetup = true }
+    }
+
+    /// Whether an owner upgrading from an earlier build should be offered a
+    /// short catch-up rather than the whole welcome sequence.
+    ///
+    /// True only when there is a garage already — a fresh install goes through
+    /// onboarding proper — and when something is still unasked.
+    var shouldOfferPermissionCatchUp: Bool {
+        guard !preferences.hasSeenPermissionSetup else { return false }
+        guard !ownedVehicles.isEmpty else { return false }
+        let remindersUnset = !snapshot.settings.reminders.remindersEnabled
+        let locationUnset = shoppingLocation.authorizationStatus == .notDetermined
+        return remindersUnset || locationUnset
     }
 
     /// Vehicles the owner added themselves. The sample never counts — not
