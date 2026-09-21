@@ -184,7 +184,7 @@ struct PaywallView: View {
             if let message {
                 QuietNote(text: message, symbolName: "info.circle")
             }
-            QuietNote(text: ProPolicy.lapsepromise, symbolName: "lock.open")
+            QuietNote(text: ProPolicy.lapsePromise, symbolName: "lock.open")
             Text("Payment is charged to your Apple Account at confirmation. A subscription renews automatically unless you turn renewal off at least 24 hours before the period ends. You can manage or cancel it in your Apple Account settings.")
                 .font(.caption)
                 .foregroundStyle(Theme.Palette.secondaryText)

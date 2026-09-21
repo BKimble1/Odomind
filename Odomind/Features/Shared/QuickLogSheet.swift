@@ -37,7 +37,7 @@ struct QuickLogSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("What was done") {
+                Section {
                     ForEach(candidates) { item in
                         Button {
                             toggle(item.id)
@@ -57,6 +57,8 @@ struct QuickLogSheet: View {
                         .accessibilityAddTraits(selected.contains(item.id) ? [.isButton, .isSelected] : .isButton)
                         .accessibilityIdentifier("quickLog.item.\(item.definitionID)")
                     }
+                } header: {
+                    Text("What was done")
                 } footer: {
                     Text("Tick everything done in the same visit and Odomind records it as one.")
                 }
@@ -160,7 +162,7 @@ struct QuickLogSheet: View {
         isSaving = true
 
         let performer: ServicePerformer = isShop
-            ? .shop(name: shopName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : shopName)
+            ? .shop(name: shopName.trimmingCharacters(in: .whitespacesAndNewlines))
             : .doItYourself
 
         let saved = model.quickLog(

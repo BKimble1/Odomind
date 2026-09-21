@@ -128,7 +128,13 @@ final class EntitlementService {
     /// payment. Treating that as an expiry would cut someone off over a card
     /// that is about to go through.
     private func isInBillingGracePeriod(productID: String) async -> Bool {
-        guard let product = products.first(where: { $0.id == productID }) ?? (try? await Product.products(for: [productID]))?.first,
+        // Written out rather than using `??`: its right-hand side is an
+        // autoclosure, which cannot carry an `await`.
+        var product = products.first(where: { $0.id == productID })
+        if product == nil {
+            product = try? await Product.products(for: [productID]).first
+        }
+        guard let product,
               let subscription = product.subscription,
               let statuses = try? await subscription.status
         else { return false }

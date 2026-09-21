@@ -84,6 +84,7 @@ def file_type(path):
         ".plist": "text.plist.xml",
         ".xcassets": "folder.assetcatalog",
         ".md": "net.daringfireball.markdown",
+        ".storekit": "text.json",
     }.get(suffix, "text")
 
 
@@ -138,6 +139,7 @@ def generate():
     unit_sources = swift_files(UNIT_TESTS)
     ui_sources = swift_files(UI_TESTS)
     unit_resources = fixture_files(f"{UNIT_TESTS}/Fixtures")
+    storekit_configuration = f"{APP}/Resources/Odomind.storekit"
 
     assets = f"{APP}/Resources/Assets.xcassets"
     info_plist = f"{APP}/Resources/Info.plist"
@@ -145,7 +147,10 @@ def generate():
     if not app_sources:
         raise SystemExit("No app sources found — run this from the repository root.")
 
-    all_paths = app_sources + unit_sources + ui_sources + unit_resources + [assets, info_plist]
+    all_paths = (
+        app_sources + unit_sources + ui_sources + unit_resources
+        + [assets, info_plist, storekit_configuration]
+    )
 
     # --- identifiers -------------------------------------------------------
     file_refs = {path: oid("fileref", path) for path in all_paths}
@@ -394,6 +399,9 @@ def generate():
 
     # --- PBXResourcesBuildPhase -------------------------------------------
     out.append("\n/* Begin PBXResourcesBuildPhase section */")
+    # The StoreKit configuration is referenced by the scheme, not copied into
+    # the app. It is a development artifact: shipping it would put a list of
+    # product identifiers and placeholder prices inside the binary.
     resource_map = {APP: [assets], UNIT_TESTS: unit_resources, UI_TESTS: []}
     for target in (APP, UNIT_TESTS, UI_TESTS):
         key = {APP: "app", UNIT_TESTS: "unit", UI_TESTS: "ui"}[target]
@@ -663,6 +671,9 @@ def write_scheme(ids):
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "NO">
+      <StoreKitConfigurationFileReference
+         identifier = "../../../Odomind/Resources/Odomind.storekit">
+      </StoreKitConfigurationFileReference>
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

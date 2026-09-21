@@ -206,7 +206,7 @@ struct ProSettingsView: View {
             } header: {
                 Text("Your plan")
             } footer: {
-                Text(ProPolicy.lapsepromise)
+                Text(ProPolicy.lapsePromise)
             }
         }
         .listStyle(.insetGrouped)

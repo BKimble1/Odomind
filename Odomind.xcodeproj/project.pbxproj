@@ -196,6 +196,7 @@
 		AE217CEE02C4A1D47D7CAFEB /* VehicleSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleSearch.swift; sourceTree = "<group>"; };
 		CF2C7485EAF41CCD40069ED6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1F9995BE230B4B0C44FDF5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4F350FE0253E1FCC98C65742 /* Odomind.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Odomind.storekit; sourceTree = "<group>"; };
 		24854BA5A01F362F12A242A4 /* AttachmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentStore.swift; sourceTree = "<group>"; };
 		02BB770B7CD7F6FF4B2A70A3 /* BackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupService.swift; sourceTree = "<group>"; };
 		E30D3977110E451C2F08505D /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarService.swift; sourceTree = "<group>"; };

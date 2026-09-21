@@ -15,6 +15,11 @@ struct DataSourcesView: View {
                 case .bundled(let version, let publishedOn):
                     ValueRow(label: "Version", value: version)
                     ValueRow(label: "Published", value: Format.date(publishedOn))
+                    ValueRow(label: "Source", value: "Shipped with the app")
+                case .installed(let version, let publishedOn):
+                    ValueRow(label: "Version", value: version)
+                    ValueRow(label: "Published", value: Format.date(publishedOn))
+                    ValueRow(label: "Source", value: "Downloaded update")
                 case .unavailable(let message):
                     InlineNotice(kind: .caution, message: message)
                 }

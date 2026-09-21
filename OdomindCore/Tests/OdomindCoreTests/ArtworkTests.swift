@@ -148,7 +148,7 @@ final class ArtworkTests: XCTestCase {
           "displayUnit": "miles",
           "odometerReplacements": [],
           "isDemo": false,
-          "createdAt": 0,
+          "createdAt": "2024-01-01T00:00:00Z",
           "sortIndex": 0
         }
         """

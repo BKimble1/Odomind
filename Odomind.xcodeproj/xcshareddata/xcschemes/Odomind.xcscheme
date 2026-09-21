@@ -60,6 +60,9 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "NO">
+      <StoreKitConfigurationFileReference
+         identifier = "../../../Odomind/Resources/Odomind.storekit">
+      </StoreKitConfigurationFileReference>
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

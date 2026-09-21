@@ -97,5 +97,5 @@ enum ProPolicy {
     ///
     /// Written once, quoted on the paywall and in Settings, so the promise
     /// cannot be worded more generously in one place than the other.
-    static let lapsepromise = "If Pro ends, everything you have recorded stays on your device, stays editable, and your reminders keep working. Only new Pro actions stop."
+    static let lapsePromise = "If Pro ends, everything you have recorded stays on your device, stays editable, and your reminders keep working. Only new Pro actions stop."
 }
