@@ -28,9 +28,6 @@ grab "error:" \
   | grep -vE "^Test Case|XCTAssert|: error: -\[|Accessibility|contrast|hit region|Element" \
   | sort -u | head -40
 
-section "ASSERTION FAILURES"
-grab ": error: -\[|XCTAssert.* failed" | sort -u | head -40
-
 section "ACCESSIBILITY AUDIT FINDINGS"
 # The audit records issues rather than throwing, so they arrive as their own
 # lines naming the element and the rule it broke. Matched narrowly: the build
@@ -41,5 +38,14 @@ grab "AUDITISSUE|Audit detected|insufficient contrast|hit region|Dynamic Type|is
 
 section "FAILED TESTS"
 grab "^Test Case .* failed" | head -40
+
+# Last on purpose, and for the same reason the whole step runs last: this is
+# the section anyone actually needs, and sixty lines of reported-not-failing
+# audit findings sit between it and the end of the log. Reading a run's
+# failure from a remote log means tailing it, and a tail that stops short of
+# the one line that says what broke costs a whole twenty-five minute cycle.
+# Three of those were spent here before the order was the problem.
+section "ASSERTION FAILURES"
+grab ": error: -\[|XCTAssert.* failed" | sort -u | head -40
 
 section "END"

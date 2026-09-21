@@ -124,23 +124,32 @@ extension XCUIApplication {
         func reading() -> String { (control.value as? String) ?? "nil" }
         if reading() == wanted { return true }
 
-        for attempt in 0..<2 {
-            // A control at the top of a `.searchable` list can sit under the
-            // search field until the list is pulled clear of it. One gesture
-            // covers that without claiming to know it is the cause.
-            if attempt > 0 { swipeDown() }
+        guard poll(timeout: timeout, until: { control.exists && control.isHittable }) else {
+            XCTFail("the switch \(identifier) never became tappable — frame \(control.frame)")
+            return false
+        }
 
-            guard poll(timeout: timeout, until: { control.exists && control.isHittable })
-            else { continue }
+        // A UISwitch is about 51 points wide. Anything much wider is the row
+        // the control sits in, published as a switch because that is what the
+        // row *means* to VoiceOver — and the middle of that row is its label,
+        // which a tap does nothing to. That is exactly what happened here: a
+        // 380x72 "switch", tapped dead centre, twice, reading "0" both times.
+        // The control itself is at the trailing edge.
+        let isWholeRow = control.frame.width > 120
+        let centre = { control.tap() }
+        let trailingEdge = {
+            control.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        }
 
-            control.tap()
+        for touch in isWholeRow ? [trailingEdge, centre] : [centre, trailingEdge] {
+            touch()
             if poll(timeout: 3, until: { (control.value as? String) == wanted }) { return true }
         }
 
         XCTFail("""
             the switch \(identifier) would not go to "\(wanted)" — \
-            value "\(reading())", exists \(control.exists), \
-            hittable \(control.isHittable), frame \(control.frame)
+            value "\(reading())", frame \(control.frame), tried \
+            \(isWholeRow ? "trailing edge then centre" : "centre then trailing edge")
             """)
         return false
     }
