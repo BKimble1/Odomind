@@ -126,11 +126,9 @@ final class OdomindJourneyUITests: XCTestCase {
 
         // Nothing has been logged, so the oil task needs setup rather than
         // appearing as done or as overdue.
-        let oil = waitFor(
-            app.element(withIdentifier: "today.task.engine-oil-and-filter"),
-            10,
-            "the oil task should be on Today"
-        )
+        let oilTask = app.element(withIdentifier: "today.task.engine-oil-and-filter")
+        XCTAssertTrue(app.scrollTo(oilTask), "the oil task should be on Today")
+        let oil = oilTask
         XCTAssertTrue(
             oil.label.lowercased().contains("no completion")
                 || oil.label.lowercased().contains("needs"),
@@ -250,23 +248,33 @@ final class OdomindJourneyUITests: XCTestCase {
             app.element(withIdentifier: "addTask.showAdvanced").waitForExistence(timeout: 10),
             "the advanced toggle is missing"
         )
-        let advanced = app.element(withIdentifier: "addTask.showAdvanced")
-        XCTAssertFalse(
-            app.element(withIdentifier: "addTask.add.wheel-alignment-check").exists,
-            "an advanced task should be hidden until the owner asks for advanced tasks"
-        )
-        advanced.tap()
 
-        let add = waitFor(
-            app.element(withIdentifier: "addTask.add.wheel-alignment-check"),
-            10,
-            "the alignment check is missing from the catalog list"
+        // Search rather than scroll. The catalog is thirty-two tasks deep and
+        // a SwiftUI List does not realise rows near the bottom, so swiping to
+        // find one is slow and brittle; filtering to it is neither.
+        let search = waitFor(app.searchFields.firstMatch, 10, "the catalog has no search field")
+        search.tap()
+        search.typeText("alignment")
+
+        let add = app.element(withIdentifier: "addTask.add.wheel-alignment-check")
+        XCTAssertFalse(
+            add.exists,
+            "an advanced task should stay hidden until the owner asks for advanced tasks"
+        )
+
+        app.element(withIdentifier: "addTask.showAdvanced").tap()
+        XCTAssertTrue(
+            app.scrollTo(add),
+            "the alignment check should appear once advanced tasks are shown"
         )
         add.tap()
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(app.navigationBars["Maintenance"], 10, "did not return to Maintenance")
-        waitFor(app.element(withIdentifier: identifier), 10, "the added task should now be tracked")
+        XCTAssertTrue(
+            app.scrollTo(app.element(withIdentifier: identifier)),
+            "the added task should now be tracked"
+        )
     }
 
     func testEditingARecordChangesWhatHistoryShows() {
@@ -276,6 +284,7 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
 
+        app.scrollTo(app.textFields["logService.odometer"])
         replaceText("121000", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
         waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
@@ -288,6 +297,7 @@ final class OdomindJourneyUITests: XCTestCase {
 
         waitFor(app.element(withIdentifier: "record.edit"), 10, "the record cannot be edited").tap()
 
+        app.scrollTo(app.textFields["logService.odometer"])
         replaceText("122500", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
 

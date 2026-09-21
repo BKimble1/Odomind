@@ -36,8 +36,8 @@ section "ACCESSIBILITY AUDIT FINDINGS"
 # lines naming the element and the rule it broke. Matched narrowly: the build
 # log mentions "Accessibility" constantly (module caches, the test file's own
 # name) and a loose pattern buries the findings in compiler invocations.
-grab "Audit detected|insufficient contrast|hit region|Dynamic Type|is clipped|no description|has no label|Element:" \
-  | sort -u | head -40
+grab "AUDITISSUE|Audit detected|insufficient contrast|hit region|Dynamic Type|is clipped|no description|has no label|Element:" \
+  | sort -u | head -60
 
 section "FAILED TESTS"
 grab "^Test Case .* failed" | head -40

@@ -8,7 +8,6 @@ struct TodayView: View {
 
     @State private var showingMileageEntry = false
     @State private var showingServiceLog = false
-    @State private var expandedGroups: Set<DueState> = [.overdue, .dueSoon]
 
     var body: some View {
         NavigationStack {

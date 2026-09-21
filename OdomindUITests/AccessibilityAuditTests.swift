@@ -22,11 +22,28 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         super.tearDown()
     }
 
-    private func audit(_ screen: String) {
+    private func audit(_ screen: String, in application: XCUIApplication? = nil) {
+        let target = application ?? app!
         do {
-            try app.performAccessibilityAudit()
+            try target.performAccessibilityAudit { issue in
+                // Name what was found. "Contrast failed" on its own says
+                // nothing about which element failed or by how much, which is
+                // not enough to fix anything. Returning false keeps the issue
+                // reported as a failure; this only adds the detail.
+                let element = issue.element
+                let label = element?.label ?? ""
+                let identifier = element?.identifier ?? ""
+                let described = [identifier, label]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " / ")
+                print(
+                    "AUDITISSUE | \(screen) | \(issue.compactDescription) | "
+                        + (described.isEmpty ? "(unlabelled element)" : described)
+                )
+                return false
+            }
         } catch {
-            XCTFail("Accessibility audit failed on \(screen): \(error)")
+            XCTFail("Accessibility audit could not run on \(screen): \(error)")
         }
     }
 
@@ -39,11 +56,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing"]
         fresh.launch()
         XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
-        do {
-            try fresh.performAccessibilityAudit()
-        } catch {
-            XCTFail("Accessibility audit failed on onboarding: \(error)")
-        }
+        audit("Onboarding", in: fresh)
     }
 
     func testMainScreensAreAccessible() {

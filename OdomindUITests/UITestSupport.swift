@@ -18,6 +18,25 @@ extension XCUIApplication {
         descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
+    /// Scrolls down until `element` exists, or gives up.
+    ///
+    /// A SwiftUI `List` only realises the rows near the viewport, so a row
+    /// further down genuinely is not in the accessibility tree yet — waiting
+    /// on it will never find it, however long the timeout. The list has to be
+    /// moved. Three UI tests failed on this: the oil task sits well down
+    /// Today's "Needs setup" group, the odometer field is below the task list
+    /// in the Log service sheet, and an alignment check is a long way into the
+    /// catalog.
+    @discardableResult
+    func scrollTo(_ element: XCUIElement, maxSwipes: Int = 8) -> Bool {
+        if element.waitForExistence(timeout: 3) { return true }
+        for _ in 0..<maxSwipes {
+            swipeUp()
+            if element.exists { return true }
+        }
+        return element.exists
+    }
+
     /// Any element whose accessibility label contains `text`.
     ///
     /// Rows combine their children for VoiceOver, so the individual labels
