@@ -1,0 +1,111 @@
+{
+  "formatVersion" : 1,
+  "generatedBy" : "Odomind 1.0 (6)",
+  "exportedOn" : "2026-09-01T10:15:00Z",
+  "vehicles" : [
+    {
+      "id" : "3F2A8C10-0000-4000-8000-000000000001",
+      "nickname" : "Blake's Jeep",
+      "identity" : {
+        "modelYear" : 2010,
+        "make" : "Jeep",
+        "model" : "Wrangler",
+        "trim" : "Unlimited Sport",
+        "identityProvenance" : "userEntered"
+      },
+      "configuration" : {
+        "powertrain" : "gasoline",
+        "engineDisplacementLiters" : 3.8,
+        "engineCylinders" : 6,
+        "transmission" : "automatic",
+        "drivetrain" : "fourWheelDrivePartTime",
+        "camshaftDrive" : "timingChain",
+        "transferCase" : "fitted",
+        "frontDifferential" : "fitted",
+        "rearDifferential" : "fitted",
+        "market" : "unitedStates",
+        "usageProfile" : "normal",
+        "confirmedFields" : []
+      },
+      "displayUnit" : "miles",
+      "odometerReplacements" : [],
+      "isDemo" : false,
+      "createdAt" : "2026-01-04T09:00:00Z",
+      "sortIndex" : 0
+    }
+  ],
+  "readings" : [
+    {
+      "id" : "3F2A8C10-0000-4000-8000-000000000011",
+      "vehicleID" : "3F2A8C10-0000-4000-8000-000000000001",
+      "recordedOn" : "2026-08-20T08:00:00Z",
+      "value" : { "amount" : 209800, "unit" : "miles" },
+      "source" : "manualEntry"
+    }
+  ],
+  "planItems" : [
+    {
+      "id" : "3F2A8C10-0000-4000-8000-000000000021",
+      "vehicleID" : "3F2A8C10-0000-4000-8000-000000000001",
+      "definitionID" : "engine-oil-and-filter",
+      "title" : "Engine oil and filter",
+      "purpose" : "Engine oil lubricates and cools the engine.",
+      "category" : "engine",
+      "action" : "replace",
+      "catalogRule" : {
+        "type" : "distanceOrTime",
+        "distance" : { "amount" : 5000, "unit" : "miles" },
+        "time" : { "count" : 6, "unit" : "months" }
+      },
+      "catalogProvenance" : {
+        "origin" : "generalTemplate",
+        "scope" : {},
+        "attribution" : { "sourceName" : "Odomind maintenance templates" }
+      },
+      "baseline" : { "type" : "notProvided" },
+      "isEnabled" : true,
+      "dueSoonThreshold" : { "distance" : { "amount" : 500, "unit" : "miles" }, "days" : 14 },
+      "reminder" : { "isEnabled" : true, "leadDays" : 7, "hour" : 9, "minute" : 0 },
+      "relatedSpecifications" : [ "engineOilViscosity" ],
+      "isCustom" : false,
+      "createdAt" : "2026-01-04T09:00:00Z"
+    }
+  ],
+  "serviceRecords" : [
+    {
+      "id" : "3F2A8C10-0000-4000-8000-000000000031",
+      "vehicleID" : "3F2A8C10-0000-4000-8000-000000000001",
+      "performedOn" : "2026-03-14T00:00:00Z",
+      "odometer" : { "amount" : 204500, "unit" : "miles" },
+      "items" : [
+        {
+          "id" : "3F2A8C10-0000-4000-8000-000000000041",
+          "planItemID" : "3F2A8C10-0000-4000-8000-000000000021",
+          "definitionID" : "engine-oil-and-filter",
+          "title" : "Engine oil and filter",
+          "action" : "replace"
+        }
+      ],
+      "totalCost" : { "amount" : 68.40, "currencyCode" : "USD" },
+      "performer" : { "type" : "shop", "name" : "Corner Garage" },
+      "attachmentIDs" : [],
+      "isDemo" : false,
+      "createdAt" : "2026-03-14T18:00:00Z",
+      "updatedAt" : "2026-03-14T18:00:00Z"
+    }
+  ],
+  "specifications" : [],
+  "attachments" : [],
+  "settings" : {
+    "reminderSettings" : {
+      "remindersEnabled" : true,
+      "mileageUpdateRemindersEnabled" : false,
+      "mileageUpdateIntervalDays" : 30,
+      "preferredHour" : 9,
+      "preferredMinute" : 0,
+      "includeEstimatedMileageReminders" : true
+    },
+    "selectedVehicleID" : "3F2A8C10-0000-4000-8000-000000000001",
+    "catalogVersion" : "2026.09.1"
+  }
+}

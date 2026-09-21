@@ -33,6 +33,10 @@ let package = Package(
         .testTarget(
             name: "OdomindCoreTests",
             dependencies: ["OdomindCore"],
+            // Carries the Build 1 backup fixture. Reading a real file rather
+            // than a string literal is deliberate: the fixture is the shape
+            // that shipped, and it should be awkward to quietly edit.
+            resources: [.process("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]
