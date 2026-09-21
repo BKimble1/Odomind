@@ -21,7 +21,9 @@ UA = "Odomind-validation-matrix/1.0 (+https://github.com/BKimble1/Odomind)"
 # Chosen to be ordinary, high-volume vehicles rather than ones picked to make
 # the matrix look good.
 VEHICLES = [
-    {"year": 2010, "make": "Jeep", "model": "Wrangler"},
+    # "JEEP" in capitals on purpose: that is what vPIC answers, so that is
+    # what the app carries on the vehicle and hands to fueleconomy.gov.
+    {"year": 2010, "make": "JEEP", "model": "Wrangler"},
     {"year": 2015, "make": "Toyota", "model": "Camry"},
     {"year": 2018, "make": "Ford", "model": "F-150"},
 ]
@@ -85,6 +87,37 @@ def menu_items(payload):
     if isinstance(items, dict):
         items = [items]
     return [i for i in items if isinstance(i, dict)]
+
+
+def fuel_economy_make_name(vehicle):
+    """What fueleconomy.gov calls this make.
+
+    The same two vocabularies as the model names, one level up. vPIC answers
+    "JEEP", in capitals; this service's menu says "Jeep", and a make it does
+    not recognise returns an empty model menu — which reads as "no published
+    configurations for this vehicle" rather than as a spelling problem.
+    """
+    payload = fuel_json(
+        "vehicle/menu/make?year={}".format(vehicle["year"]),
+        "fueleconomy.gov make menu",
+    )
+    names = [i.get("value", "") for i in menu_items(payload)]
+    asked = vehicle["make"]
+    key = asked.lower().replace("-", "").replace(" ", "")
+    match = [n for n in names if n.lower().replace("-", "").replace(" ", "") == key]
+    if asked in names:
+        print(f"    fueleconomy.gov lists {asked!r} verbatim")
+    elif match:
+        print(
+            f"    fueleconomy.gov spells {asked!r} as {match[0]!r}"
+            " — asking it verbatim returns an empty model menu"
+        )
+    else:
+        print(
+            f"    fueleconomy.gov does not list {asked!r} at all"
+            f" ({len(names)} makes for {vehicle['year']})"
+        )
+    return match[0] if match else asked
 
 
 def fuel_economy_model_name(vehicle):
@@ -209,6 +242,13 @@ def parts(vehicle):
     return None
 
 
+def as_provider_spells_it(vehicle):
+    """The same vehicle with the make in fueleconomy.gov's own spelling."""
+    resolved = dict(vehicle)
+    resolved["make"] = fuel_economy_make_name(vehicle)
+    return resolved
+
+
 def main():
     print("=== Build 3 validation matrix — live provider evidence ===")
     results = {}
@@ -218,7 +258,7 @@ def main():
         record = {"vehicle": vehicle}
         for name, step in (
             ("vpic", lambda: vpic_models(vehicle)),
-            ("fuelEconomyOptions", lambda: fuel_economy_options(vehicle)),
+            ("fuelEconomyOptions", lambda: fuel_economy_options(as_provider_spells_it(vehicle))),
             ("commons", lambda: commons_photo(vehicle)),
             ("parts", lambda: parts(vehicle)),
         ):
