@@ -77,7 +77,7 @@ struct PartsView: View {
                 ForEach(Retailer.all) { retailer in
                     RetailerRow(
                         retailer: retailer,
-                        query: PartsQueryBuilder.query(for: vehicle, part: partText)
+                        query: retailerQuery(for: vehicle)
                     ) { text in
                         UIPasteboard.general.string = text
                         copied = text
@@ -86,7 +86,18 @@ struct PartsView: View {
             } header: {
                 Text("Shop online")
             } footer: {
-                Text("Odomind opens the retailer's own search in your browser. It does not hold prices or stock, and it never sends your VIN, your mileage or your service history to a retailer.")
+                VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                    // Labelled as the fallback it is. Odomind has no licensed
+                    // catalogue, so it cannot resolve a product — it can only
+                    // hand the retailer the best search it can build.
+                    Text("This is a search, not a matched product. Odomind has no parts catalogue, so it cannot confirm a part number fits — the retailer's own fitment check can.")
+                    if let spec = specificationForQuery(vehicle) {
+                        Text("Searching with the \(spec.label.lowercased()) you have recorded: \(spec.value).")
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    }
+                    Text("Odomind opens the retailer's own search in your browser. It does not hold prices or stock, and it never sends your VIN, your mileage or your service history to a retailer.")
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                }
             }
 
             nearbySection
@@ -102,6 +113,34 @@ struct PartsView: View {
 
     /// The specifications that actually matter for what is being bought.
     @ViewBuilder
+    /// The specification worth putting in a retailer search.
+    ///
+    /// Build 2 built the query from year, make, model and the typed part and
+    /// stopped there — even when the owner had already recorded the exact
+    /// value that identifies the part, like a battery group size or a tyre
+    /// size. Searching "2010 Jeep Wrangler battery" when "group 34" is known
+    /// is throwing away the one detail that makes the result right.
+    private func specificationForQuery(_ vehicle: Vehicle) -> (label: String, value: String)? {
+        let kinds = relevantSpecificationKinds
+        guard !kinds.isEmpty else { return nil }
+        let resolved = model.resolvedSpecifications(for: vehicle)
+        for kind in kinds {
+            guard let match = resolved.first(where: { $0.kind == kind }) else { continue }
+            let value = match.active.value.displayString
+            guard !value.isEmpty else { continue }
+            return (kind.displayName, value)
+        }
+        return nil
+    }
+
+    private func retailerQuery(for vehicle: Vehicle) -> String {
+        PartsQueryBuilder.query(
+            for: vehicle,
+            part: partText,
+            specification: specificationForQuery(vehicle)?.value
+        )
+    }
+
     private func specificationsSection(for vehicle: Vehicle) -> some View {
         let kinds = relevantSpecificationKinds
         if !kinds.isEmpty {
