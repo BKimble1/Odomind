@@ -242,8 +242,8 @@ final class OdomindJourneyUITests: XCTestCase {
         let identifier = "maintenance.task.wheel-alignment-check"
         XCTAssertFalse(app.element(withIdentifier: identifier).exists, "the alignment check should not be tracked yet")
 
-        app.buttons["maintenance.addMenu"].tap()
-        waitFor(app.buttons["maintenance.addFromCatalog"], 10, "the add menu did not open").tap()
+        app.element(withIdentifier: "maintenance.addMenu").tap()
+        waitFor(app.element(withIdentifier: "maintenance.addFromCatalog"), 10, "the add menu did not open").tap()
         waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
 
         XCTAssertTrue(
@@ -252,13 +252,13 @@ final class OdomindJourneyUITests: XCTestCase {
         )
         let advanced = app.element(withIdentifier: "addTask.showAdvanced")
         XCTAssertFalse(
-            app.buttons["addTask.add.wheel-alignment-check"].exists,
+            app.element(withIdentifier: "addTask.add.wheel-alignment-check").exists,
             "an advanced task should be hidden until the owner asks for advanced tasks"
         )
         advanced.tap()
 
         let add = waitFor(
-            app.buttons["addTask.add.wheel-alignment-check"],
+            app.element(withIdentifier: "addTask.add.wheel-alignment-check"),
             10,
             "the alignment check is missing from the catalog list"
         )
@@ -286,7 +286,7 @@ final class OdomindJourneyUITests: XCTestCase {
         XCTAssertTrue(record.label.contains("121,000"), "expected the recorded reading, got '\(record.label)'")
         record.tap()
 
-        waitFor(app.buttons["record.edit"], 10, "the record cannot be edited").tap()
+        waitFor(app.element(withIdentifier: "record.edit"), 10, "the record cannot be edited").tap()
 
         replaceText("122500", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
