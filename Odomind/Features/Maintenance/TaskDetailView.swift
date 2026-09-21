@@ -41,15 +41,16 @@ struct TaskDetailView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    HStack {
-                        DueBadge(state: evaluation.state)
-                        Spacer()
-                        Text(DueSummary.basisText(for: evaluation))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    DueBadge(state: evaluation.state)
                     Text(DueSummary.text(for: evaluation, calendar: model.calendar, now: model.clock.now))
                         .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    // On its own line rather than squeezed against the badge,
+                    // where "Due by distance and date, whichever comes first"
+                    // wrapped into a two-line block the badge had to sit beside.
+                    Text(DueSummary.basisText(for: evaluation))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.vertical, Theme.Spacing.tight)

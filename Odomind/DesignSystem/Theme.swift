@@ -21,22 +21,33 @@ enum Theme {
         static let badge: CGFloat = 6
     }
 
+    /// Colours that carry meaning, chosen to stay legible as text.
+    ///
+    /// The system colours — `.red`, `.orange`, `.green`, `.blue` — are fill
+    /// colours. Measured as small text on a light grouped background they come
+    /// in at roughly 3.5:1, 2.2:1, 2.2:1 and 4.0:1, against the 4.5:1 that
+    /// WCAG asks for and that XCTest's accessibility audit checks. Used on a
+    /// badge, which is exactly where a due state appears, they fail.
+    ///
+    /// Each of these is the same hue taken dark enough for light mode and
+    /// light enough for dark mode to clear the threshold either way. They work
+    /// for the matching icon too, so a state has one colour rather than two.
     enum Colors {
-        /// Amber that is legible as text.
-        ///
-        /// `Color.orange` is a fill colour. As small text on a light grouped
-        /// background it measures about 2.2:1, well under the 4.5:1 that
-        /// WCAG asks for and that XCTest's accessibility audit checks. This is
-        /// the same hue taken dark enough for light mode and light enough for
-        /// dark mode to clear it either way.
-        ///
-        /// It is for text only. Decorative icons that carry no information
-        /// alone can keep the system colour.
-        static let caution = Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 1.00, green: 0.76, blue: 0.40, alpha: 1)
-                : UIColor(red: 0.54, green: 0.31, blue: 0.00, alpha: 1)
-        })
+        static let caution = dynamic(light: (0.54, 0.31, 0.00), dark: (1.00, 0.76, 0.40))
+        static let overdue = dynamic(light: (0.77, 0.16, 0.11), dark: (1.00, 0.54, 0.50))
+        static let informative = dynamic(light: (0.04, 0.36, 0.77), dark: (0.44, 0.70, 1.00))
+        static let unknown = dynamic(light: (0.42, 0.25, 0.63), dark: (0.79, 0.63, 0.94))
+        static let done = dynamic(light: (0.11, 0.48, 0.24), dark: (0.37, 0.84, 0.54))
+
+        private static func dynamic(
+            light: (CGFloat, CGFloat, CGFloat),
+            dark: (CGFloat, CGFloat, CGFloat)
+        ) -> Color {
+            Color(uiColor: UIColor { traits in
+                let (r, g, b) = traits.userInterfaceStyle == .dark ? dark : light
+                return UIColor(red: r, green: g, blue: b, alpha: 1)
+            })
+        }
     }
 }
 
@@ -45,12 +56,12 @@ extension DueState {
     /// between screens.
     var tint: Color {
         switch self {
-        case .overdue: return .red
-        case .dueSoon: return .orange
+        case .overdue: return Theme.Colors.overdue
+        case .dueSoon: return Theme.Colors.caution
         case .upcoming: return .secondary
-        case .historyUnknown: return .purple
-        case .needsSetup: return .blue
-        case .completed: return .green
+        case .historyUnknown: return Theme.Colors.unknown
+        case .needsSetup: return Theme.Colors.informative
+        case .completed: return Theme.Colors.done
         case .notApplicable: return .secondary
         }
     }

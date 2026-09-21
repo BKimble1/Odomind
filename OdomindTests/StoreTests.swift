@@ -54,14 +54,14 @@ final class OdomindStoreTests: XCTestCase {
             category: .engine,
             action: .replace,
             catalogRule: .distanceOrTime(distance: Distance(5_000, .miles), time: .months(6)),
-            catalogProvenance: Provenance.template("Odomind general maintenance guidance"),
+            catalogProvenance: Provenance.template("Odomind maintenance templates"),
             ownerRule: .distance(interval: Distance(3_000, .miles)),
             baseline: .declared(date: appDate(2026, 1, 1), odometer: Distance(50_000, .miles)),
             createdAt: appDate(2026, 1, 1)
         )
         item.pendingProposal = RuleChangeProposal(
             proposedRule: .distance(interval: Distance(7_500, .miles)),
-            proposedProvenance: Provenance.template("Odomind general maintenance guidance"),
+            proposedProvenance: Provenance.template("Odomind maintenance templates"),
             catalogVersion: "test",
             proposedOn: appDate(2026, 5, 1),
             summaryOfChange: "a → b"

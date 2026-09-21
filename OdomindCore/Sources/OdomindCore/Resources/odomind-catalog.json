@@ -102,7 +102,7 @@
       "coverage": "Vehicle-independent starting points for common maintenance tasks, written for Odomind. Applies to no particular make or model.",
       "id": "odomind-general-guidance",
       "limitations": "These are general templates, not a manufacturer's schedule. Intervals published by your vehicle's manufacturer take precedence and can differ substantially. Odomind labels every one of these values as general guidance.",
-      "name": "Odomind general maintenance guidance",
+      "name": "Odomind maintenance templates",
       "terms": "Written for Odomind by Idlery Services LLC and distributed with the app."
     },
     {
@@ -122,7 +122,7 @@
       "coverage": "Engine-family attributes that decide whether a task applies at all, such as whether an engine drives its camshafts by belt or by chain.",
       "id": "odomind-engine-reference",
       "limitations": "Covers only the applicability attributes listed. It is not a source for intervals, capacities, viscosities, pressures or torque values, and it has not been checked against the manufacturer's own service documentation, so nothing sourced here is shown as verified.",
-      "name": "Odomind engine reference notes",
+      "name": "Odomind engine notes",
       "terms": "Compiled for Odomind by Idlery Services LLC from engine-family references and distributed with the app."
     }
   ],
@@ -147,7 +147,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -184,7 +184,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -215,7 +215,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -249,7 +249,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -289,7 +289,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -330,7 +330,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -366,7 +366,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -403,7 +403,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -438,7 +438,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -474,7 +474,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -509,7 +509,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -544,7 +544,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -574,7 +574,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -607,7 +607,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -641,7 +641,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -672,7 +672,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -704,7 +704,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -753,7 +753,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -790,7 +790,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -1047,7 +1047,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -1084,7 +1084,7 @@
       "defaultRuleProvenance": {
         "attribution": {
           "datasetVersion": "2026.09.1",
-          "sourceName": "Odomind general maintenance guidance"
+          "sourceName": "Odomind maintenance templates"
         },
         "origin": "generalTemplate",
         "scope": {}
@@ -1158,7 +1158,7 @@
             "attribution": {
               "datasetVersion": "2026.09.1",
               "note": "Chrysler 3.8 L overhead-valve V6, sales code EGH. The only engine offered in the North American JK Wrangler for these model years.",
-              "sourceName": "Odomind engine reference notes",
+              "sourceName": "Odomind engine notes",
               "sourceReference": "odomind-engine-reference#chrysler-3800-egh"
             },
             "origin": "referenceSourced",
@@ -1173,7 +1173,7 @@
             "attribution": {
               "datasetVersion": "2026.09.1",
               "note": "The 3.8 L EGH is a pushrod overhead-valve engine and drives its camshaft by chain, so no timing-belt service applies. Not checked against Chrysler service documentation, so it is not marked verified.",
-              "sourceName": "Odomind engine reference notes",
+              "sourceName": "Odomind engine notes",
               "sourceReference": "odomind-engine-reference#chrysler-3800-egh"
             },
             "origin": "referenceSourced",

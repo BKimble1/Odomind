@@ -123,7 +123,7 @@ enum Fixture {
             category: .engine,
             action: .replace,
             catalogRule: rule,
-            catalogProvenance: Provenance.template("Odomind general maintenance guidance"),
+            catalogProvenance: Provenance.template("Odomind maintenance templates"),
             baseline: baseline,
             snoozedUntil: snoozedUntil,
             dueSoonThreshold: threshold,

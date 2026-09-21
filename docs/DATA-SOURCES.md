@@ -12,8 +12,8 @@ person relying on it.
 | Source | Used for | Redistributable | Ships in the app |
 | --- | --- | --- | --- |
 | NHTSA vPIC | VIN decoding, make/model lookup | **No** | No — queried at runtime, cached on device |
-| Odomind general maintenance guidance | Vehicle-independent task templates | Yes | Yes |
-| Odomind engine reference notes | Task-applicability facts (e.g. belt vs chain) | Yes | Yes |
+| Odomind maintenance templates | Vehicle-independent task templates | Yes | Yes |
+| Odomind engine notes | Task-applicability facts (e.g. belt vs chain) | Yes | Yes |
 
 **Odomind ships no manufacturer maintenance schedules, fluid specifications,
 capacities, viscosities or tyre pressures.** This is not an oversight; see
@@ -66,7 +66,7 @@ app discloses the destination and asks for confirmation before the first
 lookup, and every failure path leads back to typing the vehicle in by hand.
 The VIN is never written to a log, an analytics event or a crash report.
 
-## Odomind general maintenance guidance
+## Odomind maintenance templates
 
 Vehicle-independent starting points for common tasks, written for this app and
 shipped with it. Every value carries `generalTemplate` provenance and is
@@ -75,7 +75,7 @@ labelled "General guidance" wherever it appears.
 These are **not** a manufacturer's schedule. Your vehicle's published intervals
 take precedence and can differ substantially.
 
-## Odomind engine reference notes
+## Odomind engine notes
 
 A small set of engine-family attributes that decide whether a task applies at
 all — principally whether an engine drives its camshafts by belt or by chain.

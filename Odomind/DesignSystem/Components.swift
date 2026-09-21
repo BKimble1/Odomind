@@ -44,9 +44,11 @@ struct ProvenanceLabel: View {
 
     private var text: String {
         var parts: [String] = [provenance.origin.shortLabel]
+
         if let name = sourceName ?? provenance.attribution?.sourceName, !name.isEmpty {
             parts.append(name)
         }
+
         if provenance.isVerified, let reviewed = provenance.attribution?.reviewedOn {
             parts.append("verified \(Format.date(reviewed))")
         }
@@ -73,8 +75,8 @@ struct InlineNotice: View {
         var tint: Color {
             switch self {
             case .information: return .secondary
-            case .caution: return .orange
-            case .safety: return .blue
+            case .caution: return Theme.Colors.caution
+            case .safety: return Theme.Colors.informative
             }
         }
     }

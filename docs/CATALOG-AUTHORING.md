@@ -70,7 +70,7 @@ the app lie.
   },
   "defaultRuleProvenance": {
     "origin": "generalTemplate",
-    "attribution": { "sourceName": "Odomind general maintenance guidance" },
+    "attribution": { "sourceName": "Odomind maintenance templates" },
     "scope": {}
   }
 }
