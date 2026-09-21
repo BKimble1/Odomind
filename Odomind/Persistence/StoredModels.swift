@@ -327,3 +327,40 @@ final class StoredSettings {
         self.preferencesData = preferencesData
     }
 }
+
+/// An appointment the owner booked.
+///
+/// A new model type in Build 2. Adding an entity is an additive schema change
+/// SwiftData infers, and a Build 1 store simply opens with none of them.
+@Model
+final class StoredAppointment {
+    var id: UUID = UUID()
+    var vehicleID: UUID = UUID()
+    var scheduledOn: Date = Date()
+    var title: String = ""
+    /// `[UUID]` as JSON, matching how the rest of the store carries lists.
+    var planItemIDsData: Data = Data()
+    var location: String?
+    var notes: String?
+    var createdAt: Date = Date()
+
+    init(
+        id: UUID,
+        vehicleID: UUID,
+        scheduledOn: Date,
+        title: String,
+        planItemIDsData: Data,
+        location: String?,
+        notes: String?,
+        createdAt: Date
+    ) {
+        self.id = id
+        self.vehicleID = vehicleID
+        self.scheduledOn = scheduledOn
+        self.title = title
+        self.planItemIDsData = planItemIDsData
+        self.location = location
+        self.notes = notes
+        self.createdAt = createdAt
+    }
+}

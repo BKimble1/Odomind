@@ -61,11 +61,12 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Odomind uses the camera to read the VIN plate on your vehicle so you do not have to type 17 characters. Nothing is recorded or uploaded, and you can always type the VIN instead.</string>
 
-	<!-- Present so the system event editor has a description if it ever asks.
-	     Odomind itself does not request calendar access: on iOS 17 and later the
-	     event editor runs outside the app and has its own. -->
+	<!-- Write-only, because writing is all Odomind does. A single event goes
+	     through the system editor, which has its own access; a reviewed batch
+	     export asks for this. Odomind never reads the calendar, so it cannot
+	     tell you what is already on it and does not claim to. -->
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>Odomind can add a single maintenance reminder to your calendar. It never reads your calendar and only adds an event you confirm yourself.</string>
+	<string>Odomind adds maintenance dates you choose to your calendar. You see exactly what will be added first. It never reads your calendar and never removes anything.</string>
 
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Odomind attaches photos of receipts to your service records. They stay on this device.</string>

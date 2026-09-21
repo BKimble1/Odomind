@@ -254,6 +254,45 @@ public enum SpecificationKind: String, Codable, Sendable, CaseIterable, Hashable
         }
     }
 
+    /// Where the owner will actually find this value.
+    ///
+    /// The door placard is the right answer for original tyre size and cold
+    /// pressures and a wrong answer for everything else — it does not carry a
+    /// battery group size, a filter part number or a fluid capacity. One
+    /// generic sentence under every empty row was the thing that made the
+    /// specifications screen read as a form nobody could fill in.
+    public var sourceHint: String {
+        switch self {
+        case .engineOilViscosity, .engineOilStandard:
+            return "Printed on the oil filler cap, and in the owner's manual."
+        case .engineOilCapacityWithFilter, .coolantCapacity, .transmissionFluidCapacity, .fuelTankCapacity:
+            return "In the capacities table near the back of the owner's manual."
+        case .engineOilFilterPartNumber, .cabinAirFilterPartNumber, .engineAirFilterPartNumber:
+            return "On the filter that is fitted now, or from a parts lookup for your vehicle."
+        case .tireSizeFront, .tireSizeRear, .spareTireSize:
+            return "On the placard in the driver's door opening, and on the tyre sidewall."
+        case .wheelSizeFront, .wheelSizeRear:
+            return "Stamped on the back of the wheel, or in the owner's manual."
+        case .coldTirePressureFront, .coldTirePressureRear, .spareTirePressure:
+            return "On the placard in the driver's door opening. Not the number on the tyre sidewall, which is a maximum rather than the pressure to run."
+        case .lugNutTorque:
+            return "In the owner's manual, under wheels or changing a tyre."
+        case .coolantType, .brakeFluidType, .powerSteeringFluidType:
+            return "On the reservoir cap, and in the owner's manual."
+        case .transmissionFluidType, .transferCaseFluidType,
+             .frontDifferentialFluidType, .rearDifferentialFluidType:
+            return "In the owner's manual, or on a dealer parts counter using your VIN."
+        case .batteryGroupSize:
+            return "On the label on top of the battery that is fitted now — a number like 34 or H6. A parts shop will also look it up for you."
+        case .sparkPlugType, .sparkPlugGap:
+            return "In the owner's manual, or from a parts lookup for your engine."
+        case .wiperBladeSizeDriver, .wiperBladeSizePassenger, .wiperBladeSizeRear:
+            return "Measure the blade that is fitted, or use the size chart at any parts shop."
+        case .fuelGrade:
+            return "Inside the fuel filler door, and in the owner's manual."
+        }
+    }
+
     /// Whether a pressure specification must never be inferred from a tyre
     /// sidewall. Sidewall pressure is a maximum, not an operating pressure, and
     /// Odomind refuses to derive one from the other.

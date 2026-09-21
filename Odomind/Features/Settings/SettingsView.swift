@@ -4,51 +4,90 @@ import OdomindCore
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(NavigationRouter.self) private var router
 
     @State private var showingDeleteAll = false
-    @State private var showingRemoveDemo = false
 
     var body: some View {
         List {
             Section {
-                NavigationLink(value: GarageRoute.reminders) {
-                    Label("Reminders", systemImage: "bell")
+                NavigationLink(value: SettingsRoute.appearance) {
+                    LabeledContent {
+                        Text(model.appearance.displayName)
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    } label: {
+                        Label("Appearance", systemImage: "circle.lefthalf.filled")
+                    }
                 }
-                NavigationLink(value: GarageRoute.backup) {
-                    Label("Backup and restore", systemImage: "arrow.down.doc")
+                .accessibilityIdentifier("settings.appearance")
+                NavigationLink(value: SettingsRoute.reminders) {
+                    Label("Notifications", systemImage: "bell")
                 }
-                NavigationLink(value: GarageRoute.dataSources) {
+                .accessibilityIdentifier("settings.reminders")
+                NavigationLink(value: SettingsRoute.calendar) {
+                    Label("Calendar", systemImage: "calendar")
+                }
+                NavigationLink(value: SettingsRoute.units) {
+                    Label("Units", systemImage: "ruler")
+                }
+            }
+
+            Section {
+                NavigationLink(value: SettingsRoute.pro) {
+                    LabeledContent {
+                        Text(model.isPro ? "Active" : "Free plan")
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    } label: {
+                        Label("Odomind Pro", systemImage: "checkmark.seal")
+                    }
+                }
+                .accessibilityIdentifier("settings.pro")
+                NavigationLink(value: SettingsRoute.catalogUpdates) {
+                    Label("Maintenance updates", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+
+            Section {
+                NavigationLink(value: SettingsRoute.backup) {
+                    Label("Backup and export", systemImage: "arrow.down.doc")
+                }
+                NavigationLink(value: SettingsRoute.dataSources) {
                     Label("Where the data comes from", systemImage: "doc.text.magnifyingglass")
                 }
-                NavigationLink(value: GarageRoute.privacy) {
+                NavigationLink(value: SettingsRoute.privacy) {
                     Label("Privacy", systemImage: "hand.raised")
                 }
-            }
-
-            Section {
-                if model.hasDemoContent {
-                    Button("Remove the sample vehicle") { showingRemoveDemo = true }
-                } else {
-                    Button("Add a sample vehicle") { model.addDemoContent() }
+                NavigationLink(value: SettingsRoute.about) {
+                    Label("About Odomind", systemImage: "info.circle")
                 }
-            } header: {
-                Text("Sample data")
-            } footer: {
-                Text(model.demoDisclaimer ?? "Sample content is fictional and clearly marked. Removing it never touches your own records.")
+                Link(destination: SupportLinks.support) {
+                    Label("Support", systemImage: "lifepreserver")
+                }
             }
 
             Section {
-                NavigationLink(value: GarageRoute.diagnostics) {
+                NavigationLink(value: SettingsRoute.sampleData) {
+                    LabeledContent {
+                        Text(model.hasDemoContent ? "On" : "Off")
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    } label: {
+                        Label("Sample vehicle", systemImage: "car.side")
+                    }
+                }
+                NavigationLink(value: SettingsRoute.diagnostics) {
                     Label("Diagnostics", systemImage: "stethoscope")
                 }
             } footer: {
                 Text("What Odomind has scheduled, and anything it could not read.")
             }
 
+            // Kept in its own section at the bottom, well away from anything
+            // anyone taps routinely.
             Section {
                 Button("Delete all data", role: .destructive) { showingDeleteAll = true }
+                    .accessibilityIdentifier("settings.deleteAll")
             } footer: {
-                Text("Removes every vehicle, reading, task, service record and receipt from this device, and cancels every reminder. This cannot be undone.")
+                Text("Removes every vehicle, reading, job, service record and receipt from this device, and cancels every reminder. This cannot be undone.")
             }
         }
         .listStyle(.insetGrouped)
@@ -60,15 +99,7 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Every vehicle, mileage reading, task, service record and receipt is deleted from this device. Export a backup first if you want to keep any of it.")
-        }
-        .confirmationDialog("Remove the sample vehicle?", isPresented: $showingRemoveDemo, titleVisibility: .visible) {
-            Button("Remove sample data", role: .destructive) {
-                Task { await model.removeDemoContent() }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Your own vehicles and records are not affected.")
+            Text("Every vehicle, mileage reading, job, service record and receipt is deleted from this device. Export a backup first if you want to keep any of it.")
         }
     }
 }

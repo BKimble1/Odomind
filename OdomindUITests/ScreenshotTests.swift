@@ -36,11 +36,11 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear")
         capture("\(prefix)-01-today")
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         capture("\(prefix)-02-maintenance")
 
-        let task = app.element(withIdentifier: "maintenance.task.engine-oil-and-filter")
+        let task = app.element(withIdentifier: "jobs.task.engine-oil-and-filter")
         if waitFor(task, 8) {
             task.tap()
             capture("\(prefix)-03-task-detail")
@@ -66,7 +66,7 @@ final class OdomindScreenshotTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["History"]))
         capture("\(prefix)-07-history")
     }
@@ -99,7 +99,7 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear at a large text size")
         capture("large-text-01-today")
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         capture("large-text-02-maintenance")
     }

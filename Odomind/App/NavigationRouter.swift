@@ -61,6 +61,8 @@ final class NavigationRouter {
     /// Set when something should open the paywall — a gated action, or the
     /// Pro row in Settings.
     var presentPaywall = false
+    /// A day Calendar should open on, set by Home's week strip.
+    var calendarSelectedDay: Date?
 
     func follow(_ link: DeepLink) {
         switch link {

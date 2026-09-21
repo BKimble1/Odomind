@@ -43,6 +43,7 @@ struct GarageSnapshot: Sendable {
     var serviceRecords: [ServiceRecord] = []
     var specifications: [UUID: [Specification]] = [:]
     var attachments: [AttachmentMetadata] = []
+    var appointments: [Appointment] = []
     var settings: AppSettings = .initial
     var problems: [StoreProblem] = []
 
@@ -53,6 +54,7 @@ struct GarageSnapshot: Sendable {
         serviceRecords.filter { $0.vehicleID == vehicleID }
     }
     func specifications(for vehicleID: UUID) -> [Specification] { specifications[vehicleID] ?? [] }
+    func appointments(for vehicleID: UUID) -> [Appointment] { appointments.filter { $0.vehicleID == vehicleID } }
     func attachment(id: UUID) -> AttachmentMetadata? { attachments.first { $0.id == id } }
 }
 
@@ -149,6 +151,11 @@ final class OdomindStore {
             )
         }
 
+        snapshot.appointments = try fetch(
+            StoredAppointment.self,
+            sortBy: [SortDescriptor(\StoredAppointment.scheduledOn)]
+        ).map { $0.toDomain(problems: &problems) }
+
         snapshot.settings = try loadSettings(problems: &problems)
         snapshot.problems = problems
         return snapshot
@@ -243,6 +250,9 @@ final class OdomindStore {
         }
         for item in try fetch(StoredPlanItem.self) where item.vehicleID == id {
             context.delete(item)
+        }
+        for appointment in try fetch(StoredAppointment.self) where appointment.vehicleID == id {
+            context.delete(appointment)
         }
         for specification in try fetch(StoredSpecification.self) where specification.vehicleID == id {
             context.delete(specification)
@@ -397,6 +407,22 @@ final class OdomindStore {
         try commit()
     }
 
+    func save(appointment: Appointment) throws {
+        if let existing = try fetch(StoredAppointment.self).first(where: { $0.id == appointment.id }) {
+            try existing.apply(appointment)
+        } else {
+            context.insert(try StoredAppointment.make(from: appointment))
+        }
+        try commit()
+    }
+
+    func deleteAppointment(id: UUID) throws {
+        for appointment in try fetch(StoredAppointment.self) where appointment.id == id {
+            context.delete(appointment)
+        }
+        try commit()
+    }
+
     func save(settings: AppSettings) throws {
         let row = try fetch(StoredSettings.self).first
         let data = try StoreCoding.encode(settings.reminders)
@@ -436,6 +462,7 @@ final class OdomindStore {
         for item in try fetch(StoredPlanItem.self) { context.delete(item) }
         for specification in try fetch(StoredSpecification.self) { context.delete(specification) }
         for attachment in try fetch(StoredAttachment.self) { context.delete(attachment) }
+        for appointment in try fetch(StoredAppointment.self) { context.delete(appointment) }
         for vehicle in try fetch(StoredVehicle.self) { context.delete(vehicle) }
         if !keepSettings {
             for settings in try fetch(StoredSettings.self) { context.delete(settings) }
@@ -470,6 +497,7 @@ final class OdomindStore {
                 for item in try fetch(StoredPlanItem.self) { context.delete(item) }
                 for specification in try fetch(StoredSpecification.self) { context.delete(specification) }
                 for attachment in try fetch(StoredAttachment.self) { context.delete(attachment) }
+                for appointment in try fetch(StoredAppointment.self) { context.delete(appointment) }
                 for vehicle in try fetch(StoredVehicle.self) { context.delete(vehicle) }
             }
 

@@ -100,11 +100,11 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear")
         audit("Today")
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         audit("Maintenance")
 
-        let task = app.element(withIdentifier: "maintenance.task.engine-oil-and-filter")
+        let task = app.element(withIdentifier: "jobs.task.engine-oil-and-filter")
         if waitFor(task, 10) {
             task.tap()
             _ = waitFor(app.navigationBars.firstMatch, 10)
@@ -116,7 +116,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Garage"]))
         audit("Garage")
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["History"]))
         audit("History")
     }
@@ -145,7 +145,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear at a large text size")
         audit("Today at accessibility XL")
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
         audit("Maintenance at accessibility XL")
     }

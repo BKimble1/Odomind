@@ -41,3 +41,22 @@ extension AppModel {
         }
     }
 }
+
+extension AppModel {
+    /// Changes the unit a vehicle's readings are shown in.
+    ///
+    /// Readings keep the unit they were entered in; this only changes what
+    /// new entry and display use, so nothing already recorded is reinterpreted.
+    func setDisplayUnit(_ unit: DistanceUnit, for vehicleID: UUID) {
+        guard var vehicle = snapshot.vehicle(id: vehicleID), vehicle.displayUnit != unit else { return }
+        vehicle.displayUnit = unit
+        updateVehicle(vehicle, declaredTypicalDistance: snapshot.declaredTypicalDistances[vehicleID])
+    }
+
+    /// Records how the owner wants this vehicle pictured.
+    func setArtwork(_ artwork: VehicleArtworkPreference, for vehicleID: UUID) {
+        guard var vehicle = snapshot.vehicle(id: vehicleID) else { return }
+        vehicle.artwork = artwork
+        updateVehicle(vehicle, declaredTypicalDistance: snapshot.declaredTypicalDistances[vehicleID])
+    }
+}

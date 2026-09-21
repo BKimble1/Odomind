@@ -260,3 +260,42 @@ extension AppModel {
         return item.calendarExportState(currentDueDate: evaluation?.nextDueDate ?? evaluation?.estimatedDueDate)
     }
 }
+
+extension AppModel {
+    /// Asks the update service whether there is a newer reviewed catalog.
+    ///
+    /// The outcome is recorded either way, so Settings can say what happened
+    /// rather than showing a check that silently never succeeds. Nothing the
+    /// owner set is touched: an installed catalog is picked up on the next
+    /// launch, and changed guidance arrives as a reviewable proposal.
+    func checkForCatalogUpdate() async -> CatalogUpdateResult {
+        guard let current = catalogService.catalog else {
+            return .rejected("Odomind has no catalog loaded to compare against.")
+        }
+        let result = await CatalogUpdateService().check(against: current)
+        updatePreferences {
+            $0.catalogUpdates.lastCheckedOn = clock.now
+            switch result {
+            case .installed(let version):
+                $0.catalogUpdates.lastInstalledVersion = version
+                $0.catalogUpdates.lastFailureMessage = nil
+            case .upToDate:
+                $0.catalogUpdates.lastFailureMessage = nil
+            case .rejected(let reason), .unreachable(let reason):
+                $0.catalogUpdates.lastFailureMessage = reason
+            }
+        }
+        return result
+    }
+
+    /// Whether an automatic check is due.
+    ///
+    /// Pro only, at most once a day, and never at launch — the app is usable
+    /// offline and a catalog check has no business being on the path to the
+    /// first screen.
+    var isAutomaticCatalogCheckDue: Bool {
+        guard isPro, preferences.catalogUpdates.automaticUpdatesEnabled else { return false }
+        guard let last = preferences.catalogUpdates.lastCheckedOn else { return true }
+        return clock.now.timeIntervalSince(last) > 24 * 60 * 60
+    }
+}

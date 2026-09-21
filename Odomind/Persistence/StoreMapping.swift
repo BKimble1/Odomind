@@ -373,3 +373,46 @@ extension StoredSpecification {
         )
     }
 }
+
+extension StoredAppointment {
+    static func make(from appointment: Appointment) throws -> StoredAppointment {
+        StoredAppointment(
+            id: appointment.id,
+            vehicleID: appointment.vehicleID,
+            scheduledOn: appointment.scheduledOn,
+            title: appointment.title,
+            planItemIDsData: try StoreCoding.encode(appointment.planItemIDs),
+            location: appointment.location,
+            notes: appointment.notes,
+            createdAt: appointment.createdAt
+        )
+    }
+
+    func apply(_ appointment: Appointment) throws {
+        vehicleID = appointment.vehicleID
+        scheduledOn = appointment.scheduledOn
+        title = appointment.title
+        planItemIDsData = try StoreCoding.encode(appointment.planItemIDs)
+        location = appointment.location
+        notes = appointment.notes
+    }
+
+    func toDomain(problems: inout [StoreProblem]) -> Appointment {
+        Appointment(
+            id: id,
+            vehicleID: vehicleID,
+            scheduledOn: scheduledOn,
+            title: title,
+            planItemIDs: StoreCoding.decodeOrFallback(
+                [UUID].self,
+                from: planItemIDsData,
+                fallback: [],
+                context: "Appointment \(id) jobs",
+                problems: &problems
+            ),
+            location: location,
+            notes: notes,
+            createdAt: createdAt
+        )
+    }
+}

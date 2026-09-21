@@ -15,6 +15,8 @@ struct TaskDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingDuplicateCalendarWarning = false
     @State private var calendarEvent: CalendarEventDraft?
+    @State private var showsSchedule = false
+    @State private var showsHistory = false
 
     private var item: MaintenancePlanItem? { model.planItem(id: planItemID) }
     private var evaluation: ScheduleEvaluation? { model.evaluation(planItemID: planItemID) }
@@ -39,33 +41,57 @@ struct TaskDetailView: View {
     @ViewBuilder
     private func content(item: MaintenancePlanItem, evaluation: ScheduleEvaluation, vehicle: Vehicle) -> some View {
         List {
+            // Status and the action that resolves it, together, above the
+            // fold. Build 1 put three explanatory cards between the two, which
+            // is how "Log this service" ended up below the bottom of the
+            // screen on the job most likely to need it.
             Section {
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
                     DueBadge(state: evaluation.state)
                     Text(DueSummary.text(for: evaluation, calendar: model.calendar, now: model.clock.now))
                         .font(.headline)
                         .fixedSize(horizontal: false, vertical: true)
-                    // On its own line rather than squeezed against the badge,
-                    // where "Due by distance and date, whichever comes first"
-                    // wrapped into a two-line block the badge had to sit beside.
-                    Text(DueSummary.basisText(for: evaluation))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let last = lastCompletionText(item: item, evaluation: evaluation) {
+                        Text(last)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(.vertical, Theme.Spacing.tight)
 
-                ForEach(Array(evaluation.reasons.enumerated()), id: \.offset) { _, reason in
-                    InlineNotice(kind: noticeKind(for: reason), message: reason.message)
+                Button {
+                    showingServiceLog = true
+                } label: {
+                    Label("Mark as done", systemImage: "checkmark.seal")
+                        .font(.body.weight(.medium))
+                }
+                .accessibilityIdentifier("task.markDone")
+
+                if item.baseline == .notProvided || evaluation.state == .historyUnknown {
+                    Button {
+                        model.startTrackingFromToday(planItemID: planItemID)
+                    } label: {
+                        Label("Start tracking from today", systemImage: "flag")
+                    }
+                    .accessibilityIdentifier("task.startTracking")
                 }
             } header: {
                 Text("Status")
+            } footer: {
+                if item.baseline == .notProvided || evaluation.state == .historyUnknown {
+                    Text("Starting from today records a starting point, not work that was done.")
+                }
             }
 
             if !item.purpose.isEmpty {
                 Section("What this is for") {
                     Text(item.purpose)
                         .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(difficultyNote(item: item))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -76,11 +102,20 @@ struct TaskDetailView: View {
                 }
             }
 
-            scheduleSection(item: item, evaluation: evaluation)
-            dueSection(evaluation: evaluation, vehicle: vehicle)
-            historySection(item: item, vehicle: vehicle)
             specificationsSection(item: item, vehicle: vehicle)
-            actionsSection(item: item, evaluation: evaluation, vehicle: vehicle)
+            costSection(item: item, vehicle: vehicle)
+
+            // Everything below here is reference rather than action, so it is
+            // collapsed by default. One tap reveals the lot; nobody has to
+            // scroll past it to reach the thing they came for.
+            // Reference rather than action, so each one collapses. Nobody
+            // has to scroll past a schedule provenance line to reach the
+            // button that records the work.
+            scheduleDetail(item: item, evaluation: evaluation)
+            dueDetail(evaluation: evaluation, vehicle: vehicle)
+            historyDetail(item: item, vehicle: vehicle)
+
+            calendarAndSnoozeSection(item: item, evaluation: evaluation, vehicle: vehicle)
             reminderSection(item: item)
             manageSection(item: item)
         }
@@ -135,8 +170,9 @@ struct TaskDetailView: View {
     // MARK: - Sections
 
     @ViewBuilder
-    private func scheduleSection(item: MaintenancePlanItem, evaluation: ScheduleEvaluation) -> some View {
+    private func scheduleDetail(item: MaintenancePlanItem, evaluation: ScheduleEvaluation) -> some View {
         Section {
+            DisclosureGroup("Schedule and source", isExpanded: $showsSchedule) {
             if let rule = item.effectiveRule {
                 VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                     Text(rule.summary)
@@ -172,8 +208,8 @@ struct TaskDetailView: View {
                 }
                 .font(.callout)
             }
-        } header: {
-            Text("Schedule")
+            }
+            .accessibilityIdentifier("task.scheduleDisclosure")
         }
 
         if let proposal = item.pendingProposal {
@@ -194,7 +230,7 @@ struct TaskDetailView: View {
     }
 
     @ViewBuilder
-    private func dueSection(evaluation: ScheduleEvaluation, vehicle: Vehicle) -> some View {
+    private func dueDetail(evaluation: ScheduleEvaluation, vehicle: Vehicle) -> some View {
         if evaluation.nextDueOdometer != nil || evaluation.nextDueDate != nil || evaluation.estimatedDueDate != nil {
             Section("Next due") {
                 if let odometer = evaluation.nextDueOdometer {
@@ -236,7 +272,7 @@ struct TaskDetailView: View {
     }
 
     @ViewBuilder
-    private func historySection(item: MaintenancePlanItem, vehicle: Vehicle) -> some View {
+    private func historyDetail(item: MaintenancePlanItem, vehicle: Vehicle) -> some View {
         let records = model.serviceRecords(for: vehicle.id)
             .filter { $0.includes(definitionID: item.definitionID) }
 
@@ -315,14 +351,8 @@ struct TaskDetailView: View {
     }
 
     @ViewBuilder
-    private func actionsSection(item: MaintenancePlanItem, evaluation: ScheduleEvaluation, vehicle: Vehicle) -> some View {
+    private func calendarAndSnoozeSection(item: MaintenancePlanItem, evaluation: ScheduleEvaluation, vehicle: Vehicle) -> some View {
         Section {
-            Button {
-                showingServiceLog = true
-            } label: {
-                Label("Log this service", systemImage: "checkmark.seal")
-            }
-
             Button {
                 showingSnoozeOptions = true
             } label: {
@@ -419,6 +449,101 @@ struct TaskDetailView: View {
             }
         } footer: {
             Text("Turning tracking off hides this from Today without losing your history.")
+        }
+    }
+
+    /// Parts and money.
+    ///
+    /// Four different things live here and are never blurred together: what
+    /// this owner has actually paid, a budget they set themselves, a regional
+    /// estimate (which Odomind does not have a source for and therefore does
+    /// not show), and a live offer (which needs a provider Odomind does not
+    /// have). Only the first two are real, so only the first two appear.
+    @ViewBuilder
+    private func costSection(item: MaintenancePlanItem, vehicle: Vehicle) -> some View {
+        let past = pastCosts(item: item, vehicle: vehicle)
+        Section {
+            if let total = past.total, past.count > 0 {
+                ValueRow(
+                    label: "You have paid",
+                    value: Format.moneyTotal(total),
+                    secondary: "across \(past.count) recorded visit\(past.count == 1 ? "" : "s")"
+                )
+            } else {
+                QuietNote(
+                    text: "No cost recorded for this job yet. Add one when you log the work and Odomind will keep a running total.",
+                    symbolName: "dollarsign.circle"
+                )
+            }
+
+            NavigationLink(value: JobRoute.parts(planItemID)) {
+                Label("Find parts", systemImage: "bag")
+            }
+            .accessibilityIdentifier("task.findParts")
+        } header: {
+            Text("Parts and cost")
+        } footer: {
+            // No invented "typical cost in your area". Odomind has no source
+            // for one, and a made-up number beside a real one is worse than
+            // no number at all.
+            Text("Odomind does not carry regional price estimates, so it does not show one. What it can show is what you have actually spent.")
+        }
+    }
+
+    private func pastCosts(item: MaintenancePlanItem, vehicle: Vehicle) -> (total: MoneyTotal?, count: Int) {
+        let records = model.serviceRecords(for: vehicle.id)
+            .filter { $0.includes(definitionID: item.definitionID) }
+        let amounts = records.compactMap { record -> Money? in
+            if let line = record.items.first(where: { $0.definitionID == item.definitionID }),
+               let cost = line.itemCost {
+                return cost
+            }
+            // A single-job visit's total is that job's cost. A visit covering
+            // several jobs is not divided up, because Odomind has no basis to
+            // split it and a guessed split would be a fabricated number.
+            return record.items.count == 1 ? record.totalCost : nil
+        }
+        guard !amounts.isEmpty else { return (nil, 0) }
+        return (MoneyTotal.total(of: amounts), amounts.count)
+    }
+
+    /// The last recorded completion, on the status block.
+    private func lastCompletionText(item: MaintenancePlanItem, evaluation: ScheduleEvaluation) -> String? {
+        if let date = evaluation.lastCompletedOn {
+            var text = "Last done \(Format.date(date))"
+            if let odometer = evaluation.lastCompletedOdometer {
+                text += " at \(Format.distance(odometer))"
+            }
+            return text
+        }
+        switch item.baseline {
+        case .unknownToOwner:
+            return "You told Odomind you do not know when this was last done."
+        case .notProvided:
+            return "No completion recorded yet."
+        default:
+            return nil
+        }
+    }
+
+    /// Whether this is a driveway job or a shop job.
+    ///
+    /// Derived from the kind of work rather than invented per vehicle, and
+    /// worded as a general statement, because Odomind has no idea what tools
+    /// this particular owner has.
+    private func difficultyNote(item: MaintenancePlanItem) -> String {
+        switch item.action {
+        case .inspect, .clean, .recordIndicator:
+            return "Usually a look rather than a job — most people can do this themselves in a few minutes."
+        case .test, .serviceOrFlush, .adjust:
+            return "Usually a shop job: this needs equipment most people do not have at home."
+        case .replace, .rotate, .topOff:
+            switch item.category {
+            case .tiresAndWheels, .brakes, .drivetrain, .suspensionAndSteering:
+                return "Commonly done by a shop — this usually wants a lift and a torque wrench."
+            default:
+                return "Often a do-it-yourself job with basic tools, and every shop does it too."
+            }
         }
     }
 

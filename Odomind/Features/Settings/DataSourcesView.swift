@@ -210,10 +210,10 @@ struct AboutView: View {
             }
 
             Section {
-                NavigationLink(value: GarageRoute.dataSources) {
+                NavigationLink(value: SettingsRoute.dataSources) {
                     Label("Where the data comes from", systemImage: "doc.text.magnifyingglass")
                 }
-                NavigationLink(value: GarageRoute.privacy) {
+                NavigationLink(value: SettingsRoute.privacy) {
                     Label("Privacy", systemImage: "hand.raised")
                 }
             }

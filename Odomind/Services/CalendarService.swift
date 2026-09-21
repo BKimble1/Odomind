@@ -69,3 +69,121 @@ struct CalendarEventDraft: Identifiable {
     let store: EKEventStore
     let event: EKEvent
 }
+
+// MARK: - Batch export
+
+/// One candidate event in a batch export.
+struct CalendarExportCandidate: Identifiable, Hashable {
+    var id: UUID { planItemID }
+    var planItemID: UUID
+    var title: String
+    var vehicleName: String
+    var dueDate: Date
+    var isEstimated: Bool
+    var scheduleSummary: String?
+    /// When Odomind last wrote this one out, so the review can warn rather
+    /// than quietly creating a second copy.
+    var lastExportedOn: Date?
+    var lastExportedDueDate: Date?
+
+    var wasExportedBefore: Bool { lastExportedOn != nil }
+
+    /// True when a previous export is now out of date, which is the one case
+    /// where exporting again is clearly worth doing.
+    var hasMovedSinceExport: Bool {
+        guard let previous = lastExportedDueDate else { return false }
+        return previous != dueDate
+    }
+}
+
+enum CalendarExportOutcome: Equatable {
+    case written(count: Int)
+    case accessDenied
+    case failed(String)
+}
+
+extension CalendarService {
+    /// Asks for the least access that can actually do this.
+    ///
+    /// Writing a batch of events needs write-only access, and nothing more.
+    /// Odomind does not read the owner's calendar here, cannot tell them what
+    /// else is on it, and does not pretend otherwise.
+    static func requestWriteAccess(store: EKEventStore) async -> Bool {
+        do {
+            return try await store.requestWriteOnlyAccessToEvents()
+        } catch {
+            return false
+        }
+    }
+
+    static func writeAccessStatus() -> EKAuthorizationStatus {
+        EKEventStore.authorizationStatus(for: .event)
+    }
+
+    /// Writes the chosen deadlines into the owner's default calendar.
+    ///
+    /// Each event is a snapshot with the same wording as a single export, so
+    /// nobody ends up with two different explanations of the same date. The
+    /// caller records what was written; this function does not, because it has
+    /// no business touching the store.
+    static func export(
+        _ candidates: [CalendarExportCandidate],
+        addAlarm: Bool,
+        calendar: Calendar
+    ) async -> CalendarExportOutcome {
+        let store = EKEventStore()
+        let status = writeAccessStatus()
+        if status != .fullAccess && status != .writeOnly {
+            guard await requestWriteAccess(store: store) else { return .accessDenied }
+        }
+
+        guard let destination = store.defaultCalendarForNewEvents else {
+            return .failed("There is no calendar available to write to.")
+        }
+
+        var written = 0
+        for candidate in candidates {
+            let event = EKEvent(eventStore: store)
+            event.calendar = destination
+            event.title = "\(candidate.title) — \(candidate.vehicleName)"
+            event.isAllDay = true
+
+            // An all-day EKEvent ends on the last day it covers, not on the
+            // morning after. An exclusive end date stretches a one-day
+            // deadline into a two-day block.
+            let day = calendar.startOfDay(for: candidate.dueDate)
+            event.startDate = day
+            event.endDate = day
+
+            var notes: [String] = []
+            if let summary = candidate.scheduleSummary { notes.append("Schedule: \(summary)") }
+            if candidate.isEstimated {
+                notes.append(
+                    "This date is an estimate based on how far you usually drive, not a confirmed deadline."
+                )
+            }
+            notes.append(
+                "Added from Odomind. This event is a one-off copy: if the due date changes in Odomind, this event will not update."
+            )
+            event.notes = notes.joined(separator: "\n\n")
+
+            if addAlarm {
+                event.addAlarm(EKAlarm(relativeOffset: -60 * 60 * 9))
+            }
+
+            do {
+                try store.save(event, span: .thisEvent, commit: false)
+                written += 1
+            } catch {
+                return .failed((error as NSError).localizedDescription)
+            }
+        }
+
+        do {
+            try store.commit()
+        } catch {
+            return .failed((error as NSError).localizedDescription)
+        }
+        return .written(count: written)
+    }
+}

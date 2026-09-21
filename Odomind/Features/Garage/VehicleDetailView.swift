@@ -66,14 +66,14 @@ struct VehicleDetailView: View {
             }
 
             Section {
-                NavigationLink(value: GarageRoute.configuration(vehicleID)) {
+                NavigationLink(value: VehicleRoute.configuration(vehicleID)) {
                     Label("Configuration", systemImage: "gearshape.2")
                 }
-                NavigationLink(value: GarageRoute.specifications(vehicleID)) {
+                NavigationLink(value: VehicleRoute.specifications(vehicleID)) {
                     Label("Specifications", systemImage: "list.bullet.rectangle")
                 }
                 .accessibilityIdentifier("vehicle.specifications")
-                NavigationLink(value: GarageRoute.odometerHistory(vehicleID)) {
+                NavigationLink(value: VehicleRoute.odometerHistory(vehicleID)) {
                     Label("Odometer history", systemImage: "gauge.with.dots.needle.33percent")
                 }
             }
@@ -90,7 +90,7 @@ struct VehicleDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                    NavigationLink(value: GarageRoute.configuration(vehicleID)) {
+                    NavigationLink(value: VehicleRoute.configuration(vehicleID)) {
                         Text("Answer these")
                     }
                 } header: {

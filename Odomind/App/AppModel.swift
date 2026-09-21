@@ -47,6 +47,9 @@ final class AppModel {
     let backupService: BackupService
     let exportService: ExportService
     let clock: OdomindClock
+    /// StoreKit's answer about Pro. Observed, so a renewal or a refund that
+    /// arrives while a screen is open redraws it.
+    let entitlements: EntitlementService
 
     private(set) var snapshot = GarageSnapshot()
     private(set) var evaluationsByVehicle: [UUID: [ScheduleEvaluation]] = [:]
@@ -78,6 +81,7 @@ final class AppModel {
         self.backupService = BackupService(attachments: attachments)
         self.exportService = ExportService()
         self.clock = clock
+        self.entitlements = EntitlementService()
     }
 
     /// Launch argument that makes the app run against a throwaway store.
@@ -111,7 +115,10 @@ final class AppModel {
         } else {
             attachments = try AttachmentStore()
         }
-        return AppModel(store: store, attachments: attachments)
+        // `CatalogService.live()` prefers a validated installed update over
+        // the bundled catalog, and silently falls back to bundled if there is
+        // not a good one.
+        return AppModel(store: store, catalogService: .live(), attachments: attachments)
     }
 
     // MARK: - Loading
@@ -122,7 +129,11 @@ final class AppModel {
             addDemoContent()
         }
         isLoaded = true
+        // Records the garage size before any limit can apply. Must run before
+        // the first screen reads `canAddVehicle`.
+        recordGrandfatheredAllowanceIfNeeded()
         sweepOrphanedAttachments()
+        await entitlements.start()
         await syncReminders()
     }
 

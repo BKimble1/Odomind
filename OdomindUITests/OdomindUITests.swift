@@ -95,18 +95,18 @@ final class OdomindJourneyUITests: XCTestCase {
     func testAddAVehicleAndSeeItOnToday() {
         addVehicle()
 
-        let odometer = waitFor(app.element(withIdentifier: "today.odometer"), 10, "the odometer summary is missing")
+        let odometer = waitFor(app.element(withIdentifier: "home.odometer"), 10, "the odometer summary is missing")
         XCTAssertTrue(
             odometer.label.contains("120"),
             "the recorded odometer should be on Today, got '\(odometer.label)'"
         )
-        XCTAssertTrue(app.buttons["today.updateMileage"].exists)
-        XCTAssertTrue(app.buttons["today.logService"].exists)
+        XCTAssertTrue(app.buttons["home.updateMileage"].exists)
+        XCTAssertTrue(app.buttons["home.logService"].exists)
     }
 
     func testUpdateMileage() {
         addVehicle()
-        app.buttons["today.updateMileage"].tap()
+        app.buttons["home.updateMileage"].tap()
 
         let field = waitFor(app.textFields["mileage.field"], 10, "the mileage field did not appear")
         field.tap()
@@ -114,7 +114,7 @@ final class OdomindJourneyUITests: XCTestCase {
         app.buttons["mileage.save"].tap()
 
         waitFor(app.navigationBars["Today"], 10, "the sheet did not close")
-        let odometer = waitFor(app.element(withIdentifier: "today.odometer"), 10, "the odometer summary is missing")
+        let odometer = waitFor(app.element(withIdentifier: "home.odometer"), 10, "the odometer summary is missing")
         XCTAssertTrue(
             odometer.label.contains("124"),
             "the new reading should replace the old one, got '\(odometer.label)'"
@@ -134,7 +134,7 @@ final class OdomindJourneyUITests: XCTestCase {
             "the Needs setup group should be present"
         )
 
-        let oilTask = app.element(withIdentifier: "today.task.engine-oil-and-filter")
+        let oilTask = app.element(withIdentifier: "agenda.task.engine-oil-and-filter")
         XCTAssertTrue(app.scrollTo(oilTask), "the oil task should be on Today")
         let oil = oilTask
         XCTAssertTrue(
@@ -148,13 +148,13 @@ final class OdomindJourneyUITests: XCTestCase {
         // Skip the confirmation step, the way someone in a hurry would.
         addVehicle(powertrain: nil)
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
 
         // Tyre rotation applies to anything with wheels, so the plan is not
         // empty — this is a filter, not a failure to build a plan.
         waitFor(
-            app.element(withIdentifier: "maintenance.task.tire-rotation"),
+            app.element(withIdentifier: "jobs.task.tire-rotation"),
             10,
             "a task that applies to every vehicle should still be tracked"
         )
@@ -163,7 +163,7 @@ final class OdomindJourneyUITests: XCTestCase {
         // told there is one. Scheduling it anyway would be the guess the whole
         // provenance model exists to avoid.
         XCTAssertFalse(
-            app.element(withIdentifier: "maintenance.task.engine-oil-and-filter").exists,
+            app.element(withIdentifier: "jobs.task.engine-oil-and-filter").exists,
             "engine oil must not be scheduled for a vehicle whose powertrain was never confirmed"
         )
     }
@@ -171,10 +171,10 @@ final class OdomindJourneyUITests: XCTestCase {
     func testMaintenanceTabListsTheChosenTasks() {
         addVehicle()
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
         waitFor(
-            app.element(withIdentifier: "maintenance.task.engine-oil-and-filter"),
+            app.element(withIdentifier: "jobs.task.engine-oil-and-filter"),
             10,
             "the default tasks should be tracked after onboarding"
         )
@@ -183,8 +183,8 @@ final class OdomindJourneyUITests: XCTestCase {
     func testTaskDetailExplainsWhyNothingIsScheduledYet() {
         addVehicle()
 
-        app.tabBars.buttons["Maintenance"].tap()
-        waitFor(app.element(withIdentifier: "maintenance.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
+        app.tabBars.buttons["Jobs"].tap()
+        waitFor(app.element(withIdentifier: "jobs.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
 
         XCTAssertTrue(
             app.element(labelContaining: "No completion recorded").waitForExistence(timeout: 10),
@@ -200,7 +200,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testLogAServiceAndItAppearsInHistory() {
         addVehicle()
 
-        app.buttons["today.logService"].tap()
+        app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
 
         app.buttons["logService.task.engine-oil-and-filter"].tap()
@@ -208,22 +208,22 @@ final class OdomindJourneyUITests: XCTestCase {
 
         waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["History"], 10, "the History tab did not open")
-        waitFor(app.element(withIdentifier: "history.record"), 10, "the logged service should appear in History")
+        waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the logged service should appear in History")
     }
 
     func testLoggingServiceProducesANextDuePoint() {
         addVehicle()
 
-        app.buttons["today.logService"].tap()
+        app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
         app.buttons["logService.save"].tap()
         waitFor(app.navigationBars["Today"], 10, "the sheet did not close")
 
-        app.tabBars.buttons["Maintenance"].tap()
-        waitFor(app.element(withIdentifier: "maintenance.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
+        app.tabBars.buttons["Jobs"].tap()
+        waitFor(app.element(withIdentifier: "jobs.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
 
         // Serviced at 120,000 with a 5,000-mile interval.
         XCTAssertTrue(
@@ -235,7 +235,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testAddATaskFromTheCatalog() {
         addVehicle()
 
-        app.tabBars.buttons["Maintenance"].tap()
+        app.tabBars.buttons["Jobs"].tap()
         waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
 
         // Onboarding starts a vehicle on every recommended task, so the one
@@ -257,14 +257,14 @@ final class OdomindJourneyUITests: XCTestCase {
         // PlanBuilderTests.testAdvancedTasksAreHiddenFromTheShortList, which
         // also pins that this particular task is among them.
         let taskID = "power-steering-fluid"
-        let tracked = "maintenance.task.\(taskID)"
+        let tracked = "jobs.task.\(taskID)"
         XCTAssertFalse(
             app.element(withIdentifier: tracked).exists,
             "power steering fluid should not be tracked yet"
         )
 
-        app.element(withIdentifier: "maintenance.addMenu").tap()
-        waitFor(app.element(withIdentifier: "maintenance.addFromCatalog"), 10, "the add menu did not open").tap()
+        app.element(withIdentifier: "jobs.addMenu").tap()
+        waitFor(app.element(withIdentifier: "jobs.addFromCatalog"), 10, "the add menu did not open").tap()
         waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
 
         // Addressed as a switch, and waited on. Tapping whatever a query
@@ -301,7 +301,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testEditingARecordChangesWhatHistoryShows() {
         addVehicle()
 
-        app.buttons["today.logService"].tap()
+        app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
 
@@ -310,9 +310,9 @@ final class OdomindJourneyUITests: XCTestCase {
         app.buttons["logService.save"].tap()
         waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["History"], 10, "the History tab did not open")
-        let record = waitFor(app.element(withIdentifier: "history.record"), 10, "the logged service is missing")
+        let record = waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the logged service is missing")
         XCTAssertTrue(record.label.contains("121,000"), "expected the recorded reading, got '\(record.label)'")
         record.tap()
 
@@ -322,9 +322,9 @@ final class OdomindJourneyUITests: XCTestCase {
         replaceText("122500", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["History"], 10, "the History tab did not reopen")
-        let corrected = waitFor(app.element(withIdentifier: "history.record"), 10, "the record disappeared after editing")
+        let corrected = waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the record disappeared after editing")
         XCTAssertTrue(
             corrected.label.contains("122,500"),
             "the correction should replace the old reading, not sit beside it: '\(corrected.label)'"
@@ -355,11 +355,11 @@ final class OdomindJourneyUITests: XCTestCase {
     func testExportScreenOffersTheThreeFormats() {
         addVehicle()
 
-        app.tabBars.buttons["History"].tap()
+        app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["History"], 10, "the History tab did not open")
 
-        waitFor(app.buttons["history.menu"], 10, "the History menu is missing").tap()
-        waitFor(app.buttons["history.export"], 10, "the menu did not offer Export").tap()
+        waitFor(app.buttons["calendar.menu"], 10, "the History menu is missing").tap()
+        waitFor(app.buttons["calendar.export"], 10, "the menu did not offer Export").tap()
 
         waitFor(app.navigationBars["Export"], 10, "the Export screen did not open")
         XCTAssertTrue(app.buttons["export.csv"].exists)
@@ -367,7 +367,7 @@ final class OdomindJourneyUITests: XCTestCase {
     }
 
     func testSampleVehicleIsClearlyMarked() {
-        waitFor(app.buttons["onboarding.addSample"], 20, "onboarding did not appear").tap()
+        waitFor(app.buttons["onboarding.sample"], 20, "onboarding did not appear").tap()
         waitFor(app.navigationBars["Today"], 15, "Today did not appear after adding the sample")
 
         XCTAssertTrue(

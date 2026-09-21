@@ -20,7 +20,8 @@ enum OdomindSchemaV1: VersionedSchema {
             StoredServiceRecord.self,
             StoredSpecification.self,
             StoredAttachment.self,
-            StoredSettings.self
+            StoredSettings.self,
+            StoredAppointment.self
         ]
     }
 }

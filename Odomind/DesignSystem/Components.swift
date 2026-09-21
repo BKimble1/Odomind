@@ -222,40 +222,135 @@ struct UnavailableValueRow: View {
     }
 }
 
-/// One of the two actions Today keeps within reach.
+// MARK: - Build 2 surfaces
+
+/// A raised card on the page.
 ///
-/// Text only. At two-up widths a symbol crowds the label into wrapping, and
-/// neither "Update mileage" nor "Log service" needs a picture to be read.
-/// Only one of the pair is prominent, so the screen has a primary action
-/// rather than two competing blocks of colour.
+/// One component so corner radius, padding and surface colour cannot drift,
+/// and so the "giant card holding one sentence" the brief called out has a
+/// single place to be fixed if it reappears.
+struct Card<Content: View>: View {
+    var padding: CGFloat = Theme.Spacing.large
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(padding)
+            .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+}
+
+/// A section heading on a scrolling page, with an optional trailing action.
+struct SectionHeading<Trailing: View>: View {
+    let title: String
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(Theme.Palette.primaryText)
+            Spacer(minLength: Theme.Spacing.small)
+            trailing
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+extension SectionHeading where Trailing == EmptyView {
+    init(_ title: String) {
+        self.init(title: title) { EmptyView() }
+    }
+}
+
+/// The filled primary action.
+///
+/// Height comes from padding rather than `controlSize(.large)`, which pins the
+/// button's own font and shows up in the accessibility audit as partially
+/// unsupported Dynamic Type. The label grows rather than truncating, because
+/// dropping the control size once fixed the pinned font and left the label
+/// clipping instead.
 struct PrimaryActionButton: View {
     let title: String
     var isProminent: Bool = true
+    var symbolName: String?
     let action: () -> Void
 
     var body: some View {
-        // Height comes from padding rather than `controlSize(.large)`. A large
-        // control size pins the button's own font, which the accessibility
-        // audit reports as partially unsupported Dynamic Type, and a fixed
-        // height is what clipped the longer label on this pair.
-        let label = Text(title)
-            .font(.body.weight(.medium))
-            .multilineTextAlignment(.center)
-            // Grow rather than truncate. Dropping `controlSize(.large)` fixed
-            // the pinned font but left the label clipping instead, which the
-            // audit caught on the next run.
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-
-        Group {
-            if isProminent {
-                Button(action: action) { label }
-                    .buttonStyle(.borderedProminent)
-            } else {
-                Button(action: action) { label }
-                    .buttonStyle(.bordered)
+        Button(action: action) {
+            HStack(spacing: Theme.Spacing.small) {
+                if let symbolName {
+                    Image(systemName: symbolName)
+                        .imageScale(.small)
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
         }
+        .foregroundStyle(isProminent ? Theme.Palette.onAccent : Theme.Palette.accent)
+        .background(
+            isProminent ? AnyShapeStyle(Theme.Palette.accent) : AnyShapeStyle(Theme.Palette.recessed),
+            in: RoundedRectangle(cornerRadius: Theme.Radius.tile)
+        )
+        // A control this size is comfortably over the 44pt minimum at default
+        // text sizes; the floor keeps it there when the label is one short word.
+        .frame(minHeight: Theme.minimumTapTarget)
+    }
+}
+
+/// A small pill used for a filter, a segment or a tag.
+struct Chip: View {
+    let title: String
+    var symbolName: String?
+    var isSelected: Bool = false
+    var tint: Color = Theme.Palette.accent
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.tight) {
+            if let symbolName {
+                Image(systemName: symbolName)
+                    .imageScale(.small)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+        }
+        .font(.subheadline.weight(isSelected ? .semibold : .regular))
+        .foregroundStyle(isSelected ? Theme.Palette.onAccent : Theme.Palette.primaryText)
+        .padding(.horizontal, Theme.Spacing.medium)
+        .padding(.vertical, Theme.Spacing.small)
+        .background(
+            isSelected ? AnyShapeStyle(tint) : AnyShapeStyle(Theme.Palette.recessed),
+            in: Capsule()
+        )
+    }
+}
+
+/// The one-line explanation Odomind puts under something it cannot promise.
+///
+/// Small, quiet, and one sentence. The brief's complaint about Build 1 was
+/// three cards saying the same uncertainty; this exists so there is one place
+/// that says it.
+struct QuietNote: View {
+    let text: String
+    var symbolName: String = "info.circle"
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
+            Image(systemName: symbolName)
+                .imageScale(.small)
+                .foregroundStyle(Theme.Palette.secondaryText)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(Theme.Palette.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
