@@ -71,6 +71,7 @@ struct OdomindDestinations: ViewModifier {
                 case .customTask: CustomTaskEditor()
                 case .proposals: ProposalsView()
                 case .parts(let destination): PartsView(destination: destination)
+                case .untracked(let definitionID): UntrackedJobView(definitionID: definitionID)
                 }
             }
             .navigationDestination(for: VehicleRoute.self) { route in

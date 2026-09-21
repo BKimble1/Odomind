@@ -38,6 +38,7 @@
 		3D9F438387EED5C3C85CF37C /* ShareSheet.swift in app */ = {isa = PBXBuildFile; fileRef = 89D20EE5AD45A60EAB5D799D /* ShareSheet.swift */; };
 		4012BE4586A980F0220D1D43 /* ReminderAndBackupTests.swift in unit */ = {isa = PBXBuildFile; fileRef = BF29A6AF4DE7245A2BBDC5E1 /* ReminderAndBackupTests.swift */; };
 		412B9B8EB76F9CC874932743 /* ReceiptScanner.swift in app */ = {isa = PBXBuildFile; fileRef = EAF94A37187DA2AC2058FD9B /* ReceiptScanner.swift */; };
+		4291E8C34BE03468CC5F2923 /* UntrackedJobView.swift in app */ = {isa = PBXBuildFile; fileRef = 25BB9DD841DB366896A72768 /* UntrackedJobView.swift */; };
 		430F02785B55CF16BDE5EE6C /* AppModel+Vehicles.swift in app */ = {isa = PBXBuildFile; fileRef = 0F6DD0FD78B407D8AC1509C0 /* AppModel+Vehicles.swift */; };
 		4422E867A84DD7C2CC7BDF5E /* ServiceRecordDetailView.swift in app */ = {isa = PBXBuildFile; fileRef = CF16F6EDA857F2C50E694C55 /* ServiceRecordDetailView.swift */; };
 		533F75A0723EE7DC769EC20B /* EventEditView.swift in app */ = {isa = PBXBuildFile; fileRef = 3774AD31B32A309C679A2875 /* EventEditView.swift */; };
@@ -176,6 +177,7 @@
 		8F081A2B457920844C946BE9 /* ProposalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalsView.swift; sourceTree = "<group>"; };
 		5C714D2D46D236DC1826F043 /* ScheduleEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEditor.swift; sourceTree = "<group>"; };
 		BE815F42D63CACA52D126B6F /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		25BB9DD841DB366896A72768 /* UntrackedJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UntrackedJobView.swift; sourceTree = "<group>"; };
 		86BA43D228F9E97FE93E41E2 /* AddVehicleFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddVehicleFlow.swift; sourceTree = "<group>"; };
 		4B947C0F3383ADA35D8B5D65 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		95AA89E5DC676C1A13F6D54A /* PermissionSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSetupView.swift; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 				8F081A2B457920844C946BE9,
 				5C714D2D46D236DC1826F043,
 				BE815F42D63CACA52D126B6F,
+				25BB9DD841DB366896A72768,
 			);
 			path = Jobs;
 			sourceTree = "<group>";
@@ -755,6 +758,7 @@
 				FE364583576E6DD5B33DD8E2 /* ProposalsView.swift */,
 				B37661A9E9FADE06D9770261 /* ScheduleEditor.swift */,
 				7E116B82EEAF79AEF248BA2A /* TaskDetailView.swift */,
+				4291E8C34BE03468CC5F2923 /* UntrackedJobView.swift */,
 				360A4E1898F3FDC29ADF4CEE /* AddVehicleFlow.swift */,
 				0140E6EA0B791BD27DB11F73 /* OnboardingView.swift */,
 				24B6565C5A7155C52DDBD977 /* PermissionSetupView.swift */,

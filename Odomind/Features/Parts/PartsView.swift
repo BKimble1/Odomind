@@ -225,12 +225,22 @@ struct PartsView: View {
         }
     }
 
-    /// Specifications worth showing, driven by the job when there is one.
+    /// Specifications worth showing, driven by what is actually being looked
+    /// for.
+    ///
+    /// Three sources, in order of how much they know. A job says which
+    /// specifications it needs, and that is the best answer there is. Failing
+    /// that, what the owner typed is read for a part category — so "cabin air
+    /// filter" shows the cabin filter and not a tyre size. Only when neither
+    /// says anything does the general set appear.
+    ///
+    /// Build 2 had the last of those three and nothing else, which is why
+    /// looking up a filter put a battery group size on the screen.
     private var relevantSpecificationKinds: [SpecificationKind] {
-        if let planItemID, let item = model.planItem(id: planItemID) {
+        if let planItemID, let item = model.planItem(id: planItemID), !item.relatedSpecifications.isEmpty {
             return item.relatedSpecifications
         }
-        return [.engineOilViscosity, .engineOilCapacityWithFilter, .tireSizeFront, .batteryGroupSize]
+        return PartCategoryMatch.specifications(for: partText, categoryHint: destination.category)
     }
 
     private func prefill() {

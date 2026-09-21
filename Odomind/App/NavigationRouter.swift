@@ -92,12 +92,39 @@ final class NavigationRouter {
     /// Pushing onto the current stack rather than jumping to Jobs keeps the
     /// back button meaning what it looks like it means.
     func openJob(_ planItemID: UUID) {
-        let route = JobRoute.task(planItemID)
+        push(JobRoute.task(planItemID))
+    }
+
+    /// Pushes onto whichever stack is on screen.
+    func push<Route: Hashable>(_ route: Route) {
         switch selectedTab {
         case .home: homePath.append(route)
         case .jobs: jobsPath.append(route)
         case .garage: garagePath.append(route)
         case .calendar: calendarPath.append(route)
+        }
+    }
+
+    /// Swaps the screen on top for another.
+    ///
+    /// For the case where a screen's whole purpose has been served: an
+    /// untracked job that has just been tracked should not stay on the stack
+    /// saying it is untracked, and going back from the job that replaced it
+    /// belongs on the search that found it.
+    func replaceTop<Route: Hashable>(with route: Route) {
+        switch selectedTab {
+        case .home:
+            if !homePath.isEmpty { homePath.removeLast() }
+            homePath.append(route)
+        case .jobs:
+            if !jobsPath.isEmpty { jobsPath.removeLast() }
+            jobsPath.append(route)
+        case .garage:
+            if !garagePath.isEmpty { garagePath.removeLast() }
+            garagePath.append(route)
+        case .calendar:
+            if !calendarPath.isEmpty { calendarPath.removeLast() }
+            calendarPath.append(route)
         }
     }
 
@@ -133,6 +160,10 @@ enum JobRoute: Hashable {
     /// be typed again. A route that drops its own subject is a route that
     /// makes the owner do the work twice.
     case parts(PartsDestination)
+    /// A catalog job this vehicle is not tracking. Carries the definition, so
+    /// browsing one opens that job rather than the whole library with the
+    /// owner's selection thrown away.
+    case untracked(String)
 }
 
 /// Everything the parts screen needs to open already knowing what it is for.

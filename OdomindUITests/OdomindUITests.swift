@@ -221,6 +221,36 @@ final class OdomindJourneyUITests: XCTestCase {
         )
     }
 
+    func testBrowsingAnUntrackedJobOpensThatJobRatherThanTheLibrary() {
+        // The brief: "Browsing an untracked job should open that job's details
+        // directly, not a generic add-task form that loses the selection."
+        // Build 2 pushed the whole catalog here and threw the query away.
+        addVehicle()
+
+        let search = waitFor(app.textFields["home.search"], 10, "the Home search field is missing")
+        search.tap()
+        // Not one of the two tasks the setup flow adds, so it is certainly
+        // untracked.
+        search.typeText("brake fluid")
+
+        let result = waitFor(
+            app.element(withIdentifier: "jobSearch.brake-fluid"),
+            10,
+            "a brake fluid job should be found — saw \(app.visibleRowLabels())"
+        )
+        result.tap()
+
+        // The job, with its own action — not "Add a task" with the query gone.
+        XCTAssertFalse(
+            app.navigationBars["Add a task"].exists,
+            "an untracked job must not open the catalog library"
+        )
+        XCTAssertTrue(
+            app.scrollTo(app.buttons["untracked.track"], hittable: true),
+            "the untracked job should offer to track itself — saw \(app.visibleRowLabels())"
+        )
+    }
+
     func testLogAServiceAndItAppearsInHistory() {
         addVehicle()
 

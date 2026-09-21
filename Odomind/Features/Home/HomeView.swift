@@ -264,10 +264,14 @@ struct HomeView: View {
             let shown = Array(results.prefix(8))
             SeparatedRows(shown) { result in
                 JobSearchRow(result: result) {
+                    // An untracked job opens that job, not the library. Build
+                    // 2 pushed the whole catalog here and threw the query
+                    // away, so tapping "brake fluid" produced ninety rows and
+                    // the owner had to find theirs a second time.
                     if let planItemID = result.planItemID {
                         router.homePath.append(JobRoute.task(planItemID))
                     } else {
-                        router.homePath.append(JobRoute.addTask)
+                        router.homePath.append(JobRoute.untracked(result.definitionID))
                     }
                 }
             }
