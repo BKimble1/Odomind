@@ -17,6 +17,7 @@ final class VehicleOptionsTests: XCTestCase {
         VehicleConfigurationOption(
             id: id,
             providerName: "Stub configuration provider",
+            providerKey: "stub",
             label: label,
             driveDescription: drive,
             fuelDescription: fuel,

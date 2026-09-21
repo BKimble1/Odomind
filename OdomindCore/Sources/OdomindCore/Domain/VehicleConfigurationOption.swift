@@ -23,6 +23,15 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
     /// The provider's own identifier for this configuration.
     public var id: String
     public var providerName: String
+    /// A short, stable key for the service that issued `id`, used to namespace
+    /// it on the saved vehicle. Separate from `providerName` because that is
+    /// wording for a person to read and this is a dictionary key: renaming the
+    /// display name must not orphan every identifier already stored.
+    ///
+    /// Required rather than defaulted. A default here would mean a
+    /// mis-constructed option quietly filing its identifier under a made-up
+    /// namespace, which is worse than not filing it at all.
+    public var providerKey: String
     /// Where a person can read the same statement.
     public var providerURL: URL?
     /// The provider's description, verbatim: "2.5 L, 4 cyl, Automatic (S6),
@@ -43,6 +52,7 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
     public init(
         id: String,
         providerName: String,
+        providerKey: String,
         providerURL: URL? = nil,
         label: String,
         engineDisplacementLiters: Double? = nil,
@@ -56,6 +66,7 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
     ) {
         self.id = id
         self.providerName = providerName
+        self.providerKey = providerKey
         self.providerURL = providerURL
         self.label = label
         self.engineDisplacementLiters = engineDisplacementLiters
@@ -167,6 +178,12 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
         if let cylinders, !configuration.confirmedFields.contains("engineCylinders") {
             updated.engineCylinders = cylinders
         }
+        // Recorded here rather than at the call site so it cannot be
+        // forgotten. A vehicle that keeps the identifier can be re-fetched
+        // later; one that keeps only display strings has to be matched by
+        // name, which is how "Wrangler" against "Wrangler 4WD" became a bug
+        // once already.
+        updated.externalIdentifiers[providerKey] = id
         return updated
     }
 

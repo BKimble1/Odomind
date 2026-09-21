@@ -203,6 +203,18 @@ public struct VehicleConfiguration: Codable, Hashable, Sendable {
     public var usageProfile: UsageProfile
     /// Fields the owner has explicitly confirmed, by coding key.
     public var confirmedFields: Set<String>
+    /// Identifiers other services use for this exact configuration, keyed by
+    /// the service that issued them.
+    ///
+    /// Namespaced on purpose: an id is only meaningful next to the thing that
+    /// issued it, and two providers will happily both call something 29531.
+    /// Kept so a later run can re-fetch what the owner chose rather than
+    /// matching on display strings, which is how "Wrangler" and
+    /// "Wrangler 4WD" became a bug once already.
+    ///
+    /// Optional in the stored shape, so a vehicle saved by an earlier build
+    /// reads back without it rather than failing to decode.
+    public var externalIdentifiers: [String: String]
 
     public init(
         powertrain: PowertrainKind = .unknown,
@@ -218,7 +230,8 @@ public struct VehicleConfiguration: Codable, Hashable, Sendable {
         rearDifferential: Fitment = .unknown,
         market: Market = .unspecified,
         usageProfile: UsageProfile = .unspecified,
-        confirmedFields: Set<String> = []
+        confirmedFields: Set<String> = [],
+        externalIdentifiers: [String: String] = [:]
     ) {
         self.powertrain = powertrain
         self.engineDisplacementLiters = engineDisplacementLiters
@@ -234,6 +247,31 @@ public struct VehicleConfiguration: Codable, Hashable, Sendable {
         self.market = market
         self.usageProfile = usageProfile
         self.confirmedFields = confirmedFields
+        self.externalIdentifiers = externalIdentifiers
+    }
+
+    /// Decoded by hand because `externalIdentifiers` arrived after vehicles
+    /// were already saved. A synthesised decoder requires every key, so a
+    /// stored configuration written before this field existed would have
+    /// failed to read — which on a phone means a garage that comes back
+    /// empty.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        powertrain = try container.decodeIfPresent(PowertrainKind.self, forKey: .powertrain) ?? .unknown
+        engineDisplacementLiters = try container.decodeIfPresent(Double.self, forKey: .engineDisplacementLiters)
+        engineCylinders = try container.decodeIfPresent(Int.self, forKey: .engineCylinders)
+        engineCode = try container.decodeIfPresent(String.self, forKey: .engineCode)
+        transmission = try container.decodeIfPresent(TransmissionKind.self, forKey: .transmission) ?? .unknown
+        transmissionSpeeds = try container.decodeIfPresent(Int.self, forKey: .transmissionSpeeds)
+        drivetrain = try container.decodeIfPresent(DrivetrainLayout.self, forKey: .drivetrain) ?? .unknown
+        camshaftDrive = try container.decodeIfPresent(CamshaftDrive.self, forKey: .camshaftDrive) ?? .unknown
+        transferCase = try container.decodeIfPresent(Fitment.self, forKey: .transferCase) ?? .unknown
+        frontDifferential = try container.decodeIfPresent(Fitment.self, forKey: .frontDifferential) ?? .unknown
+        rearDifferential = try container.decodeIfPresent(Fitment.self, forKey: .rearDifferential) ?? .unknown
+        market = try container.decodeIfPresent(Market.self, forKey: .market) ?? .unspecified
+        usageProfile = try container.decodeIfPresent(UsageProfile.self, forKey: .usageProfile) ?? .unspecified
+        confirmedFields = try container.decodeIfPresent(Set<String>.self, forKey: .confirmedFields) ?? []
+        externalIdentifiers = try container.decodeIfPresent([String: String].self, forKey: .externalIdentifiers) ?? [:]
     }
 
     /// Configuration questions Odomind still needs answered before it can decide

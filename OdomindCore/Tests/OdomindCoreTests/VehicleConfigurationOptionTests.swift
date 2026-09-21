@@ -19,6 +19,7 @@ final class VehicleConfigurationOptionTests: XCTestCase {
         VehicleConfigurationOption(
             id: "12345",
             providerName: "Test provider",
+            providerKey: "test-provider",
             label: "test option",
             engineDisplacementLiters: displacement,
             cylinders: cylinders,
@@ -204,8 +205,61 @@ final class VehicleConfigurationOptionTests: XCTestCase {
         XCTAssertEqual(updated.powertrain, .gasoline, "unconfirmed fields still fill in")
     }
 
-    func testAnOptionThatStatesNothingChangesNothing() {
+    func testAnOptionThatStatesNothingStillRecordsWhichOptionItWas() {
+        // The identifier is not a fact about the car, it is a record of what
+        // the owner picked — so it is kept even when the option itself stated
+        // nothing else.
         let before = VehicleConfiguration()
-        XCTAssertEqual(option().applied(to: before), before)
+        let after = VehicleConfigurationOption(
+            id: "12345",
+            providerName: "Test provider",
+            providerKey: "test-provider",
+            label: "test option"
+        ).applied(to: before)
+        XCTAssertEqual(after.externalIdentifiers["test-provider"], "12345")
+        XCTAssertEqual(after.powertrain, before.powertrain, "it states nothing else, so nothing else moves")
+        XCTAssertEqual(after.drivetrain, before.drivetrain)
+    }
+
+    func testTheProvidersIdentifierIsNamespacedOntoTheVehicle() {
+        let chosen = VehicleConfigurationOption(
+            id: "29531",
+            providerName: "fueleconomy.gov (US DOE/EPA)",
+            providerKey: "fueleconomy.gov",
+            label: "Auto 4-spd, 6 cyl, 3.8 L",
+            driveDescription: "Rear-Wheel Drive",
+            fuelDescription: "Regular"
+        )
+        let updated = chosen.applied(to: VehicleConfiguration())
+        XCTAssertEqual(
+            updated.externalIdentifiers["fueleconomy.gov"], "29531",
+            "an id is only meaningful next to the service that issued it"
+        )
+    }
+
+    func testAConfigurationSavedBeforeThisFieldExistedStillDecodes() {
+        // The shape a vehicle saved by Build 2 has on disk. A synthesised
+        // decoder requires every key, so adding a field without this would
+        // mean a garage that comes back empty on upgrade.
+        let old = Data("""
+        {"powertrain":"gasoline","transmission":"automatic","drivetrain":"fourWheelDrivePartTime",
+         "camshaftDrive":"timingChain","transferCase":"fitted","frontDifferential":"fitted",
+         "rearDifferential":"fitted","market":"unitedStates","usageProfile":"unspecified",
+         "confirmedFields":[],"engineDisplacementLiters":3.8}
+        """.utf8)
+        let decoded = try? JSONDecoder().decode(VehicleConfiguration.self, from: old)
+        XCTAssertNotNil(decoded, "a configuration written before externalIdentifiers must still read")
+        XCTAssertEqual(decoded?.powertrain, .gasoline)
+        XCTAssertEqual(decoded?.engineDisplacementLiters, 3.8)
+        XCTAssertEqual(decoded?.externalIdentifiers, [:], "absent means empty, not a failure")
+    }
+
+    func testAnOptionRoundTripsThroughItsOwnEncoding() {
+        let chosen = option(fuel: "Regular", drive: "Front-Wheel Drive", displacement: 2.5)
+        guard let data = try? JSONEncoder().encode(chosen),
+              let back = try? JSONDecoder().decode(VehicleConfigurationOption.self, from: data) else {
+            return XCTFail("an option should survive its own encoding")
+        }
+        XCTAssertEqual(back, chosen)
     }
 }

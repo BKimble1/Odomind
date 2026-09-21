@@ -29,6 +29,10 @@ protocol VehicleConfigurationOptionProvider: Sendable {
 /// identifier of any kind.
 struct FuelEconomyClient: VehicleConfigurationOptionProvider {
     static let defaultBaseURL = URL(string: "https://www.fueleconomy.gov/ws/rest/")!
+    /// The key this service's ids are stored under on a vehicle. A constant,
+    /// not the display name: renaming what the owner reads must not orphan
+    /// every identifier already saved.
+    static let providerKey = "fueleconomy.gov"
 
     let baseURL: URL
     let session: URLSession
@@ -99,6 +103,7 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
                     VehicleConfigurationOption(
                         id: item.value,
                         providerName: displayName,
+                        providerKey: Self.providerKey,
                         providerURL: URL(string: "https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=\(item.value)"),
                         // The provider's own words. An option whose detail
                         // call failed still shows this, which is the part the
