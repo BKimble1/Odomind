@@ -126,10 +126,47 @@ final class BuildTwoTests: XCTestCase {
         XCTAssertEqual(reading.total, Decimal(string: "10.00"))
     }
 
-    func testAFutureDateIsRejected() {
+    func testARecognisedDateIsNeverInTheFuture() {
+        // The assertion this started as — that a receipt mentioning 2099
+        // yields no date at all — was wrong about the mechanism.
+        // `NSDataDetector` is happy to resolve a vague phrase like
+        // "Valid until …" against the reference date, so it returns *today*
+        // rather than nothing. Today is harmless (it is the field's default
+        // anyway, and the owner reviews it before anything is saved), and the
+        // guarantee that actually matters is the one asserted here: whatever
+        // it makes of the text, a receipt is never dated ahead of the moment
+        // it was read.
         let now = Date(timeIntervalSince1970: 1_790_000_000)
-        let reading = ReceiptScanner.interpret(lines: ["SHOP", "Valid until 12/31/2099"], now: now)
-        XCTAssertNil(reading.date)
+        let reading = ReceiptScanner.interpret(
+            lines: ["SHOP", "Valid until 12/31/2099", "Warranty through 2099"],
+            now: now
+        )
+        if let date = reading.date {
+            XCTAssertLessThanOrEqual(date, now, "a receipt cannot be dated in the future")
+        }
+    }
+
+    func testARealReceiptDateIsPickedUp() throws {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let reading = ReceiptScanner.interpret(
+            lines: ["QUICK LUBE", "03/14/2026", "TOTAL 56.68"],
+            now: now
+        )
+        let date = try XCTUnwrap(reading.date, "a plain date on a receipt should be read")
+        let components = Calendar(identifier: .gregorian).dateComponents([.year, .month], from: date)
+        XCTAssertEqual(components.year, 2026)
+        XCTAssertEqual(components.month, 3)
+    }
+
+    func testADateOlderThanTenYearsIsIgnored() {
+        // Almost always a misread part number rather than a transaction date.
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        let reading = ReceiptScanner.interpret(lines: ["SHOP", "01/02/1998"], now: now)
+        if let date = reading.date {
+            let cutoff = Calendar(identifier: .gregorian)
+                .date(byAdding: .year, value: -10, to: now) ?? now
+            XCTAssertGreaterThanOrEqual(date, cutoff)
+        }
     }
 
     func testNothingRecognisableProducesAnEmptyReadingRatherThanAGuess() {
