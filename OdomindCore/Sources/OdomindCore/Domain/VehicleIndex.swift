@@ -101,17 +101,30 @@ public struct VehicleIndex: Codable, Sendable, Equatable {
             .map(\.model)
     }
 
+    /// The shortest query a model may answer by prefix alone.
+    ///
+    /// One or two letters typed into an empty field are the beginning of a
+    /// *make* far more often than the beginning of a model, and matching them
+    /// by prefix across every make in the index answers "j" with a Jaguar, a
+    /// Jetta and a Journey — three unrelated cars from three unrelated
+    /// manufacturers, offered as though Odomind had understood something. A
+    /// whole-word match is still honoured at any length, because "GT" is a
+    /// real model name and "j" is not.
+    public static let shortestModelPrefix = 3
+
     /// The makes that offer a model answering this query, best first.
     ///
     /// This is what lets "wrangler" work with no make typed at all.
     public func makesOffering(modelTokens: [String], limit: Int = 6) -> [(make: String, model: String, match: VehicleTextMatch.ModelMatch)] {
         guard !modelTokens.isEmpty else { return [] }
+        let allowsPrefixMatches = modelTokens.joined().count >= Self.shortestModelPrefix
         var hits: [(make: String, model: String, match: VehicleTextMatch.ModelMatch)] = []
         for make in models.keys.sorted() {
             guard let names = models[make] else { continue }
             // Only the single best model per make, so one make cannot fill the
             // whole list with near-duplicate trims.
             if let best = VehicleTextMatch.rank(models: names, queryTokens: modelTokens, limit: 1).first {
+                guard allowsPrefixMatches || best.match.quality > .prefix else { continue }
                 hits.append((make, best.model, best.match))
             }
         }

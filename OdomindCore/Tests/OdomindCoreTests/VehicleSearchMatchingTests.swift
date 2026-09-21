@@ -131,6 +131,36 @@ final class VehicleSearchMatchingTests: XCTestCase {
         XCTAssertTrue(makes.contains("JEEP"), "got \(makes)")
     }
 
+    func testASingleLetterOffersMakesRatherThanUnrelatedModels() {
+        // Real regression. One letter used to be matched by prefix against
+        // every model name in the index, so backspacing "2010 Jeep" down to
+        // "j" answered with a Jaguar, a Jetta and a Journey — three unrelated
+        // cars from three unrelated manufacturers, presented as results.
+        XCTAssertTrue(
+            index.makesOffering(modelTokens: ["j"]).isEmpty,
+            "one letter must not match models by prefix"
+        )
+        let intent = plan("j").intent
+        guard case .makeSuggestions(let makes) = intent else {
+            return XCTFail("expected make suggestions for a single letter, got \(intent)")
+        }
+        XCTAssertTrue(makes.contains("JEEP"), "got \(makes)")
+    }
+
+    func testAShortModelNameIsStillFoundWhenItIsTypedInFull() {
+        // The length rule bars a *prefix* match, not a short model. "GT" is
+        // two characters and is a real car; barring it would be the cure
+        // doing more damage than the disease.
+        // A key path cannot address a tuple element, so the names are pulled
+        // out with a closure.
+        let hits = index.makesOffering(modelTokens: ["gt"])
+        let names = hits.map { $0.model }
+        XCTAssertTrue(
+            names.contains { VehicleTextMatch.key($0) == "gt" },
+            "a whole-word match on a two-letter model should survive, got \(names)"
+        )
+    }
+
     // MARK: - Aliases and word order
 
     func testCommonShorthandResolves() {
