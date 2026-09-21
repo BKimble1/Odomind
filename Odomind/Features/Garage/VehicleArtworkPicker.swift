@@ -68,6 +68,7 @@ struct VehicleArtworkPicker: View {
                         Button("Remove the photo", role: .destructive) {
                             model.setPhoto(nil, for: vehicle)
                         }
+                        .frame(minHeight: Theme.minimumTapTarget)
                     }
                     if vehicle.photoAttachmentID == nil {
                         QuietNote(text: "No photo saved yet, so Odomind is showing the illustration.")

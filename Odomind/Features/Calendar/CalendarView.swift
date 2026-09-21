@@ -220,6 +220,7 @@ struct CalendarView: View {
                 Button("Add upcoming items…") { batchExport = true }
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
+                    .frame(minHeight: Theme.minimumTapTarget)
                     .accessibilityIdentifier("calendar.batchExport")
             }
         }

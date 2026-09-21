@@ -122,6 +122,7 @@ struct PaywallView: View {
                     }
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.Palette.accent)
+                    .frame(minHeight: Theme.minimumTapTarget)
                     .accessibilityIdentifier("paywall.retry")
                 }
             }
