@@ -45,7 +45,9 @@ final class EntitlementService {
     private(set) var loadFailure: String?
     private(set) var isPurchasing = false
 
-    private var updatesTask: Task<Void, Never>?
+    /// Held in a box rather than a stored property so `deinit`, which is
+    /// nonisolated, can cancel it without reaching into main-actor state.
+    private let updates = TaskHandle()
 
     /// Launch-argument override, compiled into DEBUG builds only.
     ///
@@ -63,7 +65,7 @@ final class EntitlementService {
     #endif
 
     init() {
-        updatesTask = Task { [weak self] in
+        updates.task = Task { [weak self] in
             // Renewals, refunds, revocations and Ask-to-Buy approvals all
             // arrive here, including ones that happened while the app was
             // closed.
@@ -73,7 +75,7 @@ final class EntitlementService {
         }
     }
 
-    deinit { updatesTask?.cancel() }
+    deinit { updates.cancel() }
 
     func start() async {
         if isSimulatingPro {
@@ -215,4 +217,10 @@ final class EntitlementService {
         }
         return "The App Store could not complete this right now. Please try again."
     }
+}
+
+/// A cancellable task reachable from a nonisolated `deinit`.
+private final class TaskHandle: @unchecked Sendable {
+    var task: Task<Void, Never>?
+    func cancel() { task?.cancel() }
 }

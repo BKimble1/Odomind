@@ -140,7 +140,9 @@ final class VehicleSearchModel {
         self.clock = clock
     }
 
-    deinit { searchTask?.cancel() }
+    // No `deinit` cancel: `deinit` is nonisolated and cannot touch a
+    // main-actor property. The search task holds `self` weakly and the view
+    // cancels on disappear, so nothing outlives the screen either way.
 
     func cancel() {
         searchTask?.cancel()

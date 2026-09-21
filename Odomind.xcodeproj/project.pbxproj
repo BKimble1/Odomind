@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0140E6EA0B791BD27DB11F73 /* OnboardingView.swift in app */ = {isa = PBXBuildFile; fileRef = 4B947C0F3383ADA35D8B5D65 /* OnboardingView.swift */; };
+		02FA06C3C86DC943702AEF63 /* BuildTwoTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 4553FA11E3535D4611D230A1 /* BuildTwoTests.swift */; };
 		04673630FCBD2353164577CE /* Assets.xcassets in app */ = {isa = PBXBuildFile; fileRef = CF2C7485EAF41CCD40069ED6 /* Assets.xcassets */; };
 		078EDF075E57704A6A0D6534 /* Retailers.swift in app */ = {isa = PBXBuildFile; fileRef = 1533620EA8309896A17E0D78 /* Retailers.swift */; };
 		084253FE5D56F80D3805AEBA /* AppModel+Jobs.swift in app */ = {isa = PBXBuildFile; fileRef = D98196967548BB636D4A4CF8 /* AppModel+Jobs.swift */; };
@@ -207,6 +208,7 @@
 		3D893D1FC4C41CE9C06CEACB /* ReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCoordinator.swift; sourceTree = "<group>"; };
 		B14166184739F71CE3EA0D41 /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
 		1A36F37ED9CB3CE32E166AC2 /* AppTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTestSupport.swift; sourceTree = "<group>"; };
+		4553FA11E3535D4611D230A1 /* BuildTwoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildTwoTests.swift; sourceTree = "<group>"; };
 		319CE8630D9091BC0F826FF2 /* CalendarAndTransactionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAndTransactionTests.swift; sourceTree = "<group>"; };
 		5600D040D8A6F377701655C6 /* vpic-ambiguous-engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-ambiguous-engine.json"; sourceTree = "<group>"; };
 		B0FA6651AD2928ADDBB7D8FB /* vpic-partial-ev.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-partial-ev.json"; sourceTree = "<group>"; };
@@ -491,6 +493,7 @@
 				0D4AC19F0B5852AF950FA266,
 				B14166184739F71CE3EA0D41,
 				1A36F37ED9CB3CE32E166AC2,
+				4553FA11E3535D4611D230A1,
 				319CE8630D9091BC0F826FF2,
 				260C9AC5F34853A02A52E37C,
 				BF29A6AF4DE7245A2BBDC5E1,
@@ -760,6 +763,7 @@
 			files = (
 				955A93FD048CC67777069046 /* AppModelTests.swift */,
 				8F90CD8F492B274607284E8D /* AppTestSupport.swift */,
+				02FA06C3C86DC943702AEF63 /* BuildTwoTests.swift */,
 				B0659432DE3852D430F5C655 /* CalendarAndTransactionTests.swift */,
 				60714382A7B5FBD79867FF25 /* ProviderTests.swift */,
 				4012BE4586A980F0220D1D43 /* ReminderAndBackupTests.swift */,
