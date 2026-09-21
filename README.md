@@ -33,6 +33,8 @@ Built by Idlery Services LLC. This repository is public for review; see
 - **Keep specifications** from your manual and door placard, used everywhere.
 - **Get reminders** for deadlines it is confident about, and clearly-labelled
   estimates for the ones it is projecting.
+- **Give a vehicle a photo**, so a two-car garage is readable at a glance. It
+  stays on the phone, travels in the backup, and is never read for anything.
 - **Take your records with you** — CSV, a printable PDF, or a complete backup.
 
 ## What it will not do

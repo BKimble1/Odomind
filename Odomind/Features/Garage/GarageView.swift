@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import OdomindCore
 
 struct GarageView: View {
@@ -85,16 +86,16 @@ struct GarageView: View {
 }
 
 struct VehicleRow: View {
+    @Environment(AppModel.self) private var model
+
     let vehicle: Vehicle
     let isSelected: Bool
 
+    @State private var photo: UIImage?
+
     var body: some View {
         HStack(spacing: Theme.Spacing.medium) {
-            Image(systemName: "car.side")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .frame(width: 28)
-                .accessibilityHidden(true)
+            marque
             VStack(alignment: .leading, spacing: 1) {
                 Text(vehicle.displayName)
                 Text(vehicle.identity.displayName)
@@ -114,5 +115,34 @@ struct VehicleRow: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("garage.vehicle")
+        .task(id: vehicle.photoAttachmentID) {
+            photo = vehicle.photoAttachmentID
+                .flatMap { model.attachmentData($0) }
+                .flatMap { UIImage(data: $0) }
+        }
+    }
+
+    /// The owner's photo where there is one, the generic symbol otherwise.
+    ///
+    /// Same slot and same width either way, so a garage where only some
+    /// vehicles have a picture does not come out ragged. Hidden from
+    /// VoiceOver in both cases: the row is combined and already says the
+    /// vehicle's name, and a decorative image that repeats it is noise.
+    @ViewBuilder
+    private var marque: some View {
+        if let photo {
+            Image(uiImage: photo)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.badge))
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: "car.side")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+        }
     }
 }

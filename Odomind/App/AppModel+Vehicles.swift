@@ -112,6 +112,33 @@ extension AppModel {
             }
     }
 
+    /// Sets, replaces or clears a vehicle's photo.
+    ///
+    /// Replacing one releases the file the old photo used, on the same rule
+    /// the store applies elsewhere: an attachment goes only when nothing else
+    /// points at it. A restored backup can legitimately share one image
+    /// between a vehicle and a receipt, and deleting the file out from under
+    /// the receipt would turn a cosmetic change into lost evidence.
+    func setPhoto(_ attachmentID: UUID?, for vehicle: Vehicle) {
+        let previous = vehicle.photoAttachmentID
+        guard previous != attachmentID else { return }
+
+        var updated = vehicle
+        updated.photoAttachmentID = attachmentID
+        updateVehicle(updated)
+
+        // After the save, so the snapshot this reads already has the new
+        // photo in it and cannot see the old one as still referenced.
+        if let previous { releaseAttachmentIfUnreferenced(previous) }
+    }
+
+    private func releaseAttachmentIfUnreferenced(_ id: UUID) {
+        let inUse = snapshot.serviceRecords.contains { $0.attachmentIDs.contains(id) }
+            || snapshot.vehicles.contains { $0.photoAttachmentID == id }
+        guard !inUse else { return }
+        removeAttachment(id: id, fromRecord: nil)
+    }
+
     func updateVehicle(_ vehicle: Vehicle, declaredTypicalDistance: Distance? = nil) {
         do {
             try store.save(vehicle: vehicle, declaredTypicalDistance: declaredTypicalDistance)

@@ -307,6 +307,70 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.snapshot.vehicles.filter(\.isDemo).count, 1)
     }
 
+    // MARK: - Vehicle photo
+
+    /// A tiny valid JPEG, so the attachment path runs for real rather than on
+    /// bytes the image pipeline would reject.
+    private var sampleImage: Data {
+        Data([
+            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
+            0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9
+        ])
+    }
+
+    func testReplacingAVehiclePhotoDeletesTheFileTheOldOneUsed() throws {
+        let (model, _) = try makeModel()
+        let vehicleID = try XCTUnwrap(model.addVehicle(from: AppFixture.draft()))
+
+        let first = try XCTUnwrap(model.addAttachment(data: sampleImage, contentType: "image/jpeg"))
+        let firstFile = try XCTUnwrap(model.snapshot.attachment(id: first)?.fileName)
+        model.setPhoto(first, for: try XCTUnwrap(model.snapshot.vehicle(id: vehicleID)))
+        XCTAssertEqual(model.snapshot.vehicle(id: vehicleID)?.photoAttachmentID, first)
+        XCTAssertEqual(model.attachmentData(first), sampleImage)
+
+        let second = try XCTUnwrap(model.addAttachment(data: sampleImage, contentType: "image/jpeg"))
+        model.setPhoto(second, for: try XCTUnwrap(model.snapshot.vehicle(id: vehicleID)))
+
+        XCTAssertEqual(model.snapshot.vehicle(id: vehicleID)?.photoAttachmentID, second)
+        XCTAssertNil(model.snapshot.attachment(id: first), "the replaced photo should be deregistered")
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: model.attachments.url(forFileName: firstFile).path),
+            "replacing a photo should not leave the old image on disk"
+        )
+
+        model.setPhoto(nil, for: try XCTUnwrap(model.snapshot.vehicle(id: vehicleID)))
+        XCTAssertNil(model.snapshot.vehicle(id: vehicleID)?.photoAttachmentID)
+        XCTAssertNil(model.snapshot.attachment(id: second))
+    }
+
+    /// A restored backup can point a vehicle photo and a receipt at the same
+    /// image. Changing the photo is cosmetic; it must not take the receipt's
+    /// evidence with it.
+    func testReplacingAPhotoKeepsAnImageAReceiptStillUses() throws {
+        let (model, _) = try makeModel()
+        let vehicleID = try XCTUnwrap(model.addVehicle(from: AppFixture.draft()))
+        let oil = try XCTUnwrap(
+            model.evaluations(for: vehicleID).first { $0.definitionID == "engine-oil-and-filter" }
+        )
+
+        let shared = try XCTUnwrap(model.addAttachment(data: sampleImage, contentType: "image/jpeg"))
+        var draft = ServiceDraft(
+            vehicleID: vehicleID,
+            performedOn: appDate(2026, 6, 1),
+            odometerAmount: 120_000,
+            currencyCode: "USD"
+        )
+        draft.selectedPlanItemIDs = [oil.planItemID]
+        draft.attachmentIDs = [shared]
+        XCTAssertNotNil(model.saveService(draft))
+
+        model.setPhoto(shared, for: try XCTUnwrap(model.snapshot.vehicle(id: vehicleID)))
+        model.setPhoto(nil, for: try XCTUnwrap(model.snapshot.vehicle(id: vehicleID)))
+
+        XCTAssertNotNil(model.snapshot.attachment(id: shared), "the receipt still points at this image")
+        XCTAssertEqual(model.attachmentData(shared), sampleImage)
+    }
+
     // MARK: - Deleting everything
 
     func testDeleteAllDataClearsRecordsAndReminders() async throws {
