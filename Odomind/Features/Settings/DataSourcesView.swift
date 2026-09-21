@@ -83,38 +83,25 @@ struct DataSourcesView: View {
             }
 
             Section {
+                // The count comes from the list rather than from a number
+                // typed into the sentence. This screen once said a VIN lookup
+                // was the only request Odomind could make, and it was wrong
+                // by the next release; a sentence that counts itself cannot
+                // go stale the same way.
+                let requests = outboundRequests
+                let howMany = requests.count == 1
+                    ? "is one request"
+                    : "are " + Self.spelled(requests.count) + " requests"
                 Text("""
-                Odomind sends nothing anywhere unless you do something that asks it to. There are five \
-                requests it can make, and each one is listed below with what it carries.
+                Odomind sends nothing anywhere unless you do something that asks it to. There \(howMany) \
+                it can make, and each one is listed below with what it carries.
                 """)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
 
-                outboundRequest(
-                    "Vehicle model lookup",
-                    when: "You type a year and make into the search field",
-                    sends: "The year and the make, to \(model.identificationProvider.contactedHost)"
-                )
-                outboundRequest(
-                    "VIN decode",
-                    when: "You ask for one, after a disclosure naming where it goes",
-                    sends: "The VIN, to \(model.identificationProvider.contactedHost)"
-                )
-                outboundRequest(
-                    "Nearby parts shops",
-                    when: "You tap Near me, or type a postal code",
-                    sends: "A coarse location or the postal code, to Apple's map search"
-                )
-                outboundRequest(
-                    "Opening a retailer",
-                    when: "You tap a retailer",
-                    sends: "Nothing from Odomind — your browser opens their own search for the year, make, model and part"
-                )
-                outboundRequest(
-                    "Maintenance catalog update",
-                    when: "You tap Check now, or turn on automatic checks",
-                    sends: "Nothing about you or your vehicle"
-                )
+                ForEach(requests) { request in
+                    outboundRequest(request.title, when: request.when, sends: request.sends)
+                }
 
                 Text("""
                 Your mileage, your service history, your receipts, your photos and your notes stay on this \
@@ -131,6 +118,70 @@ struct DataSourcesView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Data sources")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// One request, as data rather than as a call, so the sentence above can
+    /// count them.
+    struct OutboundRequest: Identifiable {
+        var id: String { title }
+        var title: String
+        var when: String
+        var sends: String
+    }
+
+    /// Every request Odomind can make, in one place.
+    ///
+    /// Listed rather than summarised because a summary is where an absolute
+    /// creeps in: this screen used to say a VIN lookup was the only request
+    /// Odomind could make, and by Build 2 that was no longer true. Build 3
+    /// added two more — engine options and photographs — and this is the list
+    /// that has to grow with them.
+    private var outboundRequests: [OutboundRequest] {
+        let identity = model.identificationProvider.contactedHost
+        return [
+            OutboundRequest(
+                title: "Vehicle model lookup",
+                when: "You type a year and make into the search field",
+                sends: "The year and the make, to \(identity)"
+            ),
+            OutboundRequest(
+                title: "VIN decode",
+                when: "You ask for one, after a disclosure naming where it goes",
+                sends: "The VIN, to \(identity)"
+            ),
+            OutboundRequest(
+                title: "Which engines this model was sold with",
+                when: "You choose a vehicle, on the step that asks which one is yours",
+                sends: "The year, the make and the model, to www.fueleconomy.gov"
+            ),
+            OutboundRequest(
+                title: "A photograph of a car like yours",
+                when: "A vehicle is shown and Odomind has no picture for it yet",
+                sends: "The year, make, model and body style, to commons.wikimedia.org"
+            ),
+            OutboundRequest(
+                title: "Nearby parts shops",
+                when: "You tap Near me, or type a postal code",
+                sends: "A coarse location or the postal code, to Apple's map search"
+            ),
+            OutboundRequest(
+                title: "Opening a retailer",
+                when: "You tap a retailer",
+                sends: "Nothing from Odomind — your browser opens their own search for the year, make, model and part"
+            ),
+            OutboundRequest(
+                title: "Maintenance catalog update",
+                when: "You tap Check now, or turn on automatic checks",
+                sends: "Nothing about you or your vehicle"
+            ),
+        ]
+    }
+
+    /// Small numbers read better as words in a sentence.
+    static func spelled(_ count: Int) -> String {
+        let words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+        guard count >= 0, count < words.count else { return String(count) }
+        return words[count]
     }
 
     /// One outbound request, named with what triggers it and what it carries.
@@ -197,6 +248,15 @@ struct PrivacyView: View {
                 add a vehicle by hand instead. Finding nearby parts shops sends a coarse location, or the postal \
                 code you type, to Apple's map search. Checking for a maintenance catalog update sends nothing \
                 about you or your vehicles.
+                """)
+                .font(.callout)
+                .fixedSize(horizontal: false, vertical: true)
+
+                Text("""
+                Choosing a vehicle sends its year, make and model to www.fueleconomy.gov, the US Department of \
+                Energy and EPA's public database, to ask which engines and drivetrains it was sold with. \
+                Showing a photograph sends the year, make, model and body style to commons.wikimedia.org. \
+                Neither carries your VIN, your mileage or anything about you.
                 """)
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
