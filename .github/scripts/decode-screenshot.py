@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-"""Rebuild a screenshot from the `Screenshots` workflow's job log.
+"""Rebuild the screenshots in a Screenshots-workflow job log.
 
-The Screenshots workflow writes each capture into the log of its own small job
-as base64, because artifact downloads are not reachable from every environment
-this repository gets worked on from. Save that job's log to a file and run:
+The capture jobs write every screen into their own log as base64, because a
+job log is the only channel out of a runner this repository can read from —
+artifact downloads are not reachable here, and a finalize call returning 403
+once took all thirty images with it. Save the job's log to a file and run:
 
-    .github/scripts/decode-screenshot.py today.log today.jpg
+    .github/scripts/decode-screenshot.py today.log screenshots/
 
-Lines look like `IMG:0001:<base64>`, optionally behind the timestamp that
-GitHub prefixes to every log line. `IMGMISS:<name>` means the capture was not
-produced, which is worth knowing rather than silently decoding to nothing.
+One log holds many images now, so this splits on the `IMGSTART:<name>:<bytes>`
+and `IMGEND:<name>` markers before decoding, and writes one file per screen.
+The earlier version kept chunks in a single dict keyed by sequence number:
+each image restarts its numbering at 1, so later chunks silently overwrote
+earlier ones and the result still passed the contiguity check. It wrote a
+corrupt file and reported success.
+
+Each image is also checked against the byte count the emitter recorded, so a
+truncated log is refused rather than written out half-size.
+`IMGMISS:<name>` means a capture was not produced, which is worth saying.
 """
 
 import base64
@@ -18,61 +26,70 @@ import pathlib
 import re
 import sys
 
+START = re.compile(r"IMGSTART:([A-Za-z0-9._-]+):(\d+)")
+END = re.compile(r"IMGEND:([A-Za-z0-9._-]+)")
 CHUNK = re.compile(r"IMG:(\d+):([A-Za-z0-9+/=]{16,})")
 MISSING = re.compile(r"IMGMISS:([A-Za-z0-9._-]+)")
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def normalise(text: str) -> str:
-    """Make a log readable whether it was downloaded or fetched as JSON.
-
-    A log pulled through the API arrives as one long line with newlines
-    escaped, colour codes intact and a timestamp on every line. None of that
-    changes the base64, but it does stop a line-by-line parse finding it.
-    """
     if "\\n" in text and text.count("\n") < 5:
         text = text.replace("\\n", "\n")
-    text = ANSI.sub("", text)
-    return text
+    return ANSI.sub("", text)
 
 
-def main(log_path: pathlib.Path, out_path: pathlib.Path) -> int:
+def main(log_path: pathlib.Path, out_dir: pathlib.Path) -> int:
     text = normalise(log_path.read_text(errors="replace"))
+    out_dir.mkdir(parents=True, exist_ok=True)
 
+    current = None
+    expected_bytes = 0
     chunks: dict[int, str] = {}
+    written = 0
+
     for line in text.split("\n"):
-        # The log echoes the script that produced these lines, so skip
-        # anything that is quoting the marker rather than emitting it.
         if "printf" in line or "echo " in line:
             continue
+
+        for name in MISSING.findall(line):
+            print(f"  MISSING: {name}")
+
+        begin = START.search(line)
+        if begin:
+            current, expected_bytes = begin.group(1), int(begin.group(2))
+            chunks = {}
+            continue
+
+        finish = END.search(line)
+        if finish and current:
+            order = sorted(chunks)
+            if order != list(range(1, len(order) + 1)):
+                print(f"  {current}: missing chunks, refusing to write a corrupt file")
+            else:
+                data = b""
+                try:
+                    data = base64.b64decode("".join(chunks[i] for i in order), validate=True)
+                except binascii.Error as error:
+                    print(f"  {current}: {error}")
+                if data:
+                    if expected_bytes and len(data) != expected_bytes:
+                        print(f"  {current}: expected {expected_bytes} bytes, got {len(data)} — not writing")
+                    else:
+                        path = out_dir / f"{current}.jpg"
+                        path.write_bytes(data)
+                        print(f"  wrote {path} ({len(data)} bytes, {len(order)} chunks)")
+                        written += 1
+            current, chunks = None, {}
+            continue
+
         match = CHUNK.search(line)
-        if match:
+        if match and current:
             chunks[int(match.group(1))] = match.group(2)
 
-    if not chunks:
-        missing = MISSING.search(text)
-        if missing:
-            print(f"the log says {missing.group(1)} was not captured")
-        else:
-            print(f"no image chunks found in {log_path}")
+    if written == 0:
+        print(f"  no images decoded from {log_path}")
         return 1
-
-    order = sorted(chunks)
-    expected = list(range(1, len(order) + 1))
-    if order != expected:
-        gaps = sorted(set(expected) - set(order))
-        print(f"the log is missing chunk(s) {gaps}; the image would be corrupt")
-        return 1
-
-    payload = "".join(chunks[index] for index in order)
-    try:
-        data = base64.b64decode(payload, validate=True)
-    except binascii.Error as error:
-        print(f"could not decode the image: {error}")
-        return 1
-
-    out_path.write_bytes(data)
-    print(f"wrote {out_path} ({len(data)} bytes from {len(order)} chunks)")
     return 0
 
 

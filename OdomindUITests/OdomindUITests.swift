@@ -67,7 +67,16 @@ final class OdomindJourneyUITests: XCTestCase {
         )
         start.tap()
 
-        waitFor(app.buttons["addVehicle.manual"], 10, "the manual entry option is missing").tap()
+        // Scrolled to rather than waited on. A row far below a SwiftUI Form's
+        // viewport is not in the accessibility tree at all, so waiting for one
+        // never finds it however long the timeout — which is how a screen that
+        // had quietly buried this button read as a ten-second hang in fifteen
+        // different tests.
+        XCTAssertTrue(
+            app.scrollTo(app.buttons["addVehicle.manual"], hittable: true),
+            "the manual entry option is missing — saw \(app.visibleRowLabels())"
+        )
+        app.buttons["addVehicle.manual"].tap()
         type("2010", into: app.textFields["addVehicle.year"])
         type("Jeep", into: app.textFields["addVehicle.make"])
         type("Wrangler", into: app.textFields["addVehicle.model"])
@@ -218,6 +227,31 @@ final class OdomindJourneyUITests: XCTestCase {
             app.element(labelContaining: "Every 5,000 miles").waitForExistence(timeout: 5)
                 || app.element(labelContaining: "whichever comes first").exists,
             "the schedule and where it came from should be one tap away"
+        )
+    }
+
+    func testTheWaysOutOfSearchAreOnScreenBeforeAnythingIsTyped() {
+        // Both escape hatches have to be reachable without scrolling past a
+        // list of suggestions nobody asked for. Loading the suggestion index
+        // used to put twelve makes above them on a fresh install.
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing"]
+        fresh.launch()
+
+        waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
+        _ = fresh.textFields["addVehicle.search"].waitForExistence(timeout: 10)
+
+        XCTAssertTrue(
+            fresh.buttons["addVehicle.manual"].waitForExistence(timeout: 5),
+            "Type it in myself should be on screen without scrolling — saw \(fresh.visibleRowLabels())"
+        )
+        XCTAssertTrue(
+            fresh.buttons["addVehicle.useVIN"].exists,
+            "Use my VIN should be on screen too — saw \(fresh.visibleRowLabels())"
+        )
+        XCTAssertFalse(
+            fresh.buttons["addVehicle.makeSuggestion"].exists,
+            "nothing should be suggested before anybody types"
         )
     }
 

@@ -527,6 +527,39 @@ final class VehicleSearchTests: XCTestCase {
         XCTAssertEqual(count, 0, "suggesting a make needs no request")
     }
 
+    func testAnUntouchedFieldOffersNothingRatherThanTwelveBrands() async throws {
+        // A real regression, found by the UI suite. Loading the index used to
+        // put twelve makes on screen before anybody typed, which pushed "Type
+        // it in myself" and "Use my VIN" off the first screen — and out of
+        // the accessibility tree, because a List does not realise rows that
+        // far down. The two ways out of a failing search were unreachable on
+        // a fresh install.
+        let search = await makeSearch(ScriptedModelProvider())
+        XCTAssertEqual(search.state, .idle, "loading the index must not fill the screen")
+    }
+
+    func testClearingTheFieldPutsTheScreenBackTheWayItOpened() async throws {
+        let search = await makeSearch(ScriptedModelProvider())
+
+        search.search("jee", debounce: .zero)
+        try await Task.sleep(nanoseconds: 150_000_000)
+        guard case .makeSuggestions = search.state else {
+            return XCTFail("typing should suggest, got \(search.state)")
+        }
+
+        search.search("", debounce: .zero)
+        XCTAssertEqual(
+            search.state, .idle,
+            "an empty field is somebody who has not started, not a short query"
+        )
+    }
+
+    func testASingleSpaceCountsAsEmpty() async throws {
+        let search = await makeSearch(ScriptedModelProvider())
+        search.search("   ", debounce: .zero)
+        XCTAssertEqual(search.state, .idle)
+    }
+
     func testIndexResultsAreNotReplacedByASpinner() async throws {
         // The index puts real results on screen the instant somebody types a
         // model name. Showing a spinner over them while the provider confirms

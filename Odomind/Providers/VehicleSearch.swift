@@ -105,7 +105,14 @@ final class VehicleSearchModel {
         }.value
         guard let loaded else { return }
         index = loaded
-        if case .idle = state { state = .makeSuggestions(suggestedMakes()) }
+        // Deliberately does not put suggestions on screen.
+        //
+        // It used to, and that pushed "Type it in myself" and "Use my VIN"
+        // below twelve car brands nobody had asked for — off the first
+        // screen, and out of the accessibility tree entirely, because a List
+        // does not realise rows that far down. The two ways out of a failing
+        // search were unreachable on a fresh install. Suggestions are worth
+        // showing once somebody starts typing, not before.
     }
 
     /// Makes to show before anything has been typed.
@@ -137,7 +144,13 @@ final class VehicleSearchModel {
 
         switch query.intent {
         case .tooShort:
-            state = index.makes.isEmpty ? .idle : .makeSuggestions(suggestedMakes())
+            // An empty field is not a short query: it is somebody who has not
+            // started. Clearing the field puts the screen back the way it
+            // opened rather than filling it with brands.
+            let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            state = typed.isEmpty || index.makes.isEmpty
+                ? .idle
+                : .makeSuggestions(suggestedMakes())
             return
 
         case .makeSuggestions(let makes):

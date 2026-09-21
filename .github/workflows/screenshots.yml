@@ -55,7 +55,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/build.log"
 
+      # Reported, not gated. A capture chain that fails one assert has still
+      # captured everything before it, and throwing those away leaves nothing
+      # to look at and nothing to diagnose from.
       - name: Capture
+        continue-on-error: true
         run: |
           set -o pipefail
           xcodebuild test-without-building \
@@ -67,6 +71,10 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee "$RUNNER_TEMP/screens.log"
+
+      - name: Say what failed, if anything did
+        if: always()
+        run: ./.github/scripts/test-failures.sh "$RUNNER_TEMP/screens.log" || true
 
       - name: Name and shrink the captures
         run: |
@@ -86,7 +94,23 @@ jobs:
           done
           ls -l "$RUNNER_TEMP/small"
 
+      # The log is the only channel out of a runner this repository can read,
+      # so every screen goes into it here rather than through an artifact. A
+      # finalize call returning 403 took all thirty images with it last time,
+      # because the emit jobs needed an artifact that never landed.
+      - name: Emit every capture into the log
+        if: always()
+        run: |
+          shopt -s nullglob
+          for file in "$RUNNER_TEMP"/small/*.jpg; do
+            name=$(basename "$file" .jpg)
+            echo "IMGSTART:$name:$(wc -c < "$file" | tr -d ' ')"
+            base64 -b 0 "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+            echo "IMGEND:$name"
+          done
+
       - name: Upload the full-size screenshots
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: screenshots-${{ github.run_id }}
@@ -95,66 +119,13 @@ jobs:
           if-no-files-found: error
 
       - name: Upload the small copies
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: screenshots-small-${{ github.run_id }}
           path: ${{ runner.temp }}/small
           retention-days: 14
           if-no-files-found: error
-
-  emit:
-    name: Log ${{ matrix.screen }}
-    needs: capture
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        screen:
-          - light-00-onboarding
-          - light-00b-find-vehicle
-          - light-01-home
-          - light-02-jobs
-          - light-03-job-detail
-          - light-04-garage
-          - light-05-vehicle
-          - light-06-artwork
-          - light-07-specifications
-          - light-08-calendar
-          - light-09-settings
-          - light-10-pro
-          - dark-01-home
-          - dark-04-garage
-          - dark-08-calendar
-          - large-text-01-home
-          - build3-01-permissions
-          - build3-02-yearless-search
-          - build3-03-configuration
-          - build3-04-home
-          - build3-05-parts-from-a-job
-          - build3-06-location
-    steps:
-      - name: Download the small copies
-        uses: actions/download-artifact@v4
-        with:
-          name: screenshots-small-${{ github.run_id }}
-          path: small
-
-      - name: Emit
-        run: |
-          file=$(find small -maxdepth 1 -type f -name "${{ matrix.screen }}*.jpg" | sort | head -1)
-          if [ -z "$file" ]; then
-            echo "IMGMISS:${{ matrix.screen }}"
-            # Say what did arrive. If xcresulttool's manifest format changes,
-            # every screen goes missing at once and the reason is the naming,
-            # not the capture — that is only obvious with the list in hand.
-            echo "What the artifact actually contains:"
-            find small -type f | sort
-            exit 0
-          fi
-          echo "IMGSTART:${{ matrix.screen }}:$(wc -c < "$file" | tr -d ' ')"
-          base64 -w 0 "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
-          echo "IMGEND:${{ matrix.screen }}"
 
   small-display:
     name: Capture on the smallest iPhone
@@ -195,6 +166,7 @@ jobs:
             2>&1 | tail -30
 
       - name: Capture
+        continue-on-error: true
         run: |
           set -o pipefail
           xcodebuild test-without-building \
@@ -205,7 +177,13 @@ jobs:
             -only-testing:OdomindUITests/OdomindScreenshotTests \
             -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tail -40
+            2>&1 | tee "$RUNNER_TEMP/screens.log" | tail -40
+
+      # `tail` kept the log short and threw away the assertion with it. One
+      # failed test on an SE told me nothing at all last run.
+      - name: Say what failed, if anything did
+        if: always()
+        run: ./.github/scripts/test-failures.sh "$RUNNER_TEMP/screens.log" || true
 
       # Emitted from this job rather than through an artifact, because the
       # only channel out of a runner this repository can read from is the log.
