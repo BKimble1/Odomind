@@ -70,7 +70,7 @@ struct OdomindDestinations: ViewModifier {
                 case .addTask: AddTaskView()
                 case .customTask: CustomTaskEditor()
                 case .proposals: ProposalsView()
-                case .parts(let planItemID): PartsView(planItemID: planItemID)
+                case .parts(let destination): PartsView(destination: destination)
                 }
             }
             .navigationDestination(for: VehicleRoute.self) { route in

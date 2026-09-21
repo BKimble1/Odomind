@@ -68,7 +68,7 @@ struct TaskDetailView: View {
                 }
                 .accessibilityIdentifier("task.markDone")
 
-                if item.baseline == .notProvided || evaluation.state == .historyUnknown {
+                if Self.canStartTrackingFromToday(item: item, evaluation: evaluation) {
                     Button {
                         model.startTrackingFromToday(planItemID: planItemID)
                     } label: {
@@ -79,7 +79,7 @@ struct TaskDetailView: View {
             } header: {
                 Text("Status")
             } footer: {
-                if item.baseline == .notProvided || evaluation.state == .historyUnknown {
+                if Self.canStartTrackingFromToday(item: item, evaluation: evaluation) {
                     Text("Starting from today records a starting point, not work that was done.")
                 }
             }
@@ -479,7 +479,15 @@ struct TaskDetailView: View {
                 )
             }
 
-            NavigationLink(value: JobRoute.parts(planItemID)) {
+            // Carries the job, what it is called, and the category it sits
+            // in — so an oil change opens looking for an oil filter rather
+            // than at a blank field. The job's own name is the better query:
+            // "Engine oil and filter" finds a filter, "Engine" does not.
+            NavigationLink(value: JobRoute.parts(PartsDestination(
+                planItemID: planItemID,
+                query: item.title,
+                category: item.category.displayName
+            ))) {
                 Label("Find parts", systemImage: "bag")
             }
             .accessibilityIdentifier("task.findParts")
@@ -511,6 +519,20 @@ struct TaskDetailView: View {
     }
 
     /// The last recorded completion, on the status block.
+    /// Whether to offer "Start tracking from today".
+    ///
+    /// Only where the baseline is genuinely unknown. Build 2 asked whether the
+    /// *baseline field* was set, which is not the same question: a job with a
+    /// real recorded service — "Last done Mar 5, 2026 at 123,800 mi" — could
+    /// still have an empty baseline, so the screen showed a completion and an
+    /// offer to invent one directly beneath it. Taking that offer would have
+    /// written today over history the owner had already entered.
+    static func canStartTrackingFromToday(item: MaintenancePlanItem, evaluation: ScheduleEvaluation) -> Bool {
+        // A recorded service *is* the baseline.
+        guard evaluation.lastCompletedOn == nil, evaluation.lastCompletedOdometer == nil else { return false }
+        return item.baseline == .notProvided || evaluation.state == .historyUnknown
+    }
+
     private func lastCompletionText(item: MaintenancePlanItem, evaluation: ScheduleEvaluation) -> String? {
         if let date = evaluation.lastCompletedOn {
             var text = "Last done \(Format.date(date))"

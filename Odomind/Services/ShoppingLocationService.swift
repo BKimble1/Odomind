@@ -61,8 +61,11 @@ final class ShoppingLocationService {
 
     private static let storageKey = "com.idlery.odomind.shoppingArea"
 
-    init(provider: DeviceLocationProvider = DeviceLocationProvider(), defaults: UserDefaults = .standard) {
-        self.provider = provider
+    /// The provider is built here rather than defaulted in the signature: it
+    /// is main-actor isolated, and a default argument is evaluated outside
+    /// that isolation.
+    init(provider: DeviceLocationProvider? = nil, defaults: UserDefaults = .standard) {
+        self.provider = provider ?? DeviceLocationProvider()
         self.defaults = defaults
         restore()
     }

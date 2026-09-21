@@ -12,13 +12,19 @@ import OdomindCore
 struct PartsView: View {
     @Environment(AppModel.self) private var model
 
-    /// The job this was opened from, when it was.
-    let planItemID: UUID?
+    /// What this screen was opened for: the job, the typed query, the
+    /// category. Build 2 took only the job id, so a search typed on Home
+    /// arrived here as nothing at all.
+    let destination: PartsDestination
+
+    /// Kept for the call sites that only ever had a job.
+    var planItemID: UUID? { destination.planItemID }
 
     @State private var partText = ""
     @State private var place = ""
     @State private var finder = NearbyStoreFinder()
     @State private var copied: String?
+    @State private var didSeedQuery = false
 
     var body: some View {
         Group {
@@ -26,6 +32,17 @@ struct PartsView: View {
                 content(for: vehicle)
             } else {
                 NoVehicleView()
+            }
+        }
+        .task {
+            // Once: re-seeding on every appearance would undo the owner's own
+            // edits when they come back from a retailer.
+            guard !didSeedQuery else { return }
+            didSeedQuery = true
+            if let query = destination.query, !query.isEmpty {
+                partText = query
+            } else if let category = destination.category, !category.isEmpty {
+                partText = category
             }
         }
         .navigationTitle("Parts")

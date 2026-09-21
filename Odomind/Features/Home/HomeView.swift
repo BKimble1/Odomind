@@ -198,7 +198,7 @@ struct HomeView: View {
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 PrimaryActionButton(title: "Find “\(searchText)”", symbolName: "bag") {
-                    router.homePath.append(JobRoute.parts(nil))
+                    router.homePath.append(JobRoute.parts(PartsDestination(query: searchText)))
                 }
                 .accessibilityIdentifier("home.findParts")
             }

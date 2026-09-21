@@ -126,7 +126,32 @@ enum JobRoute: Hashable {
     case customTask
     case proposals
     /// The parts side of a job, or the standalone Parts search.
-    case parts(UUID?)
+    ///
+    /// Carries what the owner was actually looking for. Build 2 routed
+    /// `parts(nil)` from Home's search field, so typing "oil filter" and
+    /// tapping through arrived at an empty parts screen and the query had to
+    /// be typed again. A route that drops its own subject is a route that
+    /// makes the owner do the work twice.
+    case parts(PartsDestination)
+}
+
+/// Everything the parts screen needs to open already knowing what it is for.
+struct PartsDestination: Hashable, Sendable {
+    /// The job this came from, when it came from one.
+    var planItemID: UUID?
+    /// What was typed, carried verbatim.
+    var query: String?
+    /// The catalogue category a job maps to — an oil change opens oil and
+    /// filters, not a blank search.
+    var category: String?
+
+    init(planItemID: UUID? = nil, query: String? = nil, category: String? = nil) {
+        self.planItemID = planItemID
+        self.query = query
+        self.category = category
+    }
+
+    static let blank = PartsDestination()
 }
 
 /// A vehicle and the screens that belong to it.
