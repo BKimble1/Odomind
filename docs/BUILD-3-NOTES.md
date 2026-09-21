@@ -26,7 +26,7 @@ by returning 24 Jeep models.
 | Real photographs with licence and attribution | Implemented, **device check needed** — the simulator run does not reach Commons |
 | Photo match level shown, never implying the owner's own car | Implemented and verified |
 | Shared, persisted shopping area with a control on Home and Parts | Implemented, **device check needed** |
-| Location lifecycle: timeouts, cancellation, repeated taps, denial vs error | Implemented and verified (unit); **device check needed** for real prompts |
+| Location lifecycle: timeouts, cancellation, repeated taps, denial vs error | Implemented and verified (unit, `ShoppingLocationTests`); **device check needed** for real prompts |
 | Early permission setup, asked once, skippable | Implemented and verified |
 | Upgrade catch-up for owners who never saw the questions | Implemented and verified |
 | Search, category and job carried through navigation | Implemented and verified |
