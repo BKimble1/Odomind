@@ -1,0 +1,389 @@
+name: Odomind TestFlight
+
+# Builds, signs and uploads Odomind to App Store Connect from a GitHub-hosted
+# macOS runner. No Mac, no Xcode and no keychain wrangling required locally.
+#
+# Signing is done by Xcode's own cloud signing: given an App Store Connect API
+# key and -allowProvisioningUpdates, Xcode creates and downloads the
+# distribution certificate and provisioning profile itself. That is why this
+# needs no .p12, no .mobileprovision and no base64 keychain secrets — none of
+# which should be in source control anyway.
+#
+# Manual dispatch only. A deploy workflow that runs on pull_request would hand
+# signing and upload credentials to code from a fork.
+on:
+  workflow_dispatch:
+    inputs:
+      marketing_version:
+        description: "Marketing version (CFBundleShortVersionString). Blank keeps the project's."
+        required: false
+        default: ""
+      build_number:
+        description: "Build number. Blank asks App Store Connect for the next free one."
+        required: false
+        default: ""
+      run_ui_tests:
+        description: "Also run the UI test suite (slow — adds roughly 25 minutes)."
+        type: boolean
+        required: false
+        default: false
+      skip_tests:
+        description: "Skip tests entirely. For re-uploading a build that already passed."
+        type: boolean
+        required: false
+        default: false
+      upload:
+        description: "Upload to App Store Connect. Off builds and exports the IPA without shipping it."
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel one in flight: an upload interrupted
+# part-way is exactly the state that is awkward to reason about afterwards.
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUNDLE_ID: com.idlery.odomind
+  SCHEME: Odomind
+  PROJECT: Odomind.xcodeproj
+
+jobs:
+  deploy:
+    name: Build, sign and upload
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: ./.github/scripts/select-xcode.sh
+
+      - name: Install the App Store Connect client's one dependency
+        run: python3 -m pip install --quiet --disable-pip-version-check "pyjwt[crypto]>=2.8"
+
+      # Written to the location altool searches, with owner-only permissions,
+      # and removed in the always() cleanup at the end of the job.
+      - name: Stage the App Store Connect API key
+        id: key
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ASC_KEY_ID}" ] || [ -z "${ASC_PRIVATE_KEY}" ]; then
+            echo "::error::ASC_KEY_ID and ASC_PRIVATE_KEY must both be set as repository secrets."
+            exit 1
+          fi
+
+          dir="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$dir"
+          path="$dir/AuthKey_${ASC_KEY_ID}.p8"
+
+          # Accept the key as PEM or as base64 of the PEM; both are commonly
+          # advised, and the failure mode for guessing wrong is opaque.
+          printf '%s' "${ASC_PRIVATE_KEY}" > "$RUNNER_TEMP/key.in"
+          if grep -q "BEGIN PRIVATE KEY" "$RUNNER_TEMP/key.in"; then
+            cp "$RUNNER_TEMP/key.in" "$path"
+          else
+            tr -d '[:space:]' < "$RUNNER_TEMP/key.in" | base64 --decode > "$path" 2>/dev/null || true
+          fi
+          rm -f "$RUNNER_TEMP/key.in"
+
+          if ! grep -q "BEGIN PRIVATE KEY" "$path"; then
+            echo "::error::ASC_PRIVATE_KEY is neither a .p8 key nor base64 of one. Paste the whole AuthKey_XXXXXXXX.p8 file."
+            rm -f "$path"
+            exit 1
+          fi
+          chmod 600 "$path"
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "Staged the API key (contents never printed)."
+
+      # Fails in seconds on a bad key or a missing app record, rather than
+      # twenty minutes into an archive.
+      - name: Preflight App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: python3 .github/scripts/asc.py preflight --bundle-id "$BUNDLE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the signing inputs agree
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APPLE_TEAM_ID}" ]; then
+            echo "::error::APPLE_TEAM_ID is not set. It is the 10-character Team ID from https://developer.apple.com/account -> Membership."
+            exit 1
+          fi
+          project_bundle_id="$(sed -n 's/^BUNDLE_ID = "\(.*\)"/\1/p' Tools/generate-xcodeproj.py)"
+          if [ "$project_bundle_id" != "$BUNDLE_ID" ]; then
+            echo "::error::the project builds $project_bundle_id but this workflow targets $BUNDLE_ID."
+            exit 1
+          fi
+          echo "Bundle identifier: $project_bundle_id"
+          echo "Team ID: ${APPLE_TEAM_ID:0:3}******* (masked)"
+
+      - name: Work out the version and build number
+        id: version
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          # Through the environment, not pasted into the script by the
+          # expression engine. These are free text from whoever dispatched
+          # the run, and ${{ }} interpolation puts that text straight into
+          # the shell.
+          INPUT_MARKETING_VERSION: ${{ inputs.marketing_version }}
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          set -euo pipefail
+          version="${INPUT_MARKETING_VERSION}"
+          if [ -z "$version" ]; then
+            version="$(sed -n 's/^MARKETING_VERSION = "\(.*\)"/\1/p' Tools/generate-xcodeproj.py)"
+          fi
+
+          build="${INPUT_BUILD_NUMBER}"
+          if [ -z "$build" ]; then
+            build="$(python3 .github/scripts/asc.py next-build-number --bundle-id "$BUNDLE_ID")"
+          fi
+
+          case "$version" in
+            *[!0-9.]*|"") echo "::error::marketing version '$version' must be digits and dots only"; exit 1 ;;
+          esac
+          case "$build" in
+            *[!0-9]*|"") echo "::error::build number '$build' must be a positive integer"; exit 1 ;;
+          esac
+
+          echo "marketing=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Version"
+            echo ""
+            echo "- Marketing version \`$version\`"
+            echo "- Build number \`$build\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the domain tests
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          set -o pipefail
+          swift build --package-path OdomindCore
+          swift test --package-path OdomindCore --parallel
+          swift run --package-path OdomindCore odomind-catalog validate \
+            OdomindCore/Sources/OdomindCore/Resources/odomind-catalog.json --strict
+
+      - name: Discover a simulator
+        id: simulator
+        if: ${{ !inputs.skip_tests }}
+        run: ./.github/scripts/select-simulator.sh
+
+      - name: Run the app unit tests
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindTests \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/unit.log"
+
+      - name: Run the UI tests
+        if: ${{ !inputs.skip_tests && inputs.run_ui_tests }}
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "${{ steps.simulator.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -only-testing:OdomindUITests/OdomindJourneyUITests \
+            -only-testing:OdomindUITests/OdomindAccessibilityUITests \
+            -only-testing:OdomindUITests/OdomindAccessibilityAuditTests \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/ui.log"
+
+      - name: Summarise test failures
+        if: failure()
+        run: |
+          ./.github/scripts/test-failures.sh "$RUNNER_TEMP"/unit.log "$RUNNER_TEMP"/ui.log \
+            2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+      # Xcode creates and downloads the distribution certificate and profile
+      # here, from the API key. That is what -allowProvisioningUpdates does
+      # with -authenticationKey*; without them this step is where a build
+      # without a Mac normally stops.
+      - name: Archive for release
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_PATH: ${{ steps.key.outputs.path }}
+          MARKETING: ${{ steps.version.outputs.marketing }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Odomind.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            -skipMacroValidation \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="$MARKETING" \
+            CURRENT_PROJECT_VERSION="$BUILD" \
+            2>&1 | tee "$RUNNER_TEMP/archive.log"
+
+      - name: Confirm the archive is what it should be
+        env:
+          EXPECTED_BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          set -euo pipefail
+          plist="$RUNNER_TEMP/Odomind.xcarchive/Info.plist"
+          app="$RUNNER_TEMP/Odomind.xcarchive/Products/Applications/Odomind.app"
+          test -d "$app" || { echo "::error::the archive contains no Odomind.app"; exit 1; }
+
+          id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
+          short="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")"
+          build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")"
+          echo "archived $id $short ($build)"
+
+          [ "$id" = "$BUNDLE_ID" ] || { echo "::error::archive bundle id is $id, expected $BUNDLE_ID"; exit 1; }
+          [ "$build" = "$EXPECTED_BUILD" ] || {
+            echo "::error::archive build number is $build, expected $EXPECTED_BUILD"; exit 1; }
+
+          # An app icon carrying an alpha channel is rejected by App Store
+          # Connect after the upload, which is a slow way to find out.
+          icon="$app/AppIcon60x60@2x.png"
+          if [ -f "$icon" ] && command -v sips >/dev/null; then
+            if sips -g hasAlpha "$icon" 2>/dev/null | grep -q "hasAlpha: yes"; then
+              echo "::error::the app icon has an alpha channel; App Store Connect rejects that."
+              exit 1
+            fi
+          fi
+          echo "Archive verified: $id, $short ($build), icon opaque." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Export a signed IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_PATH: ${{ steps.key.outputs.path }}
+        run: |
+          set -o pipefail
+          ipa="$(./.github/scripts/export-ipa.sh \
+            "$RUNNER_TEMP/Odomind.xcarchive" \
+            "$RUNNER_TEMP/export" \
+            "$APPLE_TEAM_ID" \
+            "$KEY_PATH" \
+            "$ASC_KEY_ID" \
+            "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/export.log" | tail -1)"
+          test -n "$ipa" || { echo "::error::no IPA was produced"; exit 1; }
+          echo "IPA_PATH=$ipa" >> "$GITHUB_ENV"
+          echo "Exported $(basename "$ipa") ($(du -h "$ipa" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload to App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          # Validate first: the same checks Apple runs on receipt, but with the
+          # answer in this log instead of an email twenty minutes later.
+          xcrun altool --validate-app \
+            -f "$IPA_PATH" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/validate.log"
+
+          xcrun altool --upload-app \
+            -f "$IPA_PATH" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/upload.log"
+          echo "Uploaded to App Store Connect." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait for TestFlight processing
+        if: ${{ inputs.upload }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          MARKETING: ${{ steps.version.outputs.marketing }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          python3 .github/scripts/asc.py wait-for-build \
+            --bundle-id "$BUNDLE_ID" \
+            --version "$MARKETING" \
+            --build "$BUILD" \
+            --timeout 900 | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the IPA and dSYMs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: odomind-${{ steps.version.outputs.marketing }}-${{ steps.version.outputs.build }}
+          path: |
+            ${{ runner.temp }}/export/*.ipa
+            ${{ runner.temp }}/export/*.plist
+            ${{ runner.temp }}/Odomind.xcarchive/dSYMs
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Keep the build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/archive.log
+            ${{ runner.temp }}/export.log
+            ${{ runner.temp }}/upload.log
+            ${{ runner.temp }}/validate.log
+            ${{ runner.temp }}/unit.log
+            ${{ runner.temp }}/ui.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Say what happened
+        if: always()
+        run: |
+          {
+            echo ""
+            echo "### Outcome"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Bundle identifier | \`$BUNDLE_ID\` |"
+            echo "| Marketing version | \`${{ steps.version.outputs.marketing }}\` |"
+            echo "| Build number | \`${{ steps.version.outputs.build }}\` |"
+            echo "| Tests | ${{ inputs.skip_tests && 'skipped by request' || (inputs.run_ui_tests && 'domain + unit + UI' || 'domain + unit') }} |"
+            echo "| Uploaded | ${{ inputs.upload && 'yes' || 'no — export only' }} |"
+            echo "| Result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Runs whatever happened, including on cancellation.
+      - name: Remove the API key from the runner
+        if: always()
+        run: |
+          rm -rf "$HOME/.appstoreconnect/private_keys"
+          echo "API key removed."
