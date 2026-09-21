@@ -33,6 +33,30 @@ struct OdomindApp: App {
                     router.follow(link)
                 }
             }
+            .preferredColorScheme(Self.forcedColorScheme)
+        }
+    }
+
+    /// Honours `-odomind-appearance dark` (or `light`) under UI testing.
+    ///
+    /// The screenshot pass needs to capture both appearances, and setting
+    /// `XCUIDevice.shared.appearance` before launch did not take: the run that
+    /// was meant to be dark came back byte-for-byte identical to the light
+    /// one, which is a quiet way to ship an unverified dark mode. Asking the
+    /// app directly cannot silently do nothing.
+    ///
+    /// `nil` everywhere else, so the app follows the system as it should.
+    private static var forcedColorScheme: ColorScheme? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains(AppModel.uiTestingArgument),
+              let index = arguments.firstIndex(of: "-odomind-appearance"),
+              arguments.indices.contains(index + 1)
+        else { return nil }
+
+        switch arguments[index + 1].lowercased() {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
         }
     }
 

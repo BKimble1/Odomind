@@ -73,19 +73,27 @@ final class OdomindScreenshotTests: XCTestCase {
 
     func testCaptureLightAppearance() {
         XCUIDevice.shared.appearance = .light
+        app.launchArguments += ["-odomind-appearance", "light"]
         app.launch()
         walk("light")
     }
 
     func testCaptureDarkAppearance() {
+        // Both, deliberately. Setting the device appearance alone produced a
+        // "dark" capture that was identical to the light one, so the app is
+        // asked directly as well.
         XCUIDevice.shared.appearance = .dark
+        app.launchArguments += ["-odomind-appearance", "dark"]
         app.launch()
         walk("dark")
     }
 
     func testCaptureLargeTextSize() {
         XCUIDevice.shared.appearance = .light
-        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"]
+        app.launchArguments += [
+            "-odomind-appearance", "light",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"
+        ]
         app.launch()
 
         XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear at a large text size")
@@ -98,7 +106,7 @@ final class OdomindScreenshotTests: XCTestCase {
 
     func testCaptureOnboarding() {
         let fresh = XCUIApplication()
-        fresh.launchArguments = ["-odomind-ui-testing"]
+        fresh.launchArguments = ["-odomind-ui-testing", "-odomind-appearance", "light"]
         XCUIDevice.shared.appearance = .light
         fresh.launch()
 
