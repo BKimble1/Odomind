@@ -25,8 +25,13 @@ extension XCUIApplication {
     /// on it will never find it, however long the timeout. The list has to be
     /// moved. Three UI tests failed on this: the oil task sits well down
     /// Today's "Needs setup" group, the odometer field is below the task list
-    /// in the Log service sheet, and an alignment check is a long way into the
-    /// catalog.
+    /// in the Log service sheet, and a catalog row is a long way down
+    /// thirty-two of them.
+    ///
+    /// Scrolling has a reach, though, and it is shorter than it looks: these
+    /// rows are several lines tall. A test that needs a row a dozen swipes
+    /// away is better off asking for a nearer one than asking for a bigger
+    /// budget.
     /// - Parameter hittable: require the element to be tappable, not merely
     ///   present. Existing and being reachable are different things: a row can
     ///   be in the tree while still off-screen, which is how an onboarding
@@ -41,11 +46,49 @@ extension XCUIApplication {
         _ = element.waitForExistence(timeout: 3)
         if satisfied() { return true }
 
+        // Stop once the list stops moving, rather than swiping into the
+        // bottom stop for the rest of the budget. A blind loop turns "that
+        // row is not here" into a seventy-eight second timeout that says
+        // nothing about why, which is exactly how the catalog test failed.
+        var previous = rowSignature()
+        var stalls = 0
         for _ in 0..<maxSwipes {
             swipeUp()
             if satisfied() { return true }
+
+            let current = rowSignature()
+            stalls = current == previous ? stalls + 1 : 0
+            previous = current
+            // Two in a row, so one settling bounce does not read as the end.
+            if stalls >= 2 { break }
         }
         return satisfied()
+    }
+
+    /// The rows on screen right now, for a failure message that says what the
+    /// test saw instead of only what it wanted.
+    func visibleRowLabels(limit: Int = 8) -> [String] {
+        rows().prefix(limit).map(\.label).filter { !$0.isEmpty }
+    }
+
+    /// Whether the realised rows have changed, as a cheap "did that swipe do
+    /// anything?" signal.
+    ///
+    /// Row identity rather than pixels: a list that has hit its stop still
+    /// rubber-bands, and a frame that springs back is not progress.
+    private func rowSignature() -> String {
+        let realised = rows()
+        guard let first = realised.first, let last = realised.last else { return "no rows" }
+        return "\(realised.count)|\(first.label)|\(last.label)"
+    }
+
+    /// SwiftUI surfaces `List` rows as cells, but not always — a row whose
+    /// children are combined for VoiceOver can come through as a plain
+    /// element. Falling back keeps both the stall check and the failure
+    /// message working either way.
+    private func rows() -> [XCUIElement] {
+        let cells = descendants(matching: .cell).allElementsBoundByIndex
+        return cells.isEmpty ? descendants(matching: .staticText).allElementsBoundByIndex : cells
     }
 
     /// Any element whose accessibility label contains `text`.

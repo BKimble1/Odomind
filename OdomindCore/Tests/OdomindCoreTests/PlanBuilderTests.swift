@@ -100,6 +100,21 @@ final class ApplicabilityTests: XCTestCase {
 
         let full = PlanBuilder.suggestions(for: Fixture.vehicle(), catalog: catalog, includeAdvanced: true)
         XCTAssertGreaterThan(full.count, short.count)
+
+        // The journey test taps this exact task out of the catalog, having
+        // first asserted it is not already tracked. Both halves of that depend
+        // on the catalog: advanced, so onboarding leaves it out, and
+        // unconstrained, so it is offered whatever the vehicle turns out to
+        // be. Pinned here because this runs in three minutes and the UI test
+        // runs in twenty-five.
+        let target = "power-steering-fluid"
+        XCTAssertFalse(short.contains { $0.definition.id == target }, "\(target) should be advanced")
+        let offered = try XCTUnwrap(
+            full.first { $0.definition.id == target },
+            "\(target) should be offered once advanced tasks are included"
+        )
+        XCTAssertTrue(offered.applicability.isApplicable)
+        XCTAssertEqual(offered.definition.category, .fluids, "the journey test reaches it by scrolling, so where it sits matters")
     }
 }
 

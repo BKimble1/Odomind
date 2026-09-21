@@ -241,43 +241,66 @@ final class OdomindJourneyUITests: XCTestCase {
         // Onboarding starts a vehicle on every recommended task, so the one
         // task guaranteed not to be tracked yet is an advanced one — which
         // also means the test has to ask for advanced tasks to be shown.
-        let identifier = "maintenance.task.wheel-alignment-check"
-        XCTAssertFalse(app.element(withIdentifier: identifier).exists, "the alignment check should not be tracked yet")
+        //
+        // Power steering fluid specifically. It is advanced, it carries no
+        // applicability constraint so it is offered whatever the vehicle
+        // turns out to be, and it sits in `fluids` — the second of fourteen
+        // categories, in the order both this screen and the catalog group by.
+        // So it is near the top of each list.
+        //
+        // The previous target was in the eleventh category, thirty-odd tall
+        // rows down, and the test spent seventy-eight seconds swiping without
+        // reaching it. Scrolling, not searching: `.searchable` keeps its field
+        // tucked under the navigation bar until the list is pulled down, and
+        // fighting that is a presentation detail with no payoff. That advanced
+        // tasks stay filtered out until asked for is already pinned by
+        // PlanBuilderTests.testAdvancedTasksAreHiddenFromTheShortList, which
+        // also pins that this particular task is among them.
+        let taskID = "power-steering-fluid"
+        let tracked = "maintenance.task.\(taskID)"
+        XCTAssertFalse(
+            app.element(withIdentifier: tracked).exists,
+            "power steering fluid should not be tracked yet"
+        )
 
         app.element(withIdentifier: "maintenance.addMenu").tap()
         waitFor(app.element(withIdentifier: "maintenance.addFromCatalog"), 10, "the add menu did not open").tap()
         waitFor(app.navigationBars["Add a task"], 10, "the catalog did not open")
 
-        XCTAssertTrue(
-            app.element(withIdentifier: "addTask.showAdvanced").waitForExistence(timeout: 10),
+        let toggle = waitFor(
+            app.element(withIdentifier: "addTask.showAdvanced"),
+            10,
             "the advanced toggle is missing"
         )
+        toggle.tap()
 
-        // Search rather than scroll. The catalog is thirty-two tasks deep and
-        // a SwiftUI List does not realise rows near the bottom, so swiping to
-        // find one is slow and brittle; filtering to it is neither.
-        // Pinned to the catalog's own prompt: Maintenance underneath has a
-        // search field too ("Search your tasks"), and firstMatch could take it.
-        // Scrolling, not searching. `.searchable` keeps its field tucked under
-        // the navigation bar until the list is pulled down, so driving it from
-        // a test means fighting a presentation detail for no benefit. That
-        // advanced tasks are filtered out until asked for is already pinned by
-        // PlanBuilderTests.testAdvancedTasksAreHiddenFromTheShortList; what
-        // this test is for is the journey.
-        app.element(withIdentifier: "addTask.showAdvanced").tap()
+        // Check the toggle actually moved before blaming the list. A tap that
+        // fails to flip it leaves the catalog filtered, and the failure then
+        // reads as "the row is not there" — a scroll timeout standing in for
+        // a switch that never turned on.
+        let advanced = app.switches["addTask.showAdvanced"]
+        XCTAssertTrue(advanced.waitForExistence(timeout: 5), "the advanced toggle should surface as a switch")
+        XCTAssertEqual(advanced.value as? String, "1", "tapping the advanced toggle did not turn it on")
 
-        let add = app.element(withIdentifier: "addTask.add.wheel-alignment-check")
+        let add = app.element(withIdentifier: "addTask.add.\(taskID)")
         XCTAssertTrue(
-            app.scrollTo(add),
-            "the alignment check should be offered once advanced tasks are shown"
+            app.scrollTo(add, hittable: true),
+            "power steering fluid should be offered once advanced tasks are shown; the catalog showed \(app.visibleRowLabels())"
         )
         add.tap()
+
+        // The row stops offering Add once the task is tracked, so this says
+        // the add landed rather than merely that the button was tappable.
+        XCTAssertTrue(
+            add.waitForNonExistence(timeout: 5),
+            "the row should stop offering Add once the task is tracked"
+        )
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
         waitFor(app.navigationBars["Maintenance"], 10, "did not return to Maintenance")
         XCTAssertTrue(
-            app.scrollTo(app.element(withIdentifier: identifier)),
-            "the added task should now be tracked"
+            app.scrollTo(app.element(withIdentifier: tracked)),
+            "the added task should now be tracked; Maintenance showed \(app.visibleRowLabels())"
         )
     }
 
