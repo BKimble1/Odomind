@@ -146,6 +146,9 @@ struct VehiclePickerBar: View {
                     HStack(spacing: Theme.Spacing.tight) {
                         Text(selected.displayName)
                             .font(.body.weight(.medium))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                            .multilineTextAlignment(.leading)
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.caption2)
                     }
@@ -159,7 +162,12 @@ struct VehiclePickerBar: View {
                 Text(selected.displayName)
                     .font(.body.weight(.medium))
                     .foregroundStyle(Theme.Palette.primaryText)
-                    .lineLimit(1)
+                    // Two lines rather than one, and shrink before truncating.
+                    // A name cut to "Sa…" tells the owner nothing; a name over
+                    // two lines still tells them which car.
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.leading)
                     .accessibilityLabel(Text("Vehicle: \(selected.displayName)"))
                     .accessibilityIdentifier("vehiclePicker")
             }

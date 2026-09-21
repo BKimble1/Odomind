@@ -61,16 +61,14 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Home")
+            // Compact, because the tab bar already says "Home" and a large
+            // title spends a whole line restating it — on the narrowest
+            // phone, the one with least to spare.
+            .navigationBarTitleDisplayMode(.inline)
             // White in light, near-black in dark. With the section plates gone
             // the rows need a surface of their own to sit on, and the page
             // grey underneath a plateless list only looks unfinished.
             .background(Theme.Palette.raised)
-            .toolbar {
-                // Vehicle upper left, shopping area upper right — the two
-                // standing choices every screen below depends on.
-                ToolbarItem(placement: .topBarLeading) { VehiclePickerBar() }
-                ToolbarItem(placement: .topBarTrailing) { ShoppingLocationControl() }
-            }
             .odomindDestinations()
             .sheet(isPresented: $showingMileageEntry) {
                 if let vehicle = model.selectedVehicle { MileageEntrySheet(vehicle: vehicle) }
@@ -106,6 +104,22 @@ struct HomeView: View {
     private func content(for vehicle: Vehicle) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
+                // Vehicle upper left, shopping area upper right — the two
+                // standing choices every screen below depends on.
+                //
+                // In the content rather than the navigation bar, because a
+                // screenshot from an iPhone SE showed the vehicle's name
+                // rendered as "Sa…". Two toolbar items compete for one bar's
+                // width, and the leading one lost: the single most important
+                // piece of context on the screen — which car this is about —
+                // was three characters. Here they each get the full width.
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
+                    VehiclePickerBar()
+                    Spacer(minLength: Theme.Spacing.small)
+                    ShoppingLocationControl()
+                }
+                .padding(.horizontal, Theme.Spacing.large)
+
                 MileageOverview(vehicle: vehicle) { showingMileageEntry = true }
                     .padding(.horizontal, Theme.Spacing.large)
 
