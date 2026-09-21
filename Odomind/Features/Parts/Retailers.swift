@@ -77,9 +77,22 @@ struct Retailer: Identifiable, Hashable, Sendable {
     var mapQuery: String
 
     func url(for query: String) -> URL? {
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        // Not `.urlQueryAllowed`: that set permits `&`, `=`, `?` and `+`, so a
+        // part name containing one would not be escaped — it would end up
+        // adding a parameter to somebody else's URL instead of being searched
+        // for. Encoding the sub-delimiters as well keeps the whole term inside
+        // the one parameter it belongs to.
+        let encoded = query.addingPercentEncoding(withAllowedCharacters: Retailer.queryValueAllowed) ?? ""
         return URL(string: searchTemplate.replacingOccurrences(of: "{query}", with: encoded))
     }
+
+    /// `urlQueryAllowed` minus the characters that would change the URL's
+    /// structure rather than its content.
+    static let queryValueAllowed: CharacterSet = {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&=?+#/;:$,@[]!'()*")
+        return allowed
+    }()
 
     /// The retailers Odomind links to.
     ///

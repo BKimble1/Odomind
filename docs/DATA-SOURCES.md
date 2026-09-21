@@ -209,9 +209,11 @@ would otherwise assume otherwise.
 match this build's. Version must be strictly newer, compared numerically so
 2026.10.2 beats 2026.9.10. The declared byte count must match and be plausible.
 The checksum must match. It must parse. It must describe itself consistently.
-And it must pass `CatalogValidator` with no errors — the same gate CI runs with
-`--strict`. An update that would fail the project's own check does not get
-installed on a phone.
+And it must pass `CatalogValidator` with nothing reported at all — warnings
+included, which is what `--strict` means where CI holds the bundled catalog to
+the same bar. Holding a downloaded catalog to a lower standard than the one in
+the binary would make the gate meaningless: the easiest way to ship an
+unreviewed value would be to publish it rather than commit it.
 
 **Failure leaves everything alone.** Installation writes to a staging file and
 swaps it in with `replaceItemAt`, so there is no half-installed state to

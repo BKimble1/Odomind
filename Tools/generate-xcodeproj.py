@@ -22,7 +22,9 @@ PROJECT = ROOT / "Odomind.xcodeproj"
 BUNDLE_ID = "com.idlery.odomind"
 DEPLOYMENT_TARGET = "18.0"
 SWIFT_VERSION = "5.0"
-MARKETING_VERSION = "1.0"
+# Build 2 is a product milestone, so the marketing version moves with it.
+# Build numbers still come from App Store Connect, highest seen plus one.
+MARKETING_VERSION = "1.1"
 PROJECT_VERSION = "1"
 
 APP = "Odomind"

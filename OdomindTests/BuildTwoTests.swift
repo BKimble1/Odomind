@@ -45,6 +45,16 @@ final class BuildTwoTests: XCTestCase {
         XCTAssertNil(store.loadInstalled(notOlderThan: bundled))
     }
 
+    func testTheBundledCatalogPassesTheSameBarAnUpdateHasTo() throws {
+        // The updater is strict, and the bundled catalog is the reference for
+        // what strict means. If this ever fails, the bar moved.
+        let bundled = try XCTUnwrap(CatalogService().catalog)
+        XCTAssertTrue(
+            CatalogValidator.validate(bundled).isEmpty,
+            "the bundled catalog must clear the same bar a downloaded one has to: \(CatalogValidator.validate(bundled))"
+        )
+    }
+
     func testAnInstalledCatalogAtTheSameVersionIsAccepted() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("CatalogTest-\(UUID().uuidString)", isDirectory: true)
@@ -150,6 +160,23 @@ final class BuildTwoTests: XCTestCase {
         XCTAssertEqual(url.scheme, "https")
         XCTAssertFalse(url.absoluteString.contains(" "))
         XCTAssertTrue(url.absoluteString.contains("Jeep"))
+    }
+
+    func testAPartNameCannotAddAParameterToARetailersURL() throws {
+        // "oil & filter" through `.urlQueryAllowed` leaves the ampersand
+        // intact, which turns the rest of the term into a second query
+        // parameter on somebody else's site.
+        let retailer = try XCTUnwrap(Retailer.all.first { $0.acceptsPrefilledSearch })
+        let url = try XCTUnwrap(retailer.url(for: "2010 Jeep Wrangler oil & filter ?x=1"))
+        let tail = url.absoluteString.replacingOccurrences(
+            of: retailer.searchTemplate.replacingOccurrences(of: "{query}", with: ""),
+            with: ""
+        )
+        XCTAssertFalse(tail.contains("&"), "an ampersand in the term must not survive: \(url)")
+        XCTAssertFalse(tail.contains("?"), "a question mark in the term must not survive: \(url)")
+        XCTAssertFalse(tail.contains("="), "an equals in the term must not survive: \(url)")
+        // And the term is still actually searchable.
+        XCTAssertTrue(url.absoluteString.contains("Wrangler"))
     }
 
     func testARetailerThatCannotTakeAPrefilledSearchSaysSo() {
@@ -338,5 +365,97 @@ final class BuildTwoTests: XCTestCase {
                 "\(item.title) is both unscheduled and on a day"
             )
         }
+    }
+}
+
+/// The vehicle search's ordering rules.
+///
+/// These are the behaviours that are invisible when they work and produce a
+/// baffling bug report when they do not: a slow answer landing after a newer
+/// one, or one request per keystroke.
+@MainActor
+final class VehicleSearchTests: XCTestCase {
+
+    func testASlowAnswerForAnEarlierQueryIsDiscarded() async throws {
+        let provider = ScriptedModelProvider()
+        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+
+        // First query, for Jeep. Let it reach the provider, then leave it
+        // hanging — this is the "jee" typed a moment ago.
+        search.search("2010 Jeep", debounce: .zero)
+        let jeepCalled = await provider.waitForCall(make: "Jeep")
+        XCTAssertTrue(jeepCalled, "the first search should have reached the provider")
+
+        // Second query, for Ford. This is what the owner actually wants.
+        search.search("2010 Ford", debounce: .zero)
+        let fordCalled = await provider.waitForCall(make: "Ford")
+        XCTAssertTrue(fordCalled, "the second search should have reached the provider")
+
+        // Now the newer one answers first, then the stale one answers late.
+        await provider.answer(make: "Ford", with: ["F-150", "Explorer"])
+        try await waitUntil { if case .results = search.state { return true }; return false }
+        guard case .results(let ford) = search.state else {
+            return XCTFail("expected Ford results, got \(search.state)")
+        }
+        XCTAssertEqual(ford.map(\.model), ["Explorer", "F-150"])
+
+        await provider.answer(make: "Jeep", with: ["Wrangler"])
+        // Give the stale answer every chance to land.
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        guard case .results(let still) = search.state else {
+            return XCTFail("the state should still hold the newer results, got \(search.state)")
+        }
+        XCTAssertEqual(
+            still.map(\.model), ["Explorer", "F-150"],
+            "a slow answer for an earlier query must not replace a newer selection"
+        )
+    }
+
+    func testTheSameMakeAndYearIsAskedForOnce() async throws {
+        let provider = ScriptedModelProvider()
+        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+
+        search.search("2010 Jeep Wr", debounce: .zero)
+        _ = await provider.waitForCall(make: "Jeep")
+        await provider.answer(make: "Jeep", with: ["Wrangler", "Grand Cherokee"])
+        try await waitUntil { if case .results = search.state { return true }; return false }
+
+        // Narrowing the query filters the cached list rather than asking again.
+        search.search("2010 Jeep Wrangler", debounce: .zero)
+        try await waitUntil {
+            if case .results(let r) = search.state { return r.count == 1 }
+            return false
+        }
+        let count = await provider.callCount()
+        XCTAssertEqual(count, 1, "a make and year should be asked for once per session")
+    }
+
+    func testAQueryWithoutAYearAndMakeNeverReachesTheProvider() async throws {
+        let provider = ScriptedModelProvider()
+        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+
+        search.search("wrangler", debounce: .zero)
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        guard case .needsMoreDetail = search.state else {
+            return XCTFail("expected a prompt for more detail, got \(search.state)")
+        }
+        let count = await provider.callCount()
+        XCTAssertEqual(count, 0, "an incomplete query must not produce a request")
+    }
+
+    /// Polls a condition on the main actor, so a test never sleeps longer than
+    /// it has to or races an update it was about to see.
+    private func waitUntil(
+        timeout: TimeInterval = 5,
+        _ condition: @MainActor () -> Bool
+    ) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTAssertTrue(condition(), "condition never became true")
     }
 }

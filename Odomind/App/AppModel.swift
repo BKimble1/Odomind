@@ -133,7 +133,14 @@ final class AppModel {
         // the first screen reads `canAddVehicle`.
         recordGrandfatheredAllowanceIfNeeded()
         sweepOrphanedAttachments()
-        await entitlements.start()
+
+        // Deliberately not awaited. Asking the App Store about products is a
+        // network round trip, and launch must not wait on one — the app is
+        // usable with no connection at all. `status` stays `.unknown` until it
+        // answers, and `canAddVehicle` is permissive while it is unknown, so
+        // nothing is gated on a call that has not come back.
+        Task { await entitlements.start() }
+
         await syncReminders()
     }
 

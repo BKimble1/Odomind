@@ -107,12 +107,13 @@ final class OdomindJourneyUITests: XCTestCase {
             odometer.label.contains("120"),
             "the recorded odometer should be on Today, got '\(odometer.label)'"
         )
+        XCTAssertTrue(app.scrollTo(app.buttons["home.logService"]), "Log service should be reachable on Home")
         XCTAssertTrue(app.buttons["home.updateMileage"].exists)
-        XCTAssertTrue(app.buttons["home.logService"].exists)
     }
 
     func testUpdateMileage() {
         addVehicle()
+        app.scrollTo(app.buttons["home.updateMileage"], hittable: true)
         app.buttons["home.updateMileage"].tap()
 
         let field = waitFor(app.textFields["mileage.field"], 10, "the mileage field did not appear")
@@ -149,7 +150,7 @@ final class OdomindJourneyUITests: XCTestCase {
             "an all-clear must not appear while history is unknown: '\(empty.label)'"
         )
         XCTAssertTrue(
-            app.buttons["home.setStartingPoint"].exists,
+            app.scrollTo(app.buttons["home.setStartingPoint"]),
             "the honest empty state should offer a way to fix it"
         )
     }
@@ -220,6 +221,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testLogAServiceAndItAppearsInHistory() {
         addVehicle()
 
+        app.scrollTo(app.buttons["home.logService"], hittable: true)
         app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
 
@@ -236,6 +238,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testLoggingServiceProducesANextDuePoint() {
         addVehicle()
 
+        app.scrollTo(app.buttons["home.logService"], hittable: true)
         app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
@@ -321,6 +324,7 @@ final class OdomindJourneyUITests: XCTestCase {
     func testEditingARecordChangesWhatHistoryShows() {
         addVehicle()
 
+        app.scrollTo(app.buttons["home.logService"], hittable: true)
         app.buttons["home.logService"].tap()
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()

@@ -59,7 +59,10 @@ struct CatalogUpdateStore {
         guard catalog.schemaVersion == bundled.schemaVersion else { return nil }
         guard CatalogUpdateService.isNewer(catalog.catalogVersion, than: bundled.catalogVersion)
             || catalog.catalogVersion == bundled.catalogVersion else { return nil }
-        guard !CatalogValidator.validate(catalog).contains(where: { $0.severity == .error }) else { return nil }
+        // Strict, matching both the CI gate and what the updater accepted in
+        // the first place. A file that no longer validates is a file that was
+        // tampered with or truncated after installation.
+        guard CatalogValidator.validate(catalog).isEmpty else { return nil }
         return catalog
     }
 
@@ -195,10 +198,14 @@ struct CatalogUpdateService {
               candidate.schemaVersion == current.schemaVersion else {
             return .rejected("The update did not describe itself consistently.")
         }
-        // The same validator CI runs with `--strict`. An update that would not
-        // pass the project's own gate does not get installed on a phone.
-        let errors = CatalogValidator.validate(candidate).filter { $0.severity == .error }
-        guard errors.isEmpty else {
+        // The same bar CI holds the bundled catalog to, warnings included —
+        // which is what `--strict` means there. A downloaded catalog is
+        // published data like any other, and holding it to a lower standard
+        // than the one in the binary would make the gate meaningless: the
+        // easiest way to ship an unreviewed value would be to publish it
+        // rather than commit it.
+        let findings = CatalogValidator.validate(candidate)
+        guard findings.isEmpty else {
             return .rejected("The update failed Odomind's own checks, so it was discarded.")
         }
 

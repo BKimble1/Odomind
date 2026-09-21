@@ -163,3 +163,53 @@ enum FixtureFile {
 }
 
 final class FixtureBundleToken {}
+
+/// A provider that answers on command, so the search model's ordering
+/// behaviour can be driven deliberately rather than raced against a real
+/// network.
+///
+/// Each call parks a continuation keyed by the make it was asked about; the
+/// test decides which one answers, and in which order.
+actor ScriptedModelProvider: VehicleIdentificationProvider {
+    nonisolated var displayName: String { "Scripted provider" }
+    nonisolated var contactedHost: String { "example.invalid" }
+
+    private var waiting: [String: CheckedContinuation<[String], Error>] = [:]
+    private var calls: [String] = []
+
+    nonisolated func decode(vin: String, modelYear: Int?) async throws -> VehicleDecodeResult {
+        throw ProviderError.notConnected
+    }
+
+    nonisolated func models(make: String, modelYear: Int) async throws -> [String] {
+        try await park(make: make)
+    }
+
+    private func park(make: String) async throws -> [String] {
+        calls.append(make)
+        return try await withCheckedThrowingContinuation { continuation in
+            waiting[make] = continuation
+        }
+    }
+
+    /// Answers one outstanding call. Returns false if nothing is waiting on it.
+    @discardableResult
+    func answer(make: String, with models: [String]) -> Bool {
+        guard let continuation = waiting.removeValue(forKey: make) else { return false }
+        continuation.resume(returning: models)
+        return true
+    }
+
+    func callCount() -> Int { calls.count }
+
+    /// Waits until `make` has an outstanding call, so a test never answers a
+    /// request that has not been made yet.
+    func waitForCall(make: String, timeout: TimeInterval = 5) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if waiting[make] != nil { return true }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        return waiting[make] != nil
+    }
+}
