@@ -33,17 +33,17 @@ final class OdomindScreenshotTests: XCTestCase {
     }
 
     private func walk(_ prefix: String) {
-        XCTAssertTrue(waitFor(app.navigationBars["Today"], 25), "Today did not appear")
-        capture("\(prefix)-01-today")
+        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear")
+        capture("\(prefix)-01-home")
 
         app.tabBars.buttons["Jobs"].tap()
-        XCTAssertTrue(waitFor(app.navigationBars["Maintenance"]))
-        capture("\(prefix)-02-maintenance")
+        XCTAssertTrue(waitFor(app.navigationBars["Jobs"]))
+        capture("\(prefix)-02-jobs")
 
         let task = app.element(withIdentifier: "jobs.task.engine-oil-and-filter")
         if waitFor(task, 8) {
             task.tap()
-            capture("\(prefix)-03-task-detail")
+            capture("\(prefix)-03-job-detail")
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
 
@@ -55,11 +55,23 @@ final class OdomindScreenshotTests: XCTestCase {
         if waitFor(vehicle, 8) {
             vehicle.tap()
             capture("\(prefix)-05-vehicle")
+
+            // The picture is the part most likely to be wrong and least
+            // likely to be caught by a test, so it gets its own capture.
+            let artwork = app.buttons["vehicle.artwork"]
+            if waitFor(artwork, 8) {
+                artwork.tap()
+                if waitFor(app.navigationBars["Picture"], 8) {
+                    capture("\(prefix)-06-artwork")
+                }
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+            }
+
             let specifications = app.buttons["vehicle.specifications"]
             if waitFor(specifications, 8) {
                 specifications.tap()
                 if waitFor(app.navigationBars["Specifications"], 8) {
-                    capture("\(prefix)-06-specifications")
+                    capture("\(prefix)-07-specifications")
                 }
                 app.navigationBars.buttons.element(boundBy: 0).tap()
             }
@@ -67,13 +79,50 @@ final class OdomindScreenshotTests: XCTestCase {
         }
 
         app.tabBars.buttons["Calendar"].tap()
-        XCTAssertTrue(waitFor(app.navigationBars["History"]))
-        capture("\(prefix)-07-history")
+        XCTAssertTrue(waitFor(app.navigationBars["Calendar"]))
+        capture("\(prefix)-08-calendar")
+
+        // Settings, and the appearance screen that decides how all of this
+        // looks — worth a capture in both appearances for exactly that reason.
+        let settings = app.buttons["calendar.settings"]
+        if waitFor(settings, 8) {
+            settings.tap()
+            if waitFor(app.navigationBars["Settings"], 8) {
+                capture("\(prefix)-09-settings")
+                let pro = app.element(withIdentifier: "settings.pro")
+                if waitFor(pro, 8) {
+                    pro.tap()
+                    if waitFor(app.navigationBars["Odomind Pro"], 8) {
+                        capture("\(prefix)-10-pro")
+                    }
+                    app.navigationBars.buttons.element(boundBy: 0).tap()
+                }
+            }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        }
+    }
+
+    /// Onboarding, captured from a store with nothing in it.
+    ///
+    /// The first screen anybody sees is the one most worth looking at, and it
+    /// is the one the populated walk above can never reach.
+    private func captureOnboarding(_ prefix: String) {
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing", "-odomind-appearance", prefix]
+        fresh.launch()
+        if fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25) {
+            let screenshot = XCTAttachment(screenshot: fresh.screenshot())
+            screenshot.name = "\(prefix)-00-onboarding"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+        fresh.terminate()
     }
 
     func testCaptureLightAppearance() {
         XCUIDevice.shared.appearance = .light
         app.launchArguments += ["-odomind-appearance", "light"]
+        captureOnboarding("light")
         app.launch()
         walk("light")
     }
@@ -84,6 +133,7 @@ final class OdomindScreenshotTests: XCTestCase {
         // asked directly as well.
         XCUIDevice.shared.appearance = .dark
         app.launchArguments += ["-odomind-appearance", "dark"]
+        captureOnboarding("dark")
         app.launch()
         walk("dark")
     }

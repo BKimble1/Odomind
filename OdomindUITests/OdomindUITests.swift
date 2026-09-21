@@ -52,6 +52,13 @@ final class OdomindJourneyUITests: XCTestCase {
     }
 
     /// Walks onboarding to a garage containing one vehicle.
+    ///
+    /// Typed in by hand rather than searched. The search path needs the
+    /// vehicle lookup service, which is not something a UI test on a runner
+    /// should depend on being up — the provider is covered against recorded
+    /// fixtures in `ProviderTests`, and its live availability by the separate
+    /// `provider-smoke` workflow. What this exercises is the path that has to
+    /// work with no connection at all.
     private func addVehicle(odometer: String = "120000", powertrain: String? = "Gasoline") {
         let start = waitFor(
             app.buttons["onboarding.addVehicle"],
@@ -60,12 +67,14 @@ final class OdomindJourneyUITests: XCTestCase {
         )
         start.tap()
 
+        waitFor(app.buttons["addVehicle.manual"], 10, "the manual entry option is missing").tap()
         type("2010", into: app.textFields["addVehicle.year"])
         type("Jeep", into: app.textFields["addVehicle.make"])
         type("Wrangler", into: app.textFields["addVehicle.model"])
+        waitFor(app.buttons["addVehicle.manualDone"], 10, "the manual entry sheet cannot be finished").tap()
 
         let next = waitFor(app.buttons["addVehicle.next"], 10, "the Next button is missing")
-        next.tap()          // identity -> confirm
+        next.tap()          // find -> confirm
 
         // Odomind will not assume a vehicle burns fuel, so engine oil and
         // everything else that depends on a combustion engine stays out of the
@@ -81,13 +90,11 @@ final class OdomindJourneyUITests: XCTestCase {
             waitFor(app.buttons[powertrain], 10, "\(powertrain) was not offered").tap()
         }
 
-        next.tap()          // confirm -> mileage
-
         replaceText(odometer, in: app.textFields["addVehicle.odometer"])
-        next.tap()          // mileage -> tasks
+        next.tap()          // confirm -> plan
 
         waitFor(app.buttons["addVehicle.finish"], 10, "the Add vehicle button is missing").tap()
-        waitFor(app.navigationBars["Today"], 15, "Today did not appear after adding a vehicle")
+        waitFor(app.navigationBars["Home"], 15, "Home did not appear after adding a vehicle")
     }
 
     // MARK: - Tests
@@ -113,7 +120,7 @@ final class OdomindJourneyUITests: XCTestCase {
         field.typeText("124800")
         app.buttons["mileage.save"].tap()
 
-        waitFor(app.navigationBars["Today"], 10, "the sheet did not close")
+        waitFor(app.navigationBars["Home"], 10, "the sheet did not close")
         let odometer = waitFor(app.element(withIdentifier: "home.odometer"), 10, "the odometer summary is missing")
         XCTAssertTrue(
             odometer.label.contains("124"),
@@ -121,26 +128,29 @@ final class OdomindJourneyUITests: XCTestCase {
         )
     }
 
-    func testTodayGroupsTasksAndSaysNothingIsScheduledYet() {
+    func testHomeDoesNotClaimAllClearWhileHistoryIsUnknown() {
         addVehicle()
 
-        // Nothing has been logged, so the oil task needs setup rather than
-        // appearing as done or as overdue.
-        // Check the group heading first. Scrolling down to reach the task
-        // takes the heading off the top of the screen, and an element that has
-        // scrolled away is no longer in the tree.
-        XCTAssertTrue(
-            app.element(labelContaining: "Needs setup").waitForExistence(timeout: 10),
-            "the Needs setup group should be present"
+        // The Build 1 failure this replaces: a green "nothing currently due"
+        // above fifteen unanswered setup rows. Nothing has been logged, so
+        // Home must say the plan is ready and offer the action that would make
+        // it useful — not congratulate anyone.
+        let empty = waitFor(
+            app.element(withIdentifier: "home.upNextEmpty"),
+            10,
+            "Home should say something honest when there is nothing actionable"
         )
-
-        let oilTask = app.element(withIdentifier: "agenda.task.engine-oil-and-filter")
-        XCTAssertTrue(app.scrollTo(oilTask), "the oil task should be on Today")
-        let oil = oilTask
         XCTAssertTrue(
-            oil.label.lowercased().contains("no completion")
-                || oil.label.lowercased().contains("needs"),
-            "expected an explanation of why it is unscheduled, got '\(oil.label)'"
+            empty.label.lowercased().contains("plan is ready"),
+            "expected the unknown-history wording, got '\(empty.label)'"
+        )
+        XCTAssertFalse(
+            empty.label.lowercased().contains("nothing due"),
+            "an all-clear must not appear while history is unknown: '\(empty.label)'"
+        )
+        XCTAssertTrue(
+            app.buttons["home.setStartingPoint"].exists,
+            "the honest empty state should offer a way to fix it"
         )
     }
 
@@ -149,7 +159,7 @@ final class OdomindJourneyUITests: XCTestCase {
         addVehicle(powertrain: nil)
 
         app.tabBars.buttons["Jobs"].tap()
-        waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
+        waitFor(app.navigationBars["Jobs"], 10, "the Jobs tab did not open")
 
         // Tyre rotation applies to anything with wheels, so the plan is not
         // empty — this is a filter, not a failure to build a plan.
@@ -168,11 +178,11 @@ final class OdomindJourneyUITests: XCTestCase {
         )
     }
 
-    func testMaintenanceTabListsTheChosenTasks() {
+    func testJobsTabListsTheChosenTasks() {
         addVehicle()
 
         app.tabBars.buttons["Jobs"].tap()
-        waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
+        waitFor(app.navigationBars["Jobs"], 10, "the Jobs tab did not open")
         waitFor(
             app.element(withIdentifier: "jobs.task.engine-oil-and-filter"),
             10,
@@ -190,10 +200,20 @@ final class OdomindJourneyUITests: XCTestCase {
             app.element(labelContaining: "No completion recorded").waitForExistence(timeout: 10),
             "the task detail should explain that there is no history yet"
         )
+        // The schedule and its provenance are reference rather than action,
+        // so they are collapsed. That is the point of the change — the button
+        // that records the work is above them — but they still have to be one
+        // tap away and still have to say where the interval came from.
+        let disclosure = waitFor(
+            app.element(withIdentifier: "task.scheduleDisclosure"),
+            10,
+            "the schedule should be reachable from the job screen"
+        )
+        disclosure.tap()
         XCTAssertTrue(
-            app.element(labelContaining: "Every 5,000 miles").exists
+            app.element(labelContaining: "Every 5,000 miles").waitForExistence(timeout: 5)
                 || app.element(labelContaining: "whichever comes first").exists,
-            "the schedule and where it came from should be on the detail screen"
+            "the schedule and where it came from should be one tap away"
         )
     }
 
@@ -206,11 +226,11 @@ final class OdomindJourneyUITests: XCTestCase {
         app.buttons["logService.task.engine-oil-and-filter"].tap()
         app.buttons["logService.save"].tap()
 
-        waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
+        waitFor(app.navigationBars["Home"], 10, "the sheet did not close after saving")
 
         app.tabBars.buttons["Calendar"].tap()
-        waitFor(app.navigationBars["History"], 10, "the History tab did not open")
-        waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the logged service should appear in History")
+        waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not open")
+        waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the logged service should appear in the calendar")
     }
 
     func testLoggingServiceProducesANextDuePoint() {
@@ -220,7 +240,7 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
         app.buttons["logService.save"].tap()
-        waitFor(app.navigationBars["Today"], 10, "the sheet did not close")
+        waitFor(app.navigationBars["Home"], 10, "the sheet did not close")
 
         app.tabBars.buttons["Jobs"].tap()
         waitFor(app.element(withIdentifier: "jobs.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
@@ -236,7 +256,7 @@ final class OdomindJourneyUITests: XCTestCase {
         addVehicle()
 
         app.tabBars.buttons["Jobs"].tap()
-        waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
+        waitFor(app.navigationBars["Jobs"], 10, "the Jobs tab did not open")
 
         // Onboarding starts a vehicle on every recommended task, so the one
         // task guaranteed not to be tracked yet is an advanced one — which
@@ -291,7 +311,7 @@ final class OdomindJourneyUITests: XCTestCase {
         )
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        waitFor(app.navigationBars["Maintenance"], 10, "did not return to Maintenance")
+        waitFor(app.navigationBars["Jobs"], 10, "did not return to Jobs")
         XCTAssertTrue(
             app.scrollTo(app.element(withIdentifier: tracked)),
             "the added task should now be tracked; Maintenance showed \(app.visibleRowLabels())"
@@ -308,10 +328,10 @@ final class OdomindJourneyUITests: XCTestCase {
         app.scrollTo(app.textFields["logService.odometer"])
         replaceText("121000", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
-        waitFor(app.navigationBars["Today"], 10, "the sheet did not close after saving")
+        waitFor(app.navigationBars["Home"], 10, "the sheet did not close after saving")
 
         app.tabBars.buttons["Calendar"].tap()
-        waitFor(app.navigationBars["History"], 10, "the History tab did not open")
+        waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not open")
         let record = waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the logged service is missing")
         XCTAssertTrue(record.label.contains("121,000"), "expected the recorded reading, got '\(record.label)'")
         record.tap()
@@ -323,7 +343,7 @@ final class OdomindJourneyUITests: XCTestCase {
         app.buttons["logService.save"].tap()
 
         app.tabBars.buttons["Calendar"].tap()
-        waitFor(app.navigationBars["History"], 10, "the History tab did not reopen")
+        waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not reopen")
         let corrected = waitFor(app.element(withIdentifier: "calendar.entry.completed"), 10, "the record disappeared after editing")
         XCTAssertTrue(
             corrected.label.contains("122,500"),
@@ -356,9 +376,9 @@ final class OdomindJourneyUITests: XCTestCase {
         addVehicle()
 
         app.tabBars.buttons["Calendar"].tap()
-        waitFor(app.navigationBars["History"], 10, "the History tab did not open")
+        waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not open")
 
-        waitFor(app.buttons["calendar.menu"], 10, "the History menu is missing").tap()
+        waitFor(app.buttons["calendar.menu"], 10, "the Calendar menu is missing").tap()
         waitFor(app.buttons["calendar.export"], 10, "the menu did not offer Export").tap()
 
         waitFor(app.navigationBars["Export"], 10, "the Export screen did not open")
@@ -368,7 +388,7 @@ final class OdomindJourneyUITests: XCTestCase {
 
     func testSampleVehicleIsClearlyMarked() {
         waitFor(app.buttons["onboarding.sample"], 20, "onboarding did not appear").tap()
-        waitFor(app.navigationBars["Today"], 15, "Today did not appear after adding the sample")
+        waitFor(app.navigationBars["Home"], 15, "Home did not appear after adding the sample")
 
         XCTAssertTrue(
             app.element(labelContaining: "SAMPLE").waitForExistence(timeout: 10),
