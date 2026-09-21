@@ -1,7 +1,8 @@
 import SwiftUI
 import OdomindCore
 
-/// Records one specification from the owner's manual or door placard.
+/// Records one specification, from wherever that particular value lives —
+/// see `SpecificationKind.sourceHint`.
 ///
 /// What the owner types is stored as theirs: trusted, used everywhere, and
 /// never badged as manufacturer-verified, because Odomind did not check it.

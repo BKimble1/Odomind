@@ -45,8 +45,8 @@ struct SpecificationsView: View {
                 let shipped = resolved.filter { !$0.isOwnerOverride }.count
                 InlineNotice(
                     message: shipped == 0
-                        ? "Odomind ships no fluid, tire or pressure values for this vehicle. Add them once from your owner's manual and the door placard, and they appear everywhere they are relevant."
-                        : "Odomind has \(shipped) value\(shipped == 1 ? "" : "s") for this vehicle and shows where each came from. Anything below marked Not available is yours to add from your owner's manual and the door placard."
+                        ? "Odomind ships no fluid, tire or pressure values for this vehicle. Each row below says where that particular value is written on your car. Add it once and it appears everywhere it is relevant."
+                        : "Odomind has \(shipped) value\(shipped == 1 ? "" : "s") for this vehicle and shows where each came from. Each row marked Not available says where to find that particular value."
                 )
             }
 
