@@ -370,43 +370,63 @@ struct HomeView: View {
 /// number the rest of the screen is calculated from, at a size that says so.
 struct MileageOverview: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let vehicle: Vehicle
     let updateMileage: () -> Void
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
-            VStack(alignment: .leading, spacing: 2) {
-                if let reading = model.latestReading(for: vehicle.id) {
-                    Text(Format.distance(reading.value))
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(Theme.Palette.primaryText)
-                        .accessibilityIdentifier("home.odometer")
-                        .accessibilityLabel(Text("Recorded odometer \(Format.distance(reading.value))"))
-                    Text(recordedText(reading))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                } else {
-                    Text("No mileage yet")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(Theme.Palette.primaryText)
-                        .accessibilityIdentifier("home.odometer")
-                    Text("Odomind needs one reading before it can work out what is due.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        // Beside the number normally, underneath it at accessibility sizes.
+        // A title2 reading and a subheadline button do not both fit across a
+        // phone once the text is large, and the two wrong answers are
+        // shrinking the number — which is the point of large text — or
+        // dropping the button, which is the only way to change the reading.
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+                reading
+                updateButton
             }
-
-            Spacer(minLength: Theme.Spacing.small)
-
-            Button("Update", action: updateMileage)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Theme.Palette.accent)
-                .buttonStyle(.tappableText)
-                .accessibilityLabel(Text("Update mileage"))
-                .accessibilityIdentifier("home.updateMileage")
+            .accessibilityElement(children: .contain)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
+                reading
+                Spacer(minLength: Theme.Spacing.small)
+                updateButton
+            }
+            .accessibilityElement(children: .contain)
         }
-        .accessibilityElement(children: .contain)
+    }
+
+    private var reading: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let reading = model.latestReading(for: vehicle.id) {
+                Text(Format.distance(reading.value))
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .accessibilityIdentifier("home.odometer")
+                    .accessibilityLabel(Text("Recorded odometer \(Format.distance(reading.value))"))
+                Text(recordedText(reading))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+            } else {
+                Text("No mileage yet")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .accessibilityIdentifier("home.odometer")
+                Text("Odomind needs one reading before it can work out what is due.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var updateButton: some View {
+        Button("Update", action: updateMileage)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(Theme.Palette.accent)
+            .buttonStyle(.tappableText)
+            .accessibilityLabel(Text("Update mileage"))
+            .accessibilityIdentifier("home.updateMileage")
     }
 
     private func recordedText(_ reading: OdometerReading) -> String {
