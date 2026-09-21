@@ -226,3 +226,44 @@ actor ScriptedModelProvider: VehicleIdentificationProvider {
         return waiting[make] != nil
     }
 }
+
+/// Answers with a canned list of configurations rather than asking a
+/// government API what a 2010 Jeep was sold with.
+struct StubConfigurationOptionProvider: VehicleConfigurationOptionProvider {
+    var displayName = "Stub configuration provider"
+    var contactedHost = "example.invalid"
+    /// Named `answer` rather than `options` so the method body below cannot
+    /// be read as referring to the method itself.
+    var answer: [VehicleConfigurationOption] = []
+    var error: ProviderError?
+    /// Set to hold the answer until the gate is opened, so a test can move on
+    /// to a different vehicle while the first request is still in flight.
+    var gate: AsyncGate?
+
+    func options(modelYear: Int, make: String, model: String) async throws -> [VehicleConfigurationOption] {
+        if let gate { await gate.wait() }
+        if let error { throw error }
+        return answer
+    }
+}
+
+/// A one-shot gate a test can hold a provider behind.
+actor AsyncGate {
+    private var isOpen = false
+    private var waiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+
+    func wait() async {
+        if isOpen { return }
+        let token = UUID()
+        await withCheckedContinuation { continuation in
+            waiters[token] = continuation
+        }
+    }
+
+    func open() {
+        isOpen = true
+        let pending = waiters
+        waiters = [:]
+        for (_, continuation) in pending { continuation.resume() }
+    }
+}

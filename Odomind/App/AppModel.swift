@@ -55,6 +55,8 @@ final class AppModel {
     /// Where the owner is shopping. One decision, shared by Home and Parts,
     /// kept across launches.
     let shoppingLocation: ShoppingLocationService
+    /// The configurations a vehicle was actually sold in, for the setup step.
+    let vehicleOptions: VehicleOptionsService
 
     private(set) var snapshot = GarageSnapshot()
     private(set) var evaluationsByVehicle: [UUID: [ScheduleEvaluation]] = [:]
@@ -92,6 +94,9 @@ final class AppModel {
         // wait on a location fix that will never come.
         self.photos = VehiclePhotoService(enabled: !Self.isUITesting)
         self.shoppingLocation = ShoppingLocationService()
+        // Off in UI tests for the same reason as the photo service: a
+        // screenshot run must not depend on somebody else's uptime.
+        self.vehicleOptions = VehicleOptionsService(enabled: !Self.isUITesting)
     }
 
     /// Launch argument that makes the app run against a throwaway store.

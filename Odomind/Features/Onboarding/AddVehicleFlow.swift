@@ -414,6 +414,15 @@ private struct ConfirmStep: View {
 
     @State private var odometerText = ""
     @State private var didPrepare = false
+    /// The configuration as it stood before any option was applied.
+    ///
+    /// Options are applied to *this*, never to the result of the previous
+    /// one. Otherwise picking the four-wheel-drive variant and then the
+    /// two-wheel-drive one leaves whatever the first stated and the second
+    /// did not — one car's facts wearing another's label.
+    @State private var configurationBeforeOptions: VehicleConfiguration?
+    /// Set when the owner says none of the listed configurations is theirs.
+    @State private var isAnsweringManually = false
 
     var body: some View {
         Form {
@@ -450,6 +459,102 @@ private struct ConfirmStep: View {
                 Text("Read it off the dashboard. You can skip this — mileage-based due points simply wait until you add one.")
             }
 
+            configurationSection
+
+            if let decode = draft.decodeResult, !decode.providerMessages.isEmpty {
+                Section {
+                    ForEach(Array(decode.providerMessages.enumerated()), id: \.offset) { _, message in
+                        InlineNotice(kind: .caution, message: message)
+                    }
+                } header: {
+                    Text("From the lookup service")
+                }
+            }
+        }
+        .onAppear(perform: prepare)
+        // Keyed on the vehicle, so backing up and choosing a different one
+        // asks again rather than offering the previous car's engines.
+        .task(id: VehicleOptionsService.key(
+            modelYear: draft.identity.modelYear,
+            make: draft.identity.make,
+            model: draft.identity.model
+        )) {
+            // A different vehicle is a different set of answers, so the two
+            // decisions made about the previous one are dropped with it.
+            configurationBeforeOptions = nil
+            isAnsweringManually = false
+            model.vehicleOptions.resolve(
+                modelYear: draft.identity.modelYear,
+                make: draft.identity.make,
+                model: draft.identity.model
+            )
+        }
+    }
+
+    /// Only the two questions that gate whole categories of work. Anything the
+    /// VIN decode already answered is not asked again.
+    private var openQuestions: Set<ConfigurationQuestion> {
+        var questions: Set<ConfigurationQuestion> = []
+        if draft.configuration.powertrain == .unknown { questions.insert(.powertrain) }
+        if draft.configuration.drivetrain == .unknown { questions.insert(.drivetrain) }
+        return questions
+    }
+
+    /// Which engine and drivetrain, asked with the answers a provider
+    /// published rather than with the whole enum.
+    ///
+    /// Build 2 offered every powertrain ever built for every car, and every
+    /// drivetrain layout, and asked the owner to remember. The options here
+    /// are the configurations the vehicle was sold in. The generic pickers
+    /// are still underneath, for the vehicles no list covers — which is an
+    /// honest fallback and not the normal experience.
+    @ViewBuilder
+    private var configurationSection: some View {
+        switch model.vehicleOptions.status {
+        case .looking:
+            Section {
+                HStack(spacing: Theme.Spacing.small) {
+                    ProgressView().controlSize(.small)
+                    Text("Checking which engines this was sold with…")
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                }
+            }
+
+        case .options(let options) where !isAnsweringManually:
+            Section {
+                ForEach(options) { option in
+                    ConfigurationOptionRow(
+                        option: option,
+                        isSelected: model.vehicleOptions.selectedOptionID == option.id
+                    ) {
+                        select(option)
+                    }
+                }
+                // Every list of configurations is a list of what was sold in
+                // one market. Somebody with an import, a conversion or a
+                // vehicle the list simply misses needs a way through that is
+                // not picking the closest wrong answer.
+                Button("None of these is mine") {
+                    isAnsweringManually = true
+                    model.vehicleOptions.selectedOptionID = nil
+                    if let base = configurationBeforeOptions { draft.configuration = base }
+                }
+                .accessibilityIdentifier("confirm.noneOfThese")
+            } header: {
+                Text("Which one is yours?")
+            } footer: {
+                VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                    Text("These are the configurations this year, make and model was sold in. Picking one fills in the engine and drivetrain, which is what decides whether a job like a transfer case service applies at all.")
+                    if let first = options.first {
+                        Text(first.sourceLine)
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    }
+                    Text("Odomind sent only the year, make and model. Not your VIN, and not your mileage.")
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                }
+            }
+
+        case .idle, .none, .options:
             if !openQuestions.isEmpty {
                 Section {
                     if openQuestions.contains(.powertrain) {
@@ -471,36 +576,76 @@ private struct ConfirmStep: View {
                 } header: {
                     Text("A couple of details")
                 } footer: {
-                    Text("These decide which jobs apply at all — an electric vehicle never gets an oil change. Leave either unset and Odomind keeps the jobs that depend on it out of your plan rather than guessing.")
-                }
-            }
-
-            if let decode = draft.decodeResult, !decode.providerMessages.isEmpty {
-                Section {
-                    ForEach(Array(decode.providerMessages.enumerated()), id: \.offset) { _, message in
-                        InlineNotice(kind: .caution, message: message)
+                    VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                        if case .none(let reason) = model.vehicleOptions.status {
+                            Text(reason).foregroundStyle(Theme.Palette.secondaryText)
+                        }
+                        Text("These decide which jobs apply at all — an electric vehicle never gets an oil change. Leave either unset and Odomind keeps the jobs that depend on it out of your plan rather than guessing.")
                     }
-                } header: {
-                    Text("From the lookup service")
                 }
             }
         }
-        .onAppear(perform: prepare)
     }
 
-    /// Only the two questions that gate whole categories of work. Anything the
-    /// VIN decode already answered is not asked again.
-    private var openQuestions: Set<ConfigurationQuestion> {
-        var questions: Set<ConfigurationQuestion> = []
-        if draft.configuration.powertrain == .unknown { questions.insert(.powertrain) }
-        if draft.configuration.drivetrain == .unknown { questions.insert(.drivetrain) }
-        return questions
+    private func select(_ option: VehicleConfigurationOption) {
+        let base = configurationBeforeOptions ?? draft.configuration
+        configurationBeforeOptions = base
+        model.vehicleOptions.selectedOptionID = option.id
+        draft.configuration = option.applied(to: base)
     }
 
     private func prepare() {
         guard !didPrepare else { return }
         didPrepare = true
         if let amount = draft.odometerAmount { odometerText = String(amount) }
+    }
+}
+
+/// One configuration the vehicle was sold in, in the provider's own words.
+private struct ConfigurationOptionRow: View {
+    let option: VehicleConfigurationOption
+    let isSelected: Bool
+    let select: () -> Void
+
+    var body: some View {
+        Button(action: select) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: 2) {
+                    // Verbatim. Paraphrasing would put Odomind's reading in
+                    // front of what the source actually says.
+                    Text(option.label)
+                        .foregroundStyle(Theme.Palette.primaryText)
+                        .multilineTextAlignment(.leading)
+                    if let implied = impliedSummary {
+                        Text(implied)
+                            .font(.caption)
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    }
+                }
+                Spacer(minLength: Theme.Spacing.small)
+                if isSelected {
+                    // The word, not only the colour.
+                    Label("Selected", systemImage: "checkmark.circle.fill")
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(Theme.Palette.accent)
+                        .accessibilityHidden(true)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("confirm.option.\(option.id)")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// What picking this would set, so the consequence is visible before the
+    /// tap rather than discovered afterwards.
+    private var impliedSummary: String? {
+        var parts: [String] = []
+        if option.powertrain != .unknown { parts.append(option.powertrain.displayName) }
+        if option.drivetrain != .unknown { parts.append(option.drivetrain.displayName) }
+        if option.transmission != .unknown { parts.append(option.transmission.displayName) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
 

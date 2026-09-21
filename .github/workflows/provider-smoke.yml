@@ -84,6 +84,69 @@ jobs:
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  matrix:
+    name: Build 3 validation matrix
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: ./.github/scripts/select-xcode.sh
+
+      # Half the matrix is what the providers say. Reported, never gated: a
+      # government API having a bad afternoon is not a build failure.
+      - name: Ask every provider what it has for the three configurations
+        id: providers
+        continue-on-error: true
+        run: ./.github/scripts/validation-matrix.py | tee "$RUNNER_TEMP/matrix.log"
+
+      # The other half is what Odomind itself would build for them, produced
+      # by the real code path rather than by describing it.
+      - name: Ask Odomind what it would build for each
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          catalog=OdomindCore/Sources/OdomindCore/Resources/odomind-catalog.json
+          {
+            swift run --package-path OdomindCore odomind-catalog vehicle "$catalog" \
+              --year 2010 --make Jeep --model Wrangler \
+              --powertrain gasoline --displacement 3.8
+            echo ""
+            swift run --package-path OdomindCore odomind-catalog vehicle "$catalog" \
+              --year 2015 --make Toyota --model Camry \
+              --powertrain gasoline --displacement 2.5
+            echo ""
+            swift run --package-path OdomindCore odomind-catalog vehicle "$catalog" \
+              --year 2018 --make Ford --model "F-150" \
+              --powertrain gasoline --displacement 3.5
+          } 2>&1 | tee "$RUNNER_TEMP/catalog.log"
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Build 3 validation matrix"
+            echo ""
+            echo "#### What the providers returned"
+            echo '```'
+            sed -n '/=== summary ===/,$p' "$RUNNER_TEMP/matrix.log" 2>/dev/null || echo "no provider summary"
+            echo '```'
+            echo ""
+            echo "<details><summary>Full provider output</summary>"
+            echo ""
+            echo '```'
+            cat "$RUNNER_TEMP/matrix.log" 2>/dev/null || true
+            echo '```'
+            echo "</details>"
+            echo ""
+            echo "#### What Odomind would build"
+            echo '```'
+            cat "$RUNNER_TEMP/catalog.log" 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   index:
     name: Build the vehicle suggestion index
     runs-on: ubuntu-latest
