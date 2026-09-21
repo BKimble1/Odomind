@@ -481,10 +481,12 @@ final class VehicleSearchTests: XCTestCase {
         let search = await makeSearch(provider)
 
         search.search("2010 Jeep", debounce: .zero)
-        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+        let jeepCalled = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(jeepCalled)
 
         search.search("2010 Ford", debounce: .zero)
-        XCTAssertTrue(await provider.waitForCall(make: "FORD"))
+        let fordCalled = await provider.waitForCall(make: "FORD")
+        XCTAssertTrue(fordCalled)
 
         await provider.answer(make: "FORD", with: ["F-150", "Explorer"])
         try await waitUntil { if case .results = search.state { return true }; return false }
@@ -509,7 +511,8 @@ final class VehicleSearchTests: XCTestCase {
         let search = await makeSearch(provider)
 
         search.search("2010 Jeep", debounce: .zero)
-        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called)
 
         search.search("", debounce: .zero)
         await provider.answer(make: "JEEP", with: ["Wrangler"])
@@ -525,7 +528,8 @@ final class VehicleSearchTests: XCTestCase {
         let search = await makeSearch(provider)
 
         search.search("2010 Jeep", debounce: .zero)
-        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called)
 
         // Down to something that only suggests makes and makes no request.
         search.search("j", debounce: .zero)
@@ -542,7 +546,8 @@ final class VehicleSearchTests: XCTestCase {
         let search = await makeSearch(provider)
 
         search.search("2010 Jeep", debounce: .zero)
-        XCTAssertTrue(await provider.waitForCall(make: "JEEP"))
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called)
 
         search.cancel()
         await provider.answer(make: "JEEP", with: ["Wrangler"])

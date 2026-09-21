@@ -35,13 +35,21 @@ final class VehiclePhotoService {
 
     private let provider: VehiclePhotoProvider
     private let cache: PhotoCache
+    /// False in UI tests, where reaching Commons would make a screenshot run
+    /// depend on somebody else's uptime.
+    private let enabled: Bool
     private var inFlight: [UUID: Task<Void, Never>] = [:]
     /// The revision each vehicle's outstanding request was made for.
     private var revisions: [UUID: String] = [:]
 
-    init(provider: VehiclePhotoProvider = CommonsPhotoProvider(), cache: PhotoCache = PhotoCache()) {
-        self.provider = provider
+    init(
+        provider: VehiclePhotoProvider? = nil,
+        cache: PhotoCache = PhotoCache(),
+        enabled: Bool = true
+    ) {
+        self.provider = provider ?? CommonsPhotoProvider()
         self.cache = cache
+        self.enabled = enabled
     }
 
     func status(for vehicleID: UUID) -> Status {
@@ -77,6 +85,7 @@ final class VehiclePhotoService {
         }
         revisions[id] = revision
 
+        guard enabled else { return }
         if !force, case .found = status(for: id) { return }
         if inFlight[id] != nil { return }
 

@@ -29,18 +29,37 @@ struct VehiclePortrait: View {
 
     @State private var photo: UIImage?
 
+    /// The owner's own picture beats everything. Then a real photograph
+    /// Odomind is allowed to show. The drawing is what is left when neither
+    /// exists — an exception now, not the normal experience.
+    private var resolvedPhoto: VehiclePhoto? {
+        guard photo == nil else { return nil }
+        guard case .found(let found) = model.photos.status(for: vehicle.id) else { return nil }
+        return found
+    }
+
     var body: some View {
         let resolution = VehicleArtworkLoader.resolution(for: vehicle, model: model)
-        VehicleArtworkView(
-            resolution: resolution,
-            paint: (vehicle.artwork ?? .default).paintColor,
-            photo: photo,
-            accessibilityText: "\(vehicle.displayName). \(resolution.disclosure)"
-        )
+        Group {
+            if let found = resolvedPhoto {
+                RemoteVehiclePhoto(photo: found, height: height)
+                    .accessibilityLabel(Text("\(vehicle.displayName). \(found.matchLevel.disclosure)"))
+            } else {
+                VehicleArtworkView(
+                    resolution: resolution,
+                    paint: (vehicle.artwork ?? .default).paintColor,
+                    photo: photo,
+                    accessibilityText: "\(vehicle.displayName). \(resolution.disclosure)"
+                )
+            }
+        }
         .frame(height: height)
         .frame(maxWidth: .infinity)
         .background(Theme.Palette.artworkGround)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .task(id: VehiclePhotoService.revision(for: vehicle)) {
+            model.photos.resolve(for: vehicle)
+        }
         .task(id: vehicle.photoAttachmentID) {
             // Decoding is not free and has no business on the main actor's
             // critical path, so it happens off it and the result comes back.
@@ -158,8 +177,24 @@ struct GarageVehicleCard: View {
     var isHero: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-            VehiclePortrait(vehicle: vehicle, height: isHero ? 150 : 112)
+        VStack(alignment: .leading, spacing: 0) {
+            // Flush to the card's own edges and square at the bottom, so the
+            // picture *is* the top of the card. Build 2 drew a rounded grey
+            // plate inside a rounded white card inside a grouped background —
+            // three nested frames around one photograph.
+            VehiclePortrait(
+                vehicle: vehicle,
+                height: isHero ? 168 : 124,
+                cornerRadius: 0
+            )
+            .clipShape(
+                .rect(
+                    topLeadingRadius: Theme.Radius.card,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: 0,
+                    topTrailingRadius: Theme.Radius.card
+                )
+            )
 
             VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
@@ -193,8 +228,8 @@ struct GarageVehicleCard: View {
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(Theme.Spacing.medium)
         }
-        .padding(Theme.Spacing.medium)
         .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("garage.vehicle")
@@ -225,5 +260,49 @@ struct GarageVehicleCard: View {
             parts.append("plan not started")
         }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// A photograph fetched from a provider, with the credit its licence
+/// requires.
+///
+/// `AsyncImage` rather than a hand-rolled loader: it already shares
+/// `URLCache`, cancels with the view, and decodes off the main thread. The
+/// image comes back at a display width the provider rendered, so nothing here
+/// is downsampling a twenty-megapixel original on the way past.
+struct RemoteVehiclePhoto: View {
+    let photo: VehiclePhoto
+    var height: CGFloat
+
+    var body: some View {
+        AsyncImage(url: photo.imageURL) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .overlay(alignment: .bottomTrailing) {
+                        // The licence is a condition of showing the picture,
+                        // not a footnote, so it travels with the picture.
+                        Text(photo.creditLine)
+                            .font(.caption2)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(.black.opacity(0.55), in: Capsule())
+                            .padding(6)
+                            .accessibilityLabel(Text("Photo by \(photo.creditLine)"))
+                    }
+            case .failure:
+                // A provider having a bad afternoon is not worth an error
+                // card on the garage screen.
+                Color.clear
+            default:
+                ProgressView().controlSize(.small)
+            }
+        }
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .clipped()
     }
 }

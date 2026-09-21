@@ -65,6 +65,12 @@ jobs:
       - name: Check that UI tests only look for identifiers the app sets
         run: python3 .github/scripts/check-ui-identifiers.py .
 
+      # Runs on Linux in seconds and catches the Swift mistakes that would
+      # otherwise only surface after a ten-minute macOS build: an await inside
+      # an autoclosure, an await inside map or filter, unbalanced braces.
+      - name: Check for Swift shapes that will not compile
+        run: python3 Tools/check-swift-shapes.py
+
       - name: Regenerate and compare
         run: |
           python3 Tools/generate-xcodeproj.py

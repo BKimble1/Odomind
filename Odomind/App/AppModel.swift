@@ -50,6 +50,11 @@ final class AppModel {
     /// StoreKit's answer about Pro. Observed, so a renewal or a refund that
     /// arrives while a screen is open redraws it.
     let entitlements: EntitlementService
+    /// Real photographs, resolved in the background and cached.
+    let photos: VehiclePhotoService
+    /// Where the owner is shopping. One decision, shared by Home and Parts,
+    /// kept across launches.
+    let shoppingLocation: ShoppingLocationService
 
     private(set) var snapshot = GarageSnapshot()
     private(set) var evaluationsByVehicle: [UUID: [ScheduleEvaluation]] = [:]
@@ -82,6 +87,11 @@ final class AppModel {
         self.exportService = ExportService()
         self.clock = clock
         self.entitlements = EntitlementService()
+        // In UI tests neither service may reach the network: a screenshot run
+        // must not depend on Commons being up, and a journey test must not
+        // wait on a location fix that will never come.
+        self.photos = VehiclePhotoService(enabled: !Self.isUITesting)
+        self.shoppingLocation = ShoppingLocationService()
     }
 
     /// Launch argument that makes the app run against a throwaway store.
