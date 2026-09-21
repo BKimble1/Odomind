@@ -5,16 +5,21 @@
 ```
 OdomindCore/          Portable Swift package. No UIKit, SwiftUI, SwiftData or
                       EventKit. Domain models, the schedule engine, the
-                      catalog, reminder planning, transfer formats.
+                      catalog, reminder planning, transfer formats, and the
+                      rules that pick a vehicle's artwork.
                       Builds and tests anywhere Foundation does.
 
 Odomind/              The iOS app.
   App/                AppModel — the single source of truth — plus routing.
   Persistence/        SwiftData models and the store boundary.
-  Providers/          NHTSA vPIC client and its mapper.
-  Services/           Notifications, calendar, attachments, backup, export.
-  DesignSystem/       Theme, formatters, shared components.
-  Features/           One folder per screen area.
+  Providers/          NHTSA vPIC client, its mapper, and the search model.
+  Services/           Notifications, calendar, attachments, backup, export,
+                      catalog updates, on-device receipt reading.
+  DesignSystem/       Theme, formatters, shared components, and the vector
+                      vehicle illustrations.
+  Features/           One folder per screen area: Home, Jobs, Garage,
+                      Calendar, Records, Parts, Pro, Onboarding, Settings,
+                      Shared.
 
 OdomindTests/         App-level tests against in-memory stores and fixtures.
 OdomindUITests/       The principal journey, driven through the UI.
@@ -65,6 +70,52 @@ disagree.
 
 Reloading everything after every write is wasteful in the abstract and free in
 practice: a household has a handful of vehicles and a few hundred records.
+
+## Navigation
+
+Four tabs, each with its own `NavigationPath`, and **one shared set of
+destinations** registered on every stack by `.odomindDestinations()`.
+
+That last part is the whole design. A job opens from Home, from Jobs and from
+Calendar; Settings opens from Calendar's gear and from a Pro prompt raised
+anywhere. With per-tab route enums, a route value pushed onto the wrong stack
+does not fail — it does nothing at all, which is the worst way for a navigation
+bug to present. One shared registration means any route value works wherever it
+lands.
+
+Route values are grouped by what they are about rather than by which tab owns
+them: `JobRoute`, `VehicleRoute`, `RecordRoute`, `SettingsRoute`.
+
+## Artwork
+
+The rules live in `OdomindCore` (`VehicleBodyStyle.classify`,
+`VehicleIllustration.match`, `VehicleArtworkResolver`), so which drawing a
+vehicle gets is a pure function of its identity and the owner's preference, and
+is tested without a renderer. The drawing itself lives in the app
+(`VehicleDrawing`, `VehicleSilhouettes`): one rounded-polygon silhouette per
+body style, authored in a single 250 × 100 box.
+
+The split matters for the same reason the schedule engine is separate: getting
+the *choice* wrong is a correctness problem worth testing, and getting the
+*drawing* wrong is a design problem that has to be looked at.
+
+Resolution is ordered and never lies about what it produced. A body-style
+silhouette describes itself as a body-style silhouette; only an exact match
+reports `isExactMatch`, and even that says it is an illustration rather than a
+photograph and proves nothing about which parts fit.
+
+## Entitlements
+
+`EntitlementService` is the only thing that decides whether Pro is on, and
+StoreKit is its only input. No entitlement is written to disk, and the
+`#if DEBUG` simulation used by the screenshot pass cannot exist in a release
+build.
+
+Two rules keep a lapse from being destructive. `canAddVehicle` is permissive
+while StoreKit has not answered, so a slow check never looks like an expired
+subscription. And the free allowance is the *larger* of the standard two and
+whatever the owner had when Build 2 first ran — recorded once, latched, and
+never recomputed downwards.
 
 ## Persistence
 
@@ -171,14 +222,43 @@ Permission is requested when the owner turns a reminder on. Never at launch.
 
 ## Calendar
 
-Odomind requests **no** calendar permission. On iOS 17 and later
-`EKEventEditViewController` runs outside the app's process with its own access,
-so the app builds an `EKEvent`, presents the system editor, and the owner
-confirms. Odomind never reads the calendar.
+Two separate things, with two different access levels, and neither claims to be
+sync.
 
-What it cannot do is keep that event in step, so it does not pretend to. It
+**One event.** `EKEventEditViewController` runs outside the app's process with
+its own access on iOS 17 and later, so Odomind builds an `EKEvent`, presents the
+system editor, and the owner confirms. **No permission is requested at all.**
+
+**A batch.** Writing several events without an editor needs
+`requestWriteOnlyAccessToEvents()` — write-only, which is the least access that
+can do the job. Odomind still cannot read the calendar, so it cannot tell the
+owner what is already on it, and the review screen says so rather than
+pretending to de-duplicate.
+
+What neither can do is keep an event in step, so neither pretends to. Odomind
 records when an event was created and for which due date, warns before creating
 a duplicate, and says plainly when the schedule has moved since.
+
+Managed two-way sync would need full access, an owned calendar and idempotent
+reconciliation. It is not built, and — the part that matters — it is not
+advertised. See `docs/BUILD-2-NOTES.md`.
+
+## The in-app calendar
+
+`CalendarEntry` has four kinds, and they are four kinds rather than one list
+because they mean four different things: recorded work happened, an appointment
+is intended, a due date is defensible, and a projection is a guess. A job with a
+confirmed deadline and an estimate for the same date produces **one** entry —
+the confirmed one — so the calendar never shows a guess beside the fact it was
+guessing at.
+
+A scheduled job with neither a date nor a usable estimate produces no entry at
+all. It goes in `unscheduledCalendarItems()` and is listed under its own
+heading. Spreading those across next month would be the single most plausible
+lie the app could tell.
+
+Projection is bounded (six months by default) because a mileage-based date moves
+every time a reading is added.
 
 ## Privacy boundaries
 
