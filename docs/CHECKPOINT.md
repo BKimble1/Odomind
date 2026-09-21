@@ -49,6 +49,29 @@ xcodebuild test-without-building -project Odomind.xcodeproj -scheme Odomind \
   -destination "$DEST" -only-testing:OdomindTests CODE_SIGNING_ALLOWED=NO
 ```
 
+## What running the app on a simulator changed
+
+Until the `Screenshots` workflow existed, nothing here had been *seen*. Putting
+the real screens on screen and running XCTest's accessibility audit over them
+found a set of problems no amount of reading the code would have:
+
+| Found | Why reading the code missed it |
+| --- | --- |
+| "Update mileage" broke mid-word into "Up / date / mileage" at accessibility text sizes | Two buttons side by side is obviously fine until you measure the width each one actually gets |
+| Every due-state badge failed contrast | `.orange`, `.green`, `.red` and `.blue` are fill colours; as caption text they measure 2.2:1 to 4.0:1 against a 4.5:1 requirement |
+| The Specifications rows said "Not available" twice and offered a caption-sized link inside a row that was already a button | Each piece read fine on its own |
+| Onboarding's secondary action was about 20pt tall | A plain `Button` looks like a button in source |
+| The "dark" screenshot was identical to the light one | `XCUIDevice.shared.appearance` failed silently, so dark mode was being claimed on no evidence |
+
+Two UI-test failures were the same mistake in a different place: rows were
+queried as `app.otherElements[…]`, but a SwiftUI `List` row wrapping a
+`NavigationLink` is a **button**. Lookups now go through one helper that
+matches on the identifier across every descendant.
+
+The failure summariser had to be fixed before any of this was visible: the
+simulator emits thousands of harmless `[error] CoreData: error:` lines, and a
+plain `grep error:` filled its output budget with those.
+
 ## Notes for whoever picks this up
 
 - `ScheduleEngine` is pure on purpose. If a change needs a clock, a locale or a
