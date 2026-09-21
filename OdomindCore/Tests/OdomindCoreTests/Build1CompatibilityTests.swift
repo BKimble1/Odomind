@@ -92,11 +92,13 @@ final class Build1CompatibilityTests: XCTestCase {
             archive: archive,
             existingVehicleIDs: [],
             existingServiceRecordIDs: [],
-            strategy: .replaceEverything
+            strategy: .replaceEverything,
+            now: Date(timeIntervalSince1970: 1_790_000_000)
         )
+        XCTAssertTrue(plan.canApply, "a Build 1 backup must still be restorable")
         XCTAssertTrue(
-            plan.issues.filter(\.isBlocking).isEmpty,
-            "a Build 1 backup must import without a blocking issue: \(plan.issues)"
+            plan.blockingIssues.isEmpty,
+            "a Build 1 backup must import without a blocking issue: \(plan.blockingIssues)"
         )
     }
 }

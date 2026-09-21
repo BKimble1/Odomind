@@ -57,6 +57,10 @@ struct SettingsView: View {
                 NavigationLink(value: SettingsRoute.privacy) {
                     Label("Privacy", systemImage: "hand.raised")
                 }
+                Link(destination: SupportLinks.terms) {
+                    Label("Terms of use", systemImage: "doc.text")
+                }
+                .accessibilityIdentifier("settings.terms")
                 NavigationLink(value: SettingsRoute.about) {
                     Label("About Odomind", systemImage: "info.circle")
                 }
