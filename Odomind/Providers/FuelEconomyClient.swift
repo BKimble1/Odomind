@@ -124,10 +124,20 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
     /// The names this service uses for a model somebody named differently.
     ///
     /// An exact name wins outright. Otherwise every name that begins with what
-    /// was asked for is returned — "Wrangler" finds both "Wrangler 2WD" and
-    /// "Wrangler 4WD", and both are worth offering. At most three, because a
-    /// make that spells one model six ways is a reason to ask the owner, not
-    /// to make eighteen requests.
+    /// was asked for is a candidate — "Wrangler" finds both "Wrangler 2WD" and
+    /// "Wrangler 4WD", and both are worth offering.
+    ///
+    /// **Shortest first, and that is not arbitrary.** A live probe asked this
+    /// service about a 2018 F-150 and got twenty names back: "F150 Pickup
+    /// 2WD" and "F150 Pickup 4WD" alongside "F150 2.7L 2WD GVWR>6649 LBS",
+    /// "F150 2WD FFV BASE PAYLOAD LT TIRE" and sixteen more. Taking the first
+    /// few alphabetically handed the owner the payload and gross-weight
+    /// variants and hid the two ordinary trucks. The plain name is the short
+    /// one, every time, because the extra words are qualifiers.
+    ///
+    /// Capped at four, because a model spelled twenty ways is a reason to ask
+    /// the owner — which "None of these is mine" does — not to make sixty
+    /// requests.
     private func modelNames(modelYear: Int, make: String, model: String) async throws -> [String] {
         var components = URLComponents(
             url: baseURL.appendingPathComponent("vehicle/menu/model"),
@@ -154,7 +164,12 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
         if let exact = names.first(where: { VehicleTextMatch.key($0) == wanted }) {
             return [exact]
         }
-        return Array(names.filter { VehicleTextMatch.key($0).hasPrefix(wanted) }.prefix(3))
+        let matching = names.filter { VehicleTextMatch.key($0).hasPrefix(wanted) }
+        let plainestFirst = matching.sorted { left, right in
+            if left.count != right.count { return left.count < right.count }
+            return left.localizedCaseInsensitiveCompare(right) == .orderedAscending
+        }
+        return Array(plainestFirst.prefix(4))
     }
 
     /// The configuration menu for one of this service's own model names.

@@ -108,33 +108,49 @@ def fuel_economy_model_name(vehicle):
     exact = [n for n in names if n.lower().replace("-", "").replace(" ", "") == wanted]
     if exact:
         print(f"      exact name match: {exact[0]!r}")
-        return exact[0]
+        return [exact[0]]
     starts = [n for n in names if n.lower().replace("-", "").replace(" ", "").startswith(wanted)]
     if starts:
+        # Shortest first, matching the shipped client: the extra words are
+        # qualifiers, so the plain name is the short one. A 2018 F-150 comes
+        # back as twenty names and the alphabetical first three are all
+        # payload and gross-weight variants.
+        plainest = sorted(starts, key=lambda n: (len(n), n.lower()))
         print(f"      no exact name; this service spells it {starts!r}")
-        return starts[0]
+        print(f"      plainest first: {plainest[:4]!r}")
+        return plainest[:4]
     print(f"      NO MATCH for {vehicle['model']!r} in this service's names")
     return None
 
 
 def fuel_economy_options(vehicle):
-    """The configurations this year/make/model was sold in."""
-    name = fuel_economy_model_name(vehicle)
-    if not name:
+    """The configurations this year/make/model was sold in.
+
+    Every matching name is asked about, not just the first, because the
+    shipped client does the same — evidence that describes different
+    behaviour from the app is not evidence about the app.
+    """
+    names = fuel_economy_model_name(vehicle)
+    if not names:
         return None
-    payload = fuel_json(
-        "vehicle/menu/options?year={}&make={}&model={}".format(
-            vehicle["year"],
-            urllib.parse.quote(vehicle["make"]),
-            urllib.parse.quote(name),
-        ),
-        "fueleconomy.gov options",
-    )
-    items = menu_items(payload)
-    print(f"    fueleconomy.gov: {len(items)} configuration option(s) for {name!r}")
-    for item in items[:12]:
-        print(f"      {item.get('value')}: {item.get('text')}")
-    return [{"id": i.get("value"), "text": i.get("text")} for i in items]
+    collected = []
+    for name in names:
+        payload = fuel_json(
+            "vehicle/menu/options?year={}&make={}&model={}".format(
+                vehicle["year"],
+                urllib.parse.quote(vehicle["make"]),
+                urllib.parse.quote(name),
+            ),
+            f"fueleconomy.gov options for {name!r}",
+        )
+        items = menu_items(payload)
+        print(f"    fueleconomy.gov: {len(items)} configuration option(s) for {name!r}")
+        for item in items[:12]:
+            print(f"      {item.get('value')}: {item.get('text')}")
+        collected.extend(
+            {"id": i.get("value"), "text": f"{name} — {i.get('text')}"} for i in items
+        )
+    return collected
 
 
 def fuel_economy_detail(option_id):
@@ -217,7 +233,7 @@ def main():
         options = record.get("fuelEconomyOptions") or []
         if options:
             record["fuelEconomyDetail"] = []
-            for option in options[:3]:
+            for option in options[:6]:
                 if not option.get("id"):
                     continue
                 try:

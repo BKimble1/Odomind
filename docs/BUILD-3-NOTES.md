@@ -43,6 +43,83 @@ by returning 24 Jeep models.
 | Engine/trim options from a provider rather than a picker | Implemented and verified |
 | Catalog updates say "nothing published" rather than "service down" | Implemented and verified; **publishing is an owner action, see CATALOG-AUTHORING.md** |
 
+## Validation matrix — three real configurations
+
+Gathered on a macOS runner on **2026-09-21**, commit `e72cc9c`. Every line is
+this run's output, not a description of it. `.github/scripts/validation-matrix.py`
+asks the providers; `odomind-catalog vehicle` asks Odomind, through the same
+code the app uses.
+
+### What each provider actually had
+
+| | 2010 Jeep Wrangler | 2015 Toyota Camry | 2018 Ford F-150 |
+| --- | --- | --- | --- |
+| vPIC knows the model | yes (7 models for Jeep 2010) | yes (20 for Toyota 2015) | yes (49 for Ford 2018) |
+| fueleconomy.gov's name for it | **no exact match** — `Wrangler 2WD`, `Wrangler 4WD` | exact: `Camry` | **no exact match** — 20 names beginning `F150` |
+| Engine options returned | 1 for `Wrangler 2WD` | 2 | 1 for the name probed |
+| Engine, verbatim | `Auto 4-spd, 6 cyl, 3.8 L` | `Auto (S6), 4 cyl, 2.5 L`; `Auto (S6), 6 cyl, 3.5 L` | `Auto (S10), 6 cyl, 2.7 L, Turbo` |
+| Drive, verbatim | `Rear-Wheel Drive` | `Front-Wheel Drive` | `Rear-Wheel Drive` |
+| Fuel, verbatim | `Regular` | `Regular` | `Regular` |
+| Licensed photograph | 5/5 candidates carry a licence | 5/5 | 5/5 |
+| **Applicable part number** | **none** | **none** | **none** |
+| **Price / availability** | **none** | **none** | **none** |
+
+Photographs, by name and licence, so the attribution can be checked:
+
+| Vehicle | File | Licence |
+| --- | --- | --- |
+| 2010 Jeep Wrangler | `File:Jeep Wrangler Islander -- 2010 DC.jpg` | Public domain |
+| 2010 Jeep Wrangler | `File:2010 Jeep Wrangler Sahara 4WD, front left, 08-21-2026.jpg` | CC BY-SA 4.0 |
+| 2015 Toyota Camry | `File:Toyota Camry XSE.jpg` | CC BY-SA 4.0 |
+| 2018 Ford F-150 | `File:2018 Ford F-150 Crew Cab.jpg` | Public domain |
+
+Part numbers: `vPIC GetParts` returned 1,000 rows keyed `CoverLetterURL`,
+`LetterDate`, `ManufacturerId`, `ManufacturerName`, `ModelYearFrom`,
+`ModelYearTo`, `Name`, `Type`, `URL`. Regulatory filing letters. No part
+number, no category, no fitment — for any of the three. **Oil filters and
+every other ordinary category are blocked equally**, which is why the brief's
+"include oil filters and at least one other ordinary category" cannot be
+satisfied and is reported rather than filled in.
+
+### What Odomind itself builds for them
+
+| | 2010 Jeep Wrangler | 2015 Toyota Camry | 2018 Ford F-150 |
+| --- | --- | --- | --- |
+| Vehicle profile matched | `jeep-wrangler-jk-2007-2011-3800` | **none** | **none** |
+| Tasks offered | 31 | 31 | 31 |
+| Schedules from a manufacturer | **0** — every one `generalTemplate`, `verified: false` | **0** | **0** |
+| **Specifications held** | **0** | **0** | **0** |
+
+That last row is the honest state of the data feature and it is not dressed
+up. One profile exists, it carries the engine's identity and the fact that it
+is chain-driven — enough to keep timing-belt service out of a Wrangler's plan,
+which is a real saving — and it carries no oil viscosity, no capacity, no tyre
+size and no interval. The other two vehicles match nothing.
+
+So: **schedules are general guidance, honestly labelled; specifications are
+absent; part numbers are blocked.** What Build 3 adds to this picture is
+configuration — engine, drivetrain and transmission now come from a source
+rather than from the owner's memory — and photographs, which are real and
+licensed for all three.
+
+### Two things the live run caught that no test could
+
+**Two vocabularies for one car.** vPIC says `Wrangler`; fueleconomy.gov says
+`Wrangler 2WD` and `Wrangler 4WD`. The first version of the client asked using
+vPIC's spelling and would have got an empty menu — reported to the owner as
+"no published configurations for this vehicle", for every car whose name is
+not spelled identically in both services. Both now resolve the service's own
+names first.
+
+**A model spelled twenty ways.** The 2018 F-150 comes back as twenty names:
+`F150 Pickup 2WD` and `F150 Pickup 4WD` alongside
+`F150 2.7L 2WD GVWR>6649 LBS`, `F150 2WD FFV BASE PAYLOAD LT TIRE` and
+sixteen more. Taking the first few alphabetically handed the owner the payload
+and gross-weight variants and hid the two ordinary trucks. Names are now
+ordered shortest-first — the extra words are qualifiers, so the plain name is
+the short one — and capped at four, with "None of these is mine" as the way
+out for anything the list misses.
+
 ## What is blocked, and exactly what unblocks it
 
 Part applicability is the one thing in this brief that cannot be built from

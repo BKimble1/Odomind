@@ -144,6 +144,97 @@ final class OdomindScreenshotTests: XCTestCase {
         capture("large-text-02-jobs")
     }
 
+    /// The screens Build 3 added or changed, which the walk above does not
+    /// reach: the permission step, a search with no year typed, the
+    /// configuration step, parts opened from a job, and the shopping area.
+    ///
+    /// Separate from `walk` on purpose. These need a fresh install and a
+    /// different sequence, and folding them in would make one long test whose
+    /// failure tells you less.
+    func testCaptureBuildThreeScreens() {
+        let fresh = XCUIApplication()
+        fresh.launchArguments = [
+            "-odomind-ui-testing",
+            "-odomind-exercise-permissions",
+            "-odomind-appearance", "light",
+        ]
+        XCUIDevice.shared.appearance = .light
+        fresh.launch()
+
+        func shot(_ name: String) {
+            let attachment = XCTAttachment(screenshot: fresh.screenshot())
+            attachment.name = name
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+
+        XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
+        fresh.buttons["onboarding.addVehicle"].tap()
+
+        // 1. First use: the two questions, before either prompt fires.
+        XCTAssertTrue(
+            fresh.buttons["permissions.reminders"].waitForExistence(timeout: 10),
+            "the permission step is missing"
+        )
+        shot("build3-01-permissions")
+
+        fresh.buttons["permissions.reminders.skip"].tap()
+        fresh.buttons["permissions.location.skip"].tap()
+        fresh.buttons["permissions.continue"].tap()
+
+        // 2. A search with no year typed at all — the thing Build 2 refused.
+        let search = fresh.textFields["addVehicle.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 15), "the search field is missing")
+        search.tap()
+        search.typeText("wrangler")
+        // The index answers without a network, so this is a screenshot of
+        // real results rather than of a spinner.
+        let firstResult = fresh.buttons.matching(identifier: "addVehicle.result").firstMatch
+        _ = firstResult.waitForExistence(timeout: 10)
+        shot("build3-02-yearless-search")
+
+        // 3. The configuration step. In a UI-test build the options provider
+        //    is off — a screenshot run must not depend on somebody else's
+        //    uptime — so this captures the fallback questions. The
+        //    provider-backed variant is on the device-check list.
+        if firstResult.exists {
+            firstResult.tap()
+            if fresh.buttons["addVehicle.finish"].waitForExistence(timeout: 15) {
+                shot("build3-03-configuration")
+                fresh.buttons["addVehicle.finish"].tap()
+            }
+        }
+
+        guard fresh.navigationBars["Home"].waitForExistence(timeout: 20) else {
+            XCTFail("Home did not appear after adding a vehicle")
+            return
+        }
+        shot("build3-04-home")
+
+        // 4. Parts, reached from a job rather than typed again.
+        fresh.tabBars.buttons["Jobs"].tap()
+        let job = fresh.element(withIdentifier: "jobs.task.engine-oil-and-filter")
+        if job.waitForExistence(timeout: 10) {
+            job.tap()
+            let parts = fresh.buttons["task.findParts"]
+            if fresh.scrollTo(parts, hittable: true) {
+                parts.tap()
+                if fresh.navigationBars["Parts"].waitForExistence(timeout: 10) {
+                    shot("build3-05-parts-from-a-job")
+
+                    // 5. The shopping area control, and what it offers.
+                    let area = fresh.buttons["shopping.location"]
+                    if area.waitForExistence(timeout: 5) {
+                        area.tap()
+                        if fresh.navigationBars["Shopping area"].waitForExistence(timeout: 8) {
+                            shot("build3-06-location")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func testCaptureOnboarding() {
         let fresh = XCUIApplication()
         fresh.launchArguments = ["-odomind-ui-testing", "-odomind-appearance", "light"]

@@ -29,6 +29,66 @@ final class VehicleConfigurationOptionTests: XCTestCase {
         )
     }
 
+    // MARK: - Values this service actually returned
+    //
+    // Recorded from a live probe on 2026-09-21, for the three vehicles the
+    // brief names. Written down because the vocabulary is the thing most
+    // likely to move under this code, and a test written from memory of an
+    // API is a test of the memory.
+
+    func testTheExactValuesObservedForA2010JeepWrangler() {
+        // fueleconomy.gov id 29531, "Wrangler 2WD":
+        // displ 3.8, cylinders 6, drive "Rear-Wheel Drive",
+        // trany "Automatic 4-spd", fuelType "Regular".
+        let observed = option(
+            fuel: "Regular",
+            drive: "Rear-Wheel Drive",
+            transmission: "Automatic 4-spd",
+            displacement: 3.8,
+            cylinders: 6
+        )
+        // Note "Regular", not "Regular Gasoline". The service says the grade,
+        // not the fuel, and reading it as unknown would have left every
+        // petrol car asking the owner what it runs on.
+        XCTAssertEqual(observed.powertrain, .gasoline)
+        XCTAssertEqual(observed.drivetrain, .rearWheelDrive)
+        XCTAssertEqual(observed.transmission, .automatic)
+        XCTAssertEqual(observed.engineDisplacementLiters, 3.8)
+        XCTAssertEqual(observed.cylinders, 6)
+    }
+
+    func testTheExactValuesObservedForA2015ToyotaCamry() {
+        // id 35734: displ 2.5, cylinders 4, drive "Front-Wheel Drive",
+        // trany "Automatic (S6)", fuelType "Regular".
+        let observed = option(
+            fuel: "Regular",
+            drive: "Front-Wheel Drive",
+            transmission: "Automatic (S6)",
+            displacement: 2.5,
+            cylinders: 4
+        )
+        XCTAssertEqual(observed.powertrain, .gasoline)
+        XCTAssertEqual(observed.drivetrain, .frontWheelDrive)
+        XCTAssertEqual(observed.transmission, .automatic)
+    }
+
+    func testTheExactValuesObservedForA2018FordF150() {
+        // id 39243: displ 2.7, cylinders 6, drive "Rear-Wheel Drive",
+        // trany "Automatic (S10)", fuelType "Regular", eng_dscr "SIDI & PFI".
+        let observed = option(
+            fuel: "Regular",
+            drive: "Rear-Wheel Drive",
+            transmission: "Automatic (S10)",
+            displacement: 2.7,
+            cylinders: 6
+        )
+        XCTAssertEqual(observed.powertrain, .gasoline)
+        XCTAssertEqual(observed.drivetrain, .rearWheelDrive)
+        // A ten-speed automatic. The wording carries a number this mapping
+        // must not choke on.
+        XCTAssertEqual(observed.transmission, .automatic)
+    }
+
     // MARK: - Powertrain
 
     func testOrdinaryFuelDescriptionsMapToGasoline() {
