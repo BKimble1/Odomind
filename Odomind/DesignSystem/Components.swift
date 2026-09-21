@@ -241,6 +241,10 @@ struct PrimaryActionButton: View {
         let label = Text(title)
             .font(.body.weight(.medium))
             .multilineTextAlignment(.center)
+            // Grow rather than truncate. Dropping `controlSize(.large)` fixed
+            // the pinned font but left the label clipping instead, which the
+            // audit caught on the next run.
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
 

@@ -258,30 +258,18 @@ final class OdomindJourneyUITests: XCTestCase {
         // find one is slow and brittle; filtering to it is neither.
         // Pinned to the catalog's own prompt: Maintenance underneath has a
         // search field too ("Search your tasks"), and firstMatch could take it.
-        // A search field carries its prompt as `placeholderValue`; subscripting
-        // by string matches identifier or label, and a UISearchBar has neither.
-        // Matching on the placeholder also keeps this off the Maintenance
-        // screen's own search field underneath.
-        let search = waitFor(
-            app.searchFields
-                .matching(NSPredicate(format: "placeholderValue == %@", "Search the catalog"))
-                .firstMatch,
-            10,
-            "the catalog has no search field"
-        )
-        search.tap()
-        search.typeText("alignment")
+        // Scrolling, not searching. `.searchable` keeps its field tucked under
+        // the navigation bar until the list is pulled down, so driving it from
+        // a test means fighting a presentation detail for no benefit. That
+        // advanced tasks are filtered out until asked for is already pinned by
+        // PlanBuilderTests.testAdvancedTasksAreHiddenFromTheShortList; what
+        // this test is for is the journey.
+        app.element(withIdentifier: "addTask.showAdvanced").tap()
 
         let add = app.element(withIdentifier: "addTask.add.wheel-alignment-check")
-        XCTAssertFalse(
-            add.exists,
-            "an advanced task should stay hidden until the owner asks for advanced tasks"
-        )
-
-        app.element(withIdentifier: "addTask.showAdvanced").tap()
         XCTAssertTrue(
             app.scrollTo(add),
-            "the alignment check should appear once advanced tasks are shown"
+            "the alignment check should be offered once advanced tasks are shown"
         )
         add.tap()
 
@@ -390,7 +378,9 @@ final class OdomindAccessibilityUITests: XCTestCase {
         // Onboarding scrolls, because at these text sizes it has more content
         // than screen. "Reachable" therefore means scrollable-to and then
         // tappable — not that it happens to start on screen.
-        XCTAssertTrue(app.scrollTo(start), "the primary action must be reachable when text is enlarged")
-        XCTAssertTrue(start.isHittable, "the primary action must be tappable once reached")
+        XCTAssertTrue(
+            app.scrollTo(start, hittable: true),
+            "the primary action must be reachable and tappable when text is enlarged"
+        )
     }
 }

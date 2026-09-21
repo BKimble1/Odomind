@@ -313,7 +313,11 @@ struct TaskSummaryRow: View {
 
             Text(DueSummary.text(for: evaluation, calendar: model.calendar, now: model.clock.now))
                 .font(.caption)
-                .foregroundStyle(evaluation.state == .overdue ? Color.red : Color.secondary)
+                // Theme.Colors.overdue, not Color.red. DueState.tint exists so
+                // the palette cannot drift between screens, and hardcoding a
+                // colour here is exactly that drift — system red is about
+                // 3.5:1 on white, under what caption-sized text needs.
+                .foregroundStyle(evaluation.state == .overdue ? Theme.Colors.overdue : Color.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 2)

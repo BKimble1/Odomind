@@ -27,14 +27,25 @@ extension XCUIApplication {
     /// Today's "Needs setup" group, the odometer field is below the task list
     /// in the Log service sheet, and an alignment check is a long way into the
     /// catalog.
+    /// - Parameter hittable: require the element to be tappable, not merely
+    ///   present. Existing and being reachable are different things: a row can
+    ///   be in the tree while still off-screen, which is how an onboarding
+    ///   test reported the primary action as reached and then failed to tap it.
     @discardableResult
-    func scrollTo(_ element: XCUIElement, maxSwipes: Int = 8) -> Bool {
-        if element.waitForExistence(timeout: 3) { return true }
+    func scrollTo(_ element: XCUIElement, hittable: Bool = false, maxSwipes: Int = 12) -> Bool {
+        func satisfied() -> Bool {
+            guard element.exists else { return false }
+            return hittable ? element.isHittable : true
+        }
+
+        _ = element.waitForExistence(timeout: 3)
+        if satisfied() { return true }
+
         for _ in 0..<maxSwipes {
             swipeUp()
-            if element.exists { return true }
+            if satisfied() { return true }
         }
-        return element.exists
+        return satisfied()
     }
 
     /// Any element whose accessibility label contains `text`.
