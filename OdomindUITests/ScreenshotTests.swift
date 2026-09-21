@@ -265,9 +265,19 @@ final class OdomindScreenshotTests: XCTestCase {
         // Either outcome is a real screenshot: the configurations
         // fueleconomy.gov publishes for a 2023 Wrangler, or Odomind saying it
         // has no published list and asking the two questions instead.
+        //
+        // Waiting for "options or the questions" is what this did first, and
+        // it came back instantly — before the request had left the device.
+        // Not having asked yet used to look exactly like having asked and got
+        // nothing, because both showed the generic questions. The app draws a
+        // distinct "Checking…" row for the first of those now, and this waits
+        // for that row to go away.
+        let looking = fresh.element(withIdentifier: "confirm.looking")
         let option = fresh.firstElement(withIdentifierPrefix: "confirm.option.")
         let powertrain = fresh.element(withIdentifier: "confirm.powertrain")
-        let settled = fresh.waitUntil(timeout: 30) { option.exists || powertrain.exists }
+        let settled = fresh.waitUntil(timeout: 40) {
+            !looking.exists && (option.exists || powertrain.exists)
+        }
         XCTAssertTrue(
             settled,
             "the configuration step settled on neither published options nor the fallback questions"
@@ -317,7 +327,17 @@ final class OdomindScreenshotTests: XCTestCase {
         //    the capture on it would only teach me to stop asking.
         fresh.tabBars.buttons["Garage"].tap()
         XCTAssertTrue(fresh.navigationBars["Garage"].waitForExistence(timeout: 15), "Garage did not open")
-        fresh.waitUntil(timeout: 25) { fresh.element(withIdentifier: "vehicle.photo").exists }
+        let photo = fresh.element(withIdentifier: "vehicle.photo")
+        fresh.waitUntil(timeout: 25) { photo.exists }
+        if photo.exists {
+            // The licence is a condition of showing the picture, not a
+            // footnote — a photograph on screen with nothing naming its
+            // author is the one outcome here that is worse than a drawing.
+            XCTAssertTrue(
+                fresh.element(labelContaining: "Photo by").exists,
+                "a photograph is on screen with no credit beside it"
+            )
+        }
         shot("build3-07-garage")
 
         // 5. Parts, reached from a job rather than typed again.

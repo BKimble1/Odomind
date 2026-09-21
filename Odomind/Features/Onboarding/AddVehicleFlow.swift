@@ -582,13 +582,20 @@ private struct ConfirmStep: View {
     @ViewBuilder
     private var configurationSection: some View {
         switch model.vehicleOptions.status {
-        case .looking:
+        // `.idle` means the request has not gone out yet, which on this screen
+        // lasts exactly one frame — the `.task` below fires on appear. It used
+        // to fall through to the generic questions, so the owner saw "Runs
+        // on?" and "Driven wheels?" appear and then be replaced a moment later
+        // by the list of engines their car was actually sold with. Not knowing
+        // yet is not the same as having asked and got nothing.
+        case .idle, .looking:
             Section {
                 HStack(spacing: Theme.Spacing.small) {
                     ProgressView().controlSize(.small)
                     Text("Checking which engines this was sold with…")
                         .foregroundStyle(Theme.Palette.secondaryText)
                 }
+                .accessibilityIdentifier("confirm.looking")
             }
 
         case .options(let options) where !isAnsweringManually:
@@ -625,7 +632,7 @@ private struct ConfirmStep: View {
                 }
             }
 
-        case .idle, .none, .options:
+        case .none, .options:
             if !openQuestions.isEmpty {
                 Section {
                     if openQuestions.contains(.powertrain) {
