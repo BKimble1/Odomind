@@ -128,9 +128,42 @@ final class ShoppingLocationTests: XCTestCase {
         await gate.open()
         try await settle()
 
-        guard case .ready = service.resolution else {
+        // Coordinates are the answer; the town name is a label that arrives
+        // later. This used to wait on a real reverse geocode before going
+        // ready, which made the test race CLGeocoder — it passed or failed
+        // depending on how fast a network call was.
+        guard case .ready(let latitude, _, _) = service.resolution else {
             return XCTFail("three taps should still end in one answer, got \(service.resolution)")
         }
+        XCTAssertEqual(latitude, 51.5, accuracy: 0.001)
+    }
+
+    func testAFixThatLandsAfterATownIsChosenIsDiscarded() async throws {
+        // The sharp version of the test below. The fix is released and then
+        // given time to land, so a service that lets it through fails here
+        // rather than passing because nothing had arrived yet.
+        let gate = AsyncGate()
+        let provider = StubLocationProvider()
+        provider.gate = gate
+        provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
+        let service = ShoppingLocationService(provider: provider, defaults: defaults())
+
+        service.useCurrentLocation()
+        service.choose(
+            PlaceSuggestion(name: "Boise", detail: nil, latitude: 43.6, longitude: -116.2)
+        )
+        await gate.open()
+        try await settle()
+        try await settle()
+
+        XCTAssertEqual(
+            service.resolution.label, "Boise",
+            "a fix arriving after the owner picked a town must not replace it"
+        )
+        guard let coordinate = service.resolution.coordinate else {
+            return XCTFail("the chosen town should still be searchable")
+        }
+        XCTAssertEqual(coordinate.latitude, 43.6, accuracy: 0.001)
     }
 
     // MARK: - Changing the area while something is in flight

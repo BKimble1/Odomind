@@ -58,6 +58,11 @@ final class ShoppingLocationService {
     private let geocoder = CLGeocoder()
     private let defaults: UserDefaults
     private var resolveTask: Task<Void, Never>?
+    /// Bumped on every change of area. An answer is only allowed to touch
+    /// state while its generation is still current — cancellation alone
+    /// races, because a fix already delivered cannot be un-delivered. Same
+    /// rule as the search and the photo resolver, for the same reason.
+    private var generation = 0
 
     private static let storageKey = "com.idlery.odomind.shoppingArea"
 
@@ -89,6 +94,12 @@ final class ShoppingLocationService {
     }
 
     func choose(_ place: PlaceSuggestion) {
+        // A choice supersedes anything in flight. Without this, a fix that
+        // lands a moment later replaces the town the owner just picked with
+        // wherever the phone happens to be.
+        generation += 1
+        resolveTask?.cancel()
+        resolveTask = nil
         area = .place(
             name: place.name,
             detail: place.detail,
@@ -104,6 +115,8 @@ final class ShoppingLocationService {
     func resolve(force: Bool = false) {
         if !force, case .ready = resolution { return }
 
+        generation += 1
+        let mine = generation
         resolveTask?.cancel()
         switch area {
         case .place(let name, _, let latitude, let longitude):
@@ -114,15 +127,25 @@ final class ShoppingLocationService {
             resolveTask = Task { [weak self] in
                 guard let self else { return }
                 let outcome = await self.provider.fix()
-                guard !Task.isCancelled else { return }
+                guard self.generation == mine else { return }
                 switch outcome {
                 case .success(let location):
-                    let label = await self.describe(location) ?? "Current location"
-                    guard !Task.isCancelled else { return }
+                    // Ready as soon as there are coordinates. Parts searches
+                    // from a coordinate; the town name is a label. Holding the
+                    // whole screen on a spinner until a reverse geocode comes
+                    // back is waiting for cosmetics over an answer Odomind
+                    // already has.
                     self.resolution = .ready(
                         latitude: location.coordinate.latitude,
                         longitude: location.coordinate.longitude,
-                        label: label
+                        label: "Current location"
+                    )
+                    guard let described = await self.describe(location) else { return }
+                    guard self.generation == mine else { return }
+                    self.resolution = .ready(
+                        latitude: location.coordinate.latitude,
+                        longitude: location.coordinate.longitude,
+                        label: described
                     )
                 case .failure(.denied), .failure(.restricted):
                     self.resolution = .denied
