@@ -113,6 +113,20 @@ final class AppModel {
         isUITesting && ProcessInfo.processInfo.arguments.contains(seedSampleArgument)
     }
 
+    /// Launch argument that keeps the welcome permission step in a UI test.
+    ///
+    /// Off by default under test. The step puts two system dialogues between
+    /// onboarding and the vehicle flow, and every journey test wants the
+    /// vehicle flow — so the one test that is *about* permissions opts in,
+    /// and the rest are not made to walk through a screen they are not
+    /// testing.
+    static let exercisePermissionsArgument = "-odomind-exercise-permissions"
+
+    static var shouldOfferPermissionStep: Bool {
+        guard isUITesting else { return true }
+        return ProcessInfo.processInfo.arguments.contains(exercisePermissionsArgument)
+    }
+
     /// Builds the model an app launch uses.
     static func live() throws -> AppModel {
         let uiTesting = isUITesting

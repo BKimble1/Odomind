@@ -56,7 +56,7 @@ struct OnboardingView: View {
     /// a refusal is an answer, and re-asking is how an app becomes something
     /// people dismiss reflexively.
     private var shouldOfferPermissions: Bool {
-        !model.preferences.hasSeenPermissionSetup
+        AppModel.shouldOfferPermissionStep && !model.preferences.hasSeenPermissionSetup
     }
 
     private var content: some View {

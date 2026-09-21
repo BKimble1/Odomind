@@ -405,6 +405,44 @@ final class OdomindJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["export.backup"].exists)
     }
 
+    func testTheWelcomePermissionStepIsOfferedAndSkippable() {
+        // Opt-in, because it puts two system dialogues between onboarding and
+        // the vehicle flow and every other journey wants the vehicle flow.
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing", "-odomind-exercise-permissions"]
+        fresh.launch()
+
+        waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
+
+        // Both questions are put, and neither prompt fires on appearance —
+        // each waits for its own tap.
+        waitFor(fresh.buttons["permissions.reminders"], 10, "the reminders question is missing")
+        waitFor(fresh.buttons["permissions.location"], 10, "the location question is missing")
+
+        // Skipping both has to leave the app perfectly usable.
+        fresh.buttons["permissions.reminders.skip"].tap()
+        fresh.buttons["permissions.location.skip"].tap()
+        waitFor(fresh.buttons["permissions.continue"], 10, "Continue is missing").tap()
+
+        waitFor(fresh.buttons["addVehicle.manual"], 15, "skipping permissions should lead to the vehicle flow")
+    }
+
+    func testThePermissionStepIsNotAskedTwice() {
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing", "-odomind-exercise-permissions"]
+        fresh.launch()
+
+        waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
+        waitFor(fresh.buttons["permissions.continue"], 10, "the permission step is missing").tap()
+        waitFor(fresh.buttons["addVehicle.manual"], 15, "the vehicle flow should follow")
+
+        // Back out without adding anything, then start again. A refusal is an
+        // answer; re-asking is how an app trains people to dismiss it.
+        fresh.buttons["addVehicle.cancel"].tap()
+        waitFor(fresh.buttons["onboarding.addVehicle"], 10, "onboarding should come back").tap()
+        waitFor(fresh.buttons["addVehicle.manual"], 15, "the permission step must not be put a second time")
+    }
+
     func testSampleVehicleIsClearlyMarked() {
         waitFor(app.buttons["onboarding.sample"], 20, "onboarding did not appear").tap()
         waitFor(app.navigationBars["Home"], 15, "Home did not appear after adding the sample")

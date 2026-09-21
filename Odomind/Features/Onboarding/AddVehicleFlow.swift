@@ -50,6 +50,7 @@ struct AddVehicleFlow: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("addVehicle.cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if step == .plan {

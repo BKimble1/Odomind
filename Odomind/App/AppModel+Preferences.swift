@@ -34,6 +34,7 @@ extension AppModel {
     /// True only when there is a garage already — a fresh install goes through
     /// onboarding proper — and when something is still unasked.
     var shouldOfferPermissionCatchUp: Bool {
+        guard AppModel.shouldOfferPermissionStep else { return false }
         guard !preferences.hasSeenPermissionSetup else { return false }
         guard !ownedVehicles.isEmpty else { return false }
         let remindersUnset = !snapshot.settings.reminders.remindersEnabled
