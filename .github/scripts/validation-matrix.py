@@ -55,30 +55,83 @@ def vpic_models(vehicle):
     return {"count": data.get("Count", 0), "present": bool(match)}
 
 
-def fuel_economy_options(vehicle):
-    """fueleconomy.gov: a US government dataset, public domain.
-
-    The question this answers is the one Build 3's configuration step needs:
-    which engines was this year/make/model actually sold with? A hand-typed
-    list of engine choices is exactly the kind of invention the brief bars.
-    """
-    url = (
-        "https://www.fueleconomy.gov/ws/rest/vehicle/menu/options"
-        f"?year={vehicle['year']}&make={urllib.parse.quote(vehicle['make'])}"
-        f"&model={urllib.parse.quote(vehicle['model'])}"
-    )
+def fuel_json(path, label):
+    """One call to fueleconomy.gov, with the raw body shown when it surprises us."""
+    url = f"https://www.fueleconomy.gov/ws/rest/{path}"
     request = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            payload = json.loads(response.read())
+            raw = response.read()
     except Exception as error:  # noqa: BLE001
-        print(f"    fueleconomy.gov: FAILED {type(error).__name__}: {error}")
+        print(f"    {label}: FAILED {type(error).__name__}: {error}")
         return None
+    try:
+        payload = json.loads(raw)
+    except Exception:  # noqa: BLE001
+        print(f"    {label}: not JSON. First 300 bytes: {raw[:300]!r}")
+        return None
+    if payload is None:
+        print(f"    {label}: JSON null. First 300 bytes: {raw[:300]!r}")
+        return None
+    return payload
 
-    items = payload.get("menuItem", [])
+
+def menu_items(payload):
+    """The service answers with a list for several items and a bare object for
+    one. Both shapes are the same question answered."""
+    if payload is None:
+        return []
+    items = payload.get("menuItem", []) if isinstance(payload, dict) else []
     if isinstance(items, dict):
         items = [items]
-    print(f"    fueleconomy.gov: {len(items)} configuration option(s)")
+    return [i for i in items if isinstance(i, dict)]
+
+
+def fuel_economy_model_name(vehicle):
+    """What fueleconomy.gov calls this model.
+
+    vPIC says "Wrangler"; this service may say "Wrangler 4WD". Asking it for a
+    name it does not use returns nothing, which would look like "no coverage"
+    when the real problem is two vocabularies.
+    """
+    payload = fuel_json(
+        "vehicle/menu/model?year={}&make={}".format(
+            vehicle["year"], urllib.parse.quote(vehicle["make"])
+        ),
+        "fueleconomy.gov model menu",
+    )
+    names = [i.get("value", "") for i in menu_items(payload)]
+    print(f"    fueleconomy.gov: {len(names)} model name(s) for {vehicle['make']} {vehicle['year']}")
+    if names:
+        print(f"      {names[:14]}")
+    wanted = vehicle["model"].lower().replace("-", "").replace(" ", "")
+    exact = [n for n in names if n.lower().replace("-", "").replace(" ", "") == wanted]
+    if exact:
+        print(f"      exact name match: {exact[0]!r}")
+        return exact[0]
+    starts = [n for n in names if n.lower().replace("-", "").replace(" ", "").startswith(wanted)]
+    if starts:
+        print(f"      no exact name; this service spells it {starts!r}")
+        return starts[0]
+    print(f"      NO MATCH for {vehicle['model']!r} in this service's names")
+    return None
+
+
+def fuel_economy_options(vehicle):
+    """The configurations this year/make/model was sold in."""
+    name = fuel_economy_model_name(vehicle)
+    if not name:
+        return None
+    payload = fuel_json(
+        "vehicle/menu/options?year={}&make={}&model={}".format(
+            vehicle["year"],
+            urllib.parse.quote(vehicle["make"]),
+            urllib.parse.quote(name),
+        ),
+        "fueleconomy.gov options",
+    )
+    items = menu_items(payload)
+    print(f"    fueleconomy.gov: {len(items)} configuration option(s) for {name!r}")
     for item in items[:12]:
         print(f"      {item.get('value')}: {item.get('text')}")
     return [{"id": i.get("value"), "text": i.get("text")} for i in items]
@@ -86,13 +139,8 @@ def fuel_economy_options(vehicle):
 
 def fuel_economy_detail(option_id):
     """The engine facts behind one configuration option."""
-    url = f"https://www.fueleconomy.gov/ws/rest/vehicle/{option_id}"
-    request = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
-    try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            payload = json.loads(response.read())
-    except Exception as error:  # noqa: BLE001
-        print(f"      detail {option_id}: FAILED {type(error).__name__}: {error}")
+    payload = fuel_json(f"vehicle/{option_id}", f"fueleconomy.gov detail {option_id}")
+    if not isinstance(payload, dict):
         return None
     keys = ["displ", "cylinders", "drive", "trany", "fuelType", "VClass", "eng_dscr"]
     facts = {key: payload.get(key) for key in keys}
@@ -152,15 +200,30 @@ def main():
         label = f"{vehicle['year']} {vehicle['make']} {vehicle['model']}"
         print(f"\n--- {label} ---")
         record = {"vehicle": vehicle}
-        record["vpic"] = vpic_models(vehicle)
-        options = fuel_economy_options(vehicle)
-        record["fuelEconomyOptions"] = options
+        for name, step in (
+            ("vpic", lambda: vpic_models(vehicle)),
+            ("fuelEconomyOptions", lambda: fuel_economy_options(vehicle)),
+            ("commons", lambda: commons_photo(vehicle)),
+            ("parts", lambda: parts(vehicle)),
+        ):
+            # One provider falling over must not take the rest of the matrix
+            # with it. The first draft of this script did exactly that, and
+            # the evidence for two vehicles was lost to a crash on the first.
+            try:
+                record[name] = step()
+            except Exception as error:  # noqa: BLE001
+                print(f"    {name}: CRASHED {type(error).__name__}: {error}")
+                record[name] = None
+        options = record.get("fuelEconomyOptions") or []
         if options:
-            record["fuelEconomyDetail"] = [
-                fuel_economy_detail(option["id"]) for option in options[:3] if option.get("id")
-            ]
-        record["commons"] = commons_photo(vehicle)
-        record["parts"] = parts(vehicle)
+            record["fuelEconomyDetail"] = []
+            for option in options[:3]:
+                if not option.get("id"):
+                    continue
+                try:
+                    record["fuelEconomyDetail"].append(fuel_economy_detail(option["id"]))
+                except Exception as error:  # noqa: BLE001
+                    print(f"    detail: CRASHED {type(error).__name__}: {error}")
         results[label] = record
 
     print("\n=== summary ===")

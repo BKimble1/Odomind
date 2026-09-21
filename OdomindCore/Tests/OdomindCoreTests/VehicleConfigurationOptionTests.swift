@@ -121,7 +121,7 @@ final class VehicleConfigurationOptionTests: XCTestCase {
         existing.drivetrain = .rearWheelDrive
         existing.confirmedFields = ["drivetrain"]
 
-        let updated = option(drive: "All-Wheel Drive", fuel: "Regular Gasoline").applied(to: existing)
+        let updated = option(fuel: "Regular Gasoline", drive: "All-Wheel Drive").applied(to: existing)
         XCTAssertEqual(updated.drivetrain, .rearWheelDrive, "a confirmed answer is not a suggestion")
         XCTAssertEqual(updated.powertrain, .gasoline, "unconfirmed fields still fill in")
     }

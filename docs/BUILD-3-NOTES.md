@@ -35,9 +35,13 @@ by returning 24 Jeep models.
 | "Fits your vehicle" requires confirmed applicability, no open questions, no supersession | Implemented and verified |
 | **Applicable part numbers from a catalogue** | **Blocked** — no licensed data. See below. |
 | **Retail price and availability** | **Blocked** — same dependency |
-| Baseline action suppressed where history exists | Implemented and verified |
 | Garage card without the nested frame | Implemented and verified |
-| Home hierarchy simplification | **Not done this release** |
+| Baseline action suppressed where history exists | Implemented and verified |
+| Home hierarchy simplification | Implemented and verified |
+| Untracked job opens that job, not the catalog library | Implemented and verified |
+| Parts specifications follow the category searched for | Implemented and verified |
+| Engine/trim options from a provider rather than a picker | Implemented and verified |
+| Catalog updates say "nothing published" rather than "service down" | Implemented and verified; **publishing is an owner action, see CATALOG-AUTHORING.md** |
 
 ## What is blocked, and exactly what unblocks it
 

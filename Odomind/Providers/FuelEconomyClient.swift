@@ -69,6 +69,96 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
     // MARK: - Options
 
     func options(modelYear: Int, make: String, model: String) async throws -> [VehicleConfigurationOption] {
+        // What *this* service calls the model, first.
+        //
+        // vPIC says "Wrangler"; fueleconomy.gov says "Wrangler 4WD" and
+        // "Wrangler 2WD". Asking it about a name it does not use returns an
+        // empty menu, which reads as "no coverage" when the real problem is
+        // two vocabularies for the same car. A live probe caught this: the
+        // first version of this client would have found nothing, for every
+        // vehicle whose name is not spelled identically in both services.
+        let names = try await modelNames(modelYear: modelYear, make: make, model: model)
+        guard !names.isEmpty else { return [] }
+
+        var options: [VehicleConfigurationOption] = []
+        // More than one name means the service splits the model — usually by
+        // drivetrain — so both sets are offered and the owner picks, rather
+        // than Odomind choosing one of their cars for them.
+        let namesAreAmbiguous = names.count > 1
+
+        for name in names {
+            if Task.isCancelled { throw ProviderError.cancelled }
+            guard options.count < maximumDetailed else { break }
+            let items = try await menu(modelYear: modelYear, make: make, model: name)
+
+            for item in items {
+                if Task.isCancelled { throw ProviderError.cancelled }
+                guard options.count < maximumDetailed else { break }
+                let detail = try? await detail(id: item.value)
+                options.append(
+                    VehicleConfigurationOption(
+                        id: item.value,
+                        providerName: displayName,
+                        providerURL: URL(string: "https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=\(item.value)"),
+                        // The provider's own words. An option whose detail
+                        // call failed still shows this, which is the part the
+                        // owner reads and recognises. The model name is added
+                        // only when it is the thing telling two options
+                        // apart.
+                        label: namesAreAmbiguous ? "\(name) — \(item.text)" : item.text,
+                        engineDisplacementLiters: detail?.displ.flatMap(Double.init),
+                        cylinders: detail?.cylinders.flatMap(Int.init),
+                        transmissionDescription: detail?.trany,
+                        driveDescription: detail?.drive,
+                        fuelDescription: detail?.fuelType,
+                        vehicleClass: detail?.vClass,
+                        engineDescription: detail?.engineDescription,
+                        retrievedOn: clock.now
+                    )
+                )
+            }
+        }
+        return options
+    }
+
+    /// The names this service uses for a model somebody named differently.
+    ///
+    /// An exact name wins outright. Otherwise every name that begins with what
+    /// was asked for is returned — "Wrangler" finds both "Wrangler 2WD" and
+    /// "Wrangler 4WD", and both are worth offering. At most three, because a
+    /// make that spells one model six ways is a reason to ask the owner, not
+    /// to make eighteen requests.
+    private func modelNames(modelYear: Int, make: String, model: String) async throws -> [String] {
+        var components = URLComponents(
+            url: baseURL.appendingPathComponent("vehicle/menu/model"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [
+            URLQueryItem(name: "year", value: String(modelYear)),
+            URLQueryItem(name: "make", value: make),
+        ]
+        guard let url = components?.url else {
+            throw ProviderError.unreadableResponse("Could not build the model URL.")
+        }
+
+        let data = try await fetch(url)
+        guard let menu = try? JSONDecoder().decode(MenuEnvelope.self, from: data) else {
+            throw ProviderError.unreadableResponse("Unexpected model menu shape.")
+        }
+        let names = menu.items.map(\.value)
+        guard !names.isEmpty else { return [] }
+
+        let wanted = VehicleTextMatch.key(model)
+        guard !wanted.isEmpty else { return [] }
+
+        if let exact = names.first(where: { VehicleTextMatch.key($0) == wanted }) {
+            return [exact]
+        }
+        return Array(names.filter { VehicleTextMatch.key($0).hasPrefix(wanted) }.prefix(3))
+    }
+
+    /// The configuration menu for one of this service's own model names.
+    private func menu(modelYear: Int, make: String, model: String) async throws -> [MenuEnvelope.Item] {
         var components = URLComponents(
             url: baseURL.appendingPathComponent("vehicle/menu/options"),
             resolvingAgainstBaseURL: false
@@ -81,43 +171,11 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
         guard let url = components?.url else {
             throw ProviderError.unreadableResponse("Could not build the options URL.")
         }
-
         let data = try await fetch(url)
-        let menu: MenuEnvelope
-        do {
-            menu = try JSONDecoder().decode(MenuEnvelope.self, from: data)
-        } catch {
+        guard let menu = try? JSONDecoder().decode(MenuEnvelope.self, from: data) else {
             throw ProviderError.unreadableResponse("Unexpected response shape.")
         }
-
-        let items = menu.items
-        guard !items.isEmpty else { return [] }
-
-        var options: [VehicleConfigurationOption] = []
-        for item in items.prefix(maximumDetailed) {
-            if Task.isCancelled { throw ProviderError.cancelled }
-            let detail = try? await detail(id: item.value)
-            options.append(
-                VehicleConfigurationOption(
-                    id: item.value,
-                    providerName: displayName,
-                    providerURL: URL(string: "https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=\(item.value)"),
-                    // The provider's own words. An option whose detail call
-                    // failed still shows this, which is the part the owner
-                    // reads and recognises.
-                    label: item.text,
-                    engineDisplacementLiters: detail?.displ.flatMap(Double.init),
-                    cylinders: detail?.cylinders.flatMap(Int.init),
-                    transmissionDescription: detail?.trany,
-                    driveDescription: detail?.drive,
-                    fuelDescription: detail?.fuelType,
-                    vehicleClass: detail?.vClass,
-                    engineDescription: detail?.engineDescription,
-                    retrievedOn: clock.now
-                )
-            )
-        }
-        return options
+        return menu.items
     }
 
     private func detail(id: String) async throws -> VehicleDetail {
@@ -164,7 +222,7 @@ struct FuelEconomyClient: VehicleConfigurationOptionProvider {
 /// letting the single-variant case read as an empty list — which would make
 /// the app quietly fall back to generic pickers for every vehicle sold in one
 /// configuration.
-private struct MenuEnvelope: Decodable {
+struct MenuEnvelope: Decodable {
     struct Item: Decodable {
         var text: String
         var value: String

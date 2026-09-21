@@ -18,7 +18,7 @@ limitation of the authoring environment, not evidence about the data.
 | # | Capability | Source | Status |
 | --- | --- | --- | --- |
 | 1 | Vehicle discovery — makes and models, with or without a year | NHTSA vPIC | **Implemented** |
-| 2 | Configuration — engine, body, drivetrain, trim | NHTSA vPIC VIN decode + owner confirmation | **Implemented, with stated gaps** |
+| 2 | Configuration — engine, body, drivetrain, trim | NHTSA vPIC VIN decode, **fueleconomy.gov configuration options**, owner confirmation | **Implemented, with stated gaps** |
 | 3 | Maintenance schedules and specifications | Odomind's own versioned catalog | **Partial** — intervals yes, manufacturer fluid values no |
 | 4 | Replacement-part applicability and manufacturer part numbers | — | **Blocked. Needs licensed data.** |
 | 5 | Retail price, availability, store location | MapKit for stores; no offer source | **Partial** — stores yes, offers no |
@@ -48,6 +48,51 @@ and left **TransmissionStyle blank**. That blank is the point: a VIN decode is
 a strong start and not a complete configuration, so Odomind asks the owner for
 what the decode did not establish rather than presenting a guess as decoded
 fact.
+
+## 2 — fueleconomy.gov, for the configurations a vehicle was sold in
+
+**What it is.** The US Department of Energy and EPA's fuel economy database,
+with a documented REST API at `https://www.fueleconomy.gov/ws/rest/`. Its data
+is a work of the United States Government and therefore in the public domain.
+No key, so nothing secret has to travel in the shipped client.
+
+**Why Odomind uses it.** The brief asks for "engine/body/trim choices using
+provider-backed options". Build 2 asked the owner to pick their powertrain
+from an enum containing every powertrain ever built, and their drivetrain from
+every layout — a memory test, where a wrong answer silently adds or removes
+whole jobs from the plan. This answers the question properly: which engine,
+transmission and drivetrain combinations were this year, make and model
+actually sold in.
+
+**How it is used.** One `vehicle/menu/options` call per vehicle the owner is
+adding, plus up to eight `vehicle/{id}` detail calls for the configurations
+offered. Documented API, per-vehicle, on demand. Not scraped, not harvested in
+bulk, and the response is cached by `URLCache` for the session.
+
+**What it does not carry.** No maintenance schedules, no fluid capacities, no
+part numbers. Nothing in the app suggests otherwise.
+
+**How its vocabulary is mapped.** Conservatively, and the refusals matter more
+than the matches:
+
+| Provider value | Odomind reads it as | Note |
+| --- | --- | --- |
+| `Regular Gasoline`, `Premium Gasoline`, `Gasoline or E85` | gasoline | |
+| `Diesel` | diesel | |
+| `Electricity` | battery electric | |
+| `Premium and Electricity`, `Regular Gas and Electricity` | plug-in hybrid | The provider's own way of saying so |
+| `Front-Wheel Drive`, `Rear-Wheel Drive`, `All-Wheel Drive` | the same | |
+| `Part-time 4-Wheel Drive` | part-time four-wheel drive | |
+| `4-Wheel Drive` | four-wheel drive, sub-type unestablished | Odomind has a case for exactly this |
+| **`4-Wheel or All-Wheel Drive`** | **unknown** | A real value, and it means the source does not distinguish them. That distinction decides whether a transfer-case job exists, so Odomind asks rather than guesses. |
+| Anything unrecognised | unset, owner asked | |
+
+A value the owner has confirmed is never overwritten by a provider value.
+They were looking at their own car; the provider was looking at a table.
+
+**Escape hatch.** Every such list is one market's list. "None of these is
+mine" returns to the generic questions, because an import or a conversion is
+not a reason to pick the closest wrong answer.
 
 ## 4 — Parts applicability is blocked, and here is the proof
 
@@ -111,6 +156,7 @@ the same reason as the parts vendors.
 | Request | Carries | Never carries |
 | --- | --- | --- |
 | Model lookup | Year and make | VIN, location, history |
+| Configuration options | Year, make and model | VIN, location, history, mileage |
 | VIN decode | The VIN, after a disclosure naming the host | Anything else |
 | Photograph | Year, make, model, generation | VIN, location, history |
 | Nearby stores | A coarse location or a typed postal code | VIN, vehicle, history |
