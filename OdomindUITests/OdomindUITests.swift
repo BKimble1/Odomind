@@ -252,7 +252,13 @@ final class OdomindJourneyUITests: XCTestCase {
         // Search rather than scroll. The catalog is thirty-two tasks deep and
         // a SwiftUI List does not realise rows near the bottom, so swiping to
         // find one is slow and brittle; filtering to it is neither.
-        let search = waitFor(app.searchFields.firstMatch, 10, "the catalog has no search field")
+        // Pinned to the catalog's own prompt: Maintenance underneath has a
+        // search field too ("Search your tasks"), and firstMatch could take it.
+        let search = waitFor(
+            app.searchFields["Search the catalog"],
+            10,
+            "the catalog has no search field"
+        )
         search.tap()
         search.typeText("alignment")
 
