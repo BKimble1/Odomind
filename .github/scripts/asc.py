@@ -48,6 +48,13 @@ def bearer():
             + ". Add them under Settings -> Secrets and variables -> Actions."
         )
 
+    # Strip first. A secret pasted into a web form very often carries a
+    # trailing newline, and a newline inside the JWT's kid header or the
+    # issuer claim produces a 401 that says nothing about whitespace.
+    key_id = os.environ["ASC_KEY_ID"].strip()
+    issuer = os.environ["ASC_ISSUER_ID"].strip()
+    check_shapes(key_id, issuer)
+
     key = normalise_key(os.environ["ASC_PRIVATE_KEY"])
 
     try:
@@ -57,16 +64,44 @@ def bearer():
 
     now = int(time.time())
     return jwt.encode(
-        {
-            "iss": os.environ["ASC_ISSUER_ID"],
-            "iat": now,
-            "exp": now + 15 * 60,
-            "aud": AUDIENCE,
-        },
+        {"iss": issuer, "iat": now, "exp": now + 15 * 60, "aud": AUDIENCE},
         key,
         algorithm="ES256",
-        headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"},
+        headers={"kid": key_id, "typ": "JWT"},
     )
+
+
+def check_shapes(key_id, issuer):
+    """Rejects credentials that cannot possibly work, and says which one.
+
+    A 401 from Apple is the same whatever is wrong, so the shapes are checked
+    here where the answer can be specific. Neither value is printed: the
+    finding is about length and format, not content.
+    """
+    import re
+
+    problems = []
+    if not re.fullmatch(r"[A-Za-z0-9]{8,12}", key_id):
+        problems.append(
+            f"ASC_KEY_ID should be the ~10-character key identifier Apple shows "
+            f"next to the key (the XXXXXXXXXX in AuthKey_XXXXXXXXXX.p8); this "
+            f"one is {len(key_id)} character(s) and not alphanumeric throughout"
+        )
+    if not re.fullmatch(
+        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        issuer,
+    ):
+        problems.append(
+            f"ASC_ISSUER_ID should be the UUID shown above the key list in "
+            f"App Store Connect -> Users and Access -> Integrations "
+            f"(8-4-4-4-12 hex); this one is {len(issuer)} character(s) and is "
+            f"not in that form"
+        )
+    if problems:
+        die(
+            "the App Store Connect credentials cannot be right:\n  - "
+            + "\n  - ".join(problems)
+        )
 
 
 def normalise_key(raw):
@@ -109,9 +144,18 @@ def get(path, params=None, token=None):
         body = error.read().decode("utf-8", "replace")[:800]
         if error.code == 401:
             die(
-                "App Store Connect rejected the API key (401). Check that "
-                "ASC_KEY_ID and ASC_ISSUER_ID match the key in "
-                "ASC_PRIVATE_KEY, and that the key has not been revoked."
+                "App Store Connect rejected the API key (401). The three "
+                "values are individually well-formed, so the likely causes, "
+                "in order:\n"
+                "  1. ASC_KEY_ID and ASC_PRIVATE_KEY are from different keys "
+                "— the ID must be the one shown beside that exact .p8.\n"
+                "  2. ASC_ISSUER_ID belongs to a different team or is the "
+                "wrong UUID from that page.\n"
+                "  3. The key was revoked in App Store Connect -> Users and "
+                "Access -> Integrations.\n"
+                "  4. The key is an Individual key while the issuer is a "
+                "team issuer, or the reverse.\n"
+                "Re-copy all three from the same key and try again."
             )
         if error.code == 403:
             die(

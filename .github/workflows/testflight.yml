@@ -123,6 +123,10 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
+          # pipefail, or tee's exit status hides the client's. Without it this
+          # gate reported success on a 401 and the deploy walked past the one
+          # step whose entire job is to stop it.
+          set -o pipefail
           "$ASC_PYTHON" .github/scripts/asc.py preflight --bundle-id "$BUNDLE_ID" \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -374,6 +378,7 @@ jobs:
           MARKETING: ${{ steps.version.outputs.marketing }}
           BUILD: ${{ steps.version.outputs.build }}
         run: |
+          set -o pipefail
           "$ASC_PYTHON" .github/scripts/asc.py wait-for-build \
             --bundle-id "$BUNDLE_ID" \
             --version "$MARKETING" \
