@@ -59,6 +59,7 @@ final class ShoppingLocationTests: XCTestCase {
 
     func testARefusalIsRecordedAsDeniedRatherThanAsAnError() async throws {
         let provider = StubLocationProvider()
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .failure(.denied)
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 
@@ -70,6 +71,7 @@ final class ShoppingLocationTests: XCTestCase {
 
     func testATemporaryProblemIsNotRecordedAsARefusal() async throws {
         let provider = StubLocationProvider()
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .failure(.unavailable)
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 
@@ -83,6 +85,7 @@ final class ShoppingLocationTests: XCTestCase {
 
     func testATimeoutIsAFailureAndSaysToTryAgain() async throws {
         let provider = StubLocationProvider()
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .failure(.timedOut)
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 
@@ -109,6 +112,69 @@ final class ShoppingLocationTests: XCTestCase {
         XCTAssertEqual(service.resolution, .denied)
     }
 
+    // MARK: - Opening a screen is not asking
+
+    func testOpeningPartsWithNoPermissionDoesNotRequestALocation() async throws {
+        // A screenshot caught this: tapping "Find parts" on an oil change put
+        // the iOS location prompt on screen, in an app whose own permission
+        // string says "only when you ask". Parts resolves on appear so a
+        // chosen area loads its shops without a second tap; with nothing
+        // granted there is nothing to resolve.
+        let provider = StubLocationProvider()   // .notDetermined
+        let service = ShoppingLocationService(provider: provider, defaults: defaults())
+
+        service.resolve()
+        try await settle()
+
+        XCTAssertEqual(provider.fixCallCount, 0, "opening a screen must not ask the device where it is")
+        XCTAssertEqual(provider.authorizationCallCount, 0, "and must not raise the system prompt")
+        XCTAssertEqual(service.resolution, .none, "there is simply no area yet")
+    }
+
+    func testOpeningPartsWithPermissionAlreadyGrantedDoesResolve() async throws {
+        // The other half: somebody who already said yes should not have to
+        // tap again every time they open Parts.
+        let provider = StubLocationProvider()
+        provider.authorizationStatus = .authorizedWhenInUse
+        provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
+        let service = ShoppingLocationService(provider: provider, defaults: defaults())
+
+        service.resolve()
+        try await settle()
+
+        XCTAssertEqual(provider.fixCallCount, 1)
+        guard case .ready = service.resolution else {
+            return XCTFail("an authorised owner should get an area, got \(service.resolution)")
+        }
+    }
+
+    func testTappingUseCurrentLocationIsWhatAsks() async throws {
+        let provider = StubLocationProvider()   // .notDetermined
+        provider.authorizationAnswer = .authorizedWhenInUse
+        provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
+        let service = ShoppingLocationService(provider: provider, defaults: defaults())
+
+        service.useCurrentLocation()
+        try await settle()
+
+        XCTAssertEqual(provider.authorizationCallCount, 1, "the tap is the ask")
+        guard case .ready = service.resolution else {
+            return XCTFail("granting should produce an area, got \(service.resolution)")
+        }
+    }
+
+    func testRefusingAtTheTapIsRecordedAsDenied() async throws {
+        let provider = StubLocationProvider()
+        provider.authorizationAnswer = .denied
+        let service = ShoppingLocationService(provider: provider, defaults: defaults())
+
+        service.useCurrentLocation()
+        try await settle()
+
+        XCTAssertEqual(service.resolution, .denied)
+        XCTAssertEqual(provider.fixCallCount, 0, "a refusal is not followed by asking anyway")
+    }
+
     // MARK: - Repeated taps
 
     func testRepeatedTapsWhileUnresolvedDoNotStrandTheFirstRequest() async throws {
@@ -119,6 +185,7 @@ final class ShoppingLocationTests: XCTestCase {
         let gate = AsyncGate()
         let provider = StubLocationProvider()
         provider.gate = gate
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 
@@ -145,6 +212,7 @@ final class ShoppingLocationTests: XCTestCase {
         let gate = AsyncGate()
         let provider = StubLocationProvider()
         provider.gate = gate
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 
@@ -175,6 +243,7 @@ final class ShoppingLocationTests: XCTestCase {
         let gate = AsyncGate()
         let provider = StubLocationProvider()
         provider.gate = gate
+        provider.authorizationStatus = .authorizedWhenInUse
         provider.fixAnswer = .success(CLLocation(latitude: 51.5, longitude: -0.12))
         let service = ShoppingLocationService(provider: provider, defaults: defaults())
 

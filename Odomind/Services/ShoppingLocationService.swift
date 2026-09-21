@@ -87,10 +87,29 @@ final class ShoppingLocationService {
 
     // MARK: - Choosing
 
+    /// The owner tapped "Use current location". This is the one place a
+    /// system permission prompt may come from.
     func useCurrentLocation() {
         area = .currentLocation
         persist()
-        resolve(force: true)
+
+        generation += 1
+        let mine = generation
+        resolveTask?.cancel()
+        resolution = .resolving
+
+        resolveTask = Task { [weak self] in
+            guard let self else { return }
+            if !self.provider.isAuthorized {
+                let status = await self.provider.requestAuthorization()
+                guard self.generation == mine else { return }
+                guard status == .authorizedWhenInUse || status == .authorizedAlways else {
+                    self.resolution = status == .notDetermined ? .none : .denied
+                    return
+                }
+            }
+            await self.fixCurrentLocation(generation: mine)
+        }
     }
 
     func choose(_ place: PlaceSuggestion) {
@@ -123,38 +142,56 @@ final class ShoppingLocationService {
             resolution = .ready(latitude: latitude, longitude: longitude, label: name)
 
         case .currentLocation:
+            // Opening a screen is not asking.
+            //
+            // A screenshot caught this: tapping "Find parts" on an oil change
+            // put the iOS location prompt on screen, over an app whose own
+            // permission string says "only when you ask". Parts calls this on
+            // appear so that an area already chosen loads its shops without a
+            // second tap — which is right — but with no permission yet there
+            // is nothing to resolve and a request here is a prompt nobody
+            // asked for. The owner taps "Use current location" when they want
+            // that, and only that path may prompt.
+            guard provider.isAuthorized else {
+                resolution = .none
+                return
+            }
             resolution = .resolving
             resolveTask = Task { [weak self] in
-                guard let self else { return }
-                let outcome = await self.provider.fix()
-                guard self.generation == mine else { return }
-                switch outcome {
-                case .success(let location):
-                    // Ready as soon as there are coordinates. Parts searches
-                    // from a coordinate; the town name is a label. Holding the
-                    // whole screen on a spinner until a reverse geocode comes
-                    // back is waiting for cosmetics over an answer Odomind
-                    // already has.
-                    self.resolution = .ready(
-                        latitude: location.coordinate.latitude,
-                        longitude: location.coordinate.longitude,
-                        label: "Current location"
-                    )
-                    guard let described = await self.describe(location) else { return }
-                    guard self.generation == mine else { return }
-                    self.resolution = .ready(
-                        latitude: location.coordinate.latitude,
-                        longitude: location.coordinate.longitude,
-                        label: described
-                    )
-                case .failure(.denied), .failure(.restricted):
-                    self.resolution = .denied
-                case .failure(.timedOut):
-                    self.resolution = .failed("Odomind could not get a location in time. Try again, or type an area.")
-                case .failure(.unavailable):
-                    self.resolution = .failed("Odomind could not get a location. Try again, or type an area.")
-                }
+                await self?.fixCurrentLocation(generation: mine)
             }
+        }
+    }
+
+    /// Asks the device where it is and records the answer, once permission is
+    /// already settled.
+    private func fixCurrentLocation(generation mine: Int) async {
+        let outcome = await provider.fix()
+        guard generation == mine else { return }
+        switch outcome {
+        case .success(let location):
+            // Ready as soon as there are coordinates. Parts searches from a
+            // coordinate; the town name is a label. Holding the whole screen
+            // on a spinner until a reverse geocode comes back is waiting for
+            // cosmetics over an answer Odomind already has.
+            resolution = .ready(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                label: "Current location"
+            )
+            guard let described = await describe(location) else { return }
+            guard generation == mine else { return }
+            resolution = .ready(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                label: described
+            )
+        case .failure(.denied), .failure(.restricted):
+            resolution = .denied
+        case .failure(.timedOut):
+            resolution = .failed("Odomind could not get a location in time. Try again, or type an area.")
+        case .failure(.unavailable):
+            resolution = .failed("Odomind could not get a location. Try again, or type an area.")
         }
     }
 
