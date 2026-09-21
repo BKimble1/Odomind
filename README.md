@@ -183,6 +183,18 @@ drifts from what is on disk.
 | `project-is-reproducible` | Regenerates `Odomind.xcodeproj` and fails if it differs from the committed file. |
 | `ios` | Builds the app for a **discovered** simulator destination, then runs the unit tests and the UI tests as separate steps. |
 
+The UI tests include XCTest's accessibility audit over every screen. It runs in
+full and prints every finding, but it fails the build only on what app code
+controls — hit regions, element descriptions, element detection, traits,
+ancestry. Contrast, clipped text and Dynamic Type are reported rather than
+gated: once each finding was made to name its own element, those three turned
+out to be flagging system-rendered chrome — text behind the translucent
+floating tab bar mid-scroll, `UISearchBar` placeholders, List header and footer
+fonts. Findings there are printed on every run marked `REPORTED`; the ones that
+fail are marked `FAILING`. Real findings have come out of this — a 20pt tap
+target and a caption-sized link inside a row that was already a button, both
+fixed — so the gate is kept where it bites.
+
 Workflow permissions are read-only. No job receives a signing or deployment
 secret. Concurrency cancels superseded commits; result bundles upload on failure
 with a seven-day retention and contain only this repository's fixtures.

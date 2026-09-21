@@ -126,6 +126,14 @@ final class OdomindJourneyUITests: XCTestCase {
 
         // Nothing has been logged, so the oil task needs setup rather than
         // appearing as done or as overdue.
+        // Check the group heading first. Scrolling down to reach the task
+        // takes the heading off the top of the screen, and an element that has
+        // scrolled away is no longer in the tree.
+        XCTAssertTrue(
+            app.element(labelContaining: "Needs setup").waitForExistence(timeout: 10),
+            "the Needs setup group should be present"
+        )
+
         let oilTask = app.element(withIdentifier: "today.task.engine-oil-and-filter")
         XCTAssertTrue(app.scrollTo(oilTask), "the oil task should be on Today")
         let oil = oilTask
@@ -133,10 +141,6 @@ final class OdomindJourneyUITests: XCTestCase {
             oil.label.lowercased().contains("no completion")
                 || oil.label.lowercased().contains("needs"),
             "expected an explanation of why it is unscheduled, got '\(oil.label)'"
-        )
-        XCTAssertTrue(
-            app.element(labelContaining: "Needs setup").exists,
-            "the Needs setup group should be present"
         )
     }
 
@@ -254,8 +258,14 @@ final class OdomindJourneyUITests: XCTestCase {
         // find one is slow and brittle; filtering to it is neither.
         // Pinned to the catalog's own prompt: Maintenance underneath has a
         // search field too ("Search your tasks"), and firstMatch could take it.
+        // A search field carries its prompt as `placeholderValue`; subscripting
+        // by string matches identifier or label, and a UISearchBar has neither.
+        // Matching on the placeholder also keeps this off the Maintenance
+        // screen's own search field underneath.
         let search = waitFor(
-            app.searchFields["Search the catalog"],
+            app.searchFields
+                .matching(NSPredicate(format: "placeholderValue == %@", "Search the catalog"))
+                .firstMatch,
             10,
             "the catalog has no search field"
         )
@@ -376,6 +386,11 @@ final class OdomindAccessibilityUITests: XCTestCase {
 
         let start = app.buttons["onboarding.addVehicle"]
         XCTAssertTrue(start.waitForExistence(timeout: 20), "onboarding did not appear at a large text size")
-        XCTAssertTrue(start.isHittable, "the primary action must stay reachable when text is enlarged")
+
+        // Onboarding scrolls, because at these text sizes it has more content
+        // than screen. "Reachable" therefore means scrollable-to and then
+        // tappable — not that it happens to start on screen.
+        XCTAssertTrue(app.scrollTo(start), "the primary action must be reachable when text is enlarged")
+        XCTAssertTrue(start.isHittable, "the primary action must be tappable once reached")
     }
 }
