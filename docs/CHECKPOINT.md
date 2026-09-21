@@ -166,20 +166,33 @@ credentials at all.
 
 ## Remaining and deliberately not done
 
+`docs/BUILD-2-NOTES.md` carries the full feature status table and the tester
+checklist. The engineering-side leftovers:
+
 - Swift 6 strict concurrency migration.
-- A hosted catalog with signed manifests and last-known-good fallback.
-- Device-only verification: real notification delivery, the calendar editor, the
-  camera VIN scanner. These cannot be exercised on a simulator and are listed in
-  the README as outstanding rather than claimed as tested.
+- Catalog **content**. The updater is built, strict and tested; what it has to
+  serve does not exist, because manufacturer sources are unreachable from the
+  authoring host. Keep those two facts apart when reporting on it.
+- A detached signature over the catalog manifest. Today's trust model is TLS to
+  a pinned host for authenticity and a checksum for integrity, and the code says
+  so where somebody would otherwise assume it was a signature.
+- Managed two-way calendar sync. Deferred by decision and, importantly, not
+  advertised anywhere in the app. Reasoning in BUILD-2-NOTES.
+- Device-only verification: real notification delivery, the calendar editors
+  (single and batch), the camera VIN scanner, Vision OCR over a real receipt,
+  MapKit place search, and sandbox purchases. None can be exercised on a
+  simulator. They are listed as outstanding rather than claimed as tested.
+- App Store Connect products and agreements. Owner-only; `docs/PRO-SETUP.md`
+  has the exact values. Until they exist, the paywall correctly reports that
+  subscription details are unavailable rather than showing a placeholder price.
 - The vehicle photo renders only on a device or simulator by hand. CI never
   sets one, so the model side — add, replace, release-if-unreferenced, clear —
   is covered by OdomindTests/AppModelTests.swift and the two views are covered
   only by compiling.
 - Localisation beyond English. The formatting layer is locale-aware; the strings
   are not yet extracted.
-- Reading a VIN from a photo already in the library. The brief asks for this
-  "when practical"; what is built is live camera scanning plus typing, and
-  typing is the path every failure already falls back to. Adding it means
-  running `VNRecognizeTextRequest` over a `PhotosPicker` result and feeding the
-  same confirm-before-submit step the camera path uses — the review step is the
-  part that matters and it already exists.
+- Reading a VIN from a photo already in the library. What is built is live
+  camera scanning plus typing, and typing is the path every failure already
+  falls back to. Build 2 makes this cheaper than it was: `ReceiptScanner`
+  already runs `VNRecognizeTextRequest` over a `PhotosPicker` result behind a
+  review step, so the VIN version is that pipeline with a different parser.
