@@ -65,8 +65,18 @@ jobs:
       - name: Select Xcode
         run: ./.github/scripts/select-xcode.sh
 
+      # In a virtual environment, not system-wide. The runner's Python is
+      # Homebrew's, which refuses a system-wide install under PEP 668, and
+      # --break-system-packages would trade a clear error for the risk of a
+      # broken Homebrew later in the same job.
       - name: Install the App Store Connect client's one dependency
-        run: python3 -m pip install --quiet --disable-pip-version-check "pyjwt[crypto]>=2.8"
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install --quiet --upgrade pip
+          "$RUNNER_TEMP/venv/bin/python" -m pip install --quiet "pyjwt[crypto]>=2.8"
+          echo "ASC_PYTHON=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/venv/bin/python" -c "import jwt; print('PyJWT', jwt.__version__)"
 
       # Written to the location altool searches, with owner-only permissions,
       # and removed in the always() cleanup at the end of the job.
@@ -112,7 +122,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-        run: python3 .github/scripts/asc.py preflight --bundle-id "$BUNDLE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+        run: |
+          "$ASC_PYTHON" .github/scripts/asc.py preflight --bundle-id "$BUNDLE_ID" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Check the signing inputs agree
         env:
@@ -152,7 +164,7 @@ jobs:
 
           build="${INPUT_BUILD_NUMBER}"
           if [ -z "$build" ]; then
-            build="$(python3 .github/scripts/asc.py next-build-number --bundle-id "$BUNDLE_ID")"
+            build="$("$ASC_PYTHON" .github/scripts/asc.py next-build-number --bundle-id "$BUNDLE_ID")"
           fi
 
           case "$version" in
@@ -330,7 +342,7 @@ jobs:
           MARKETING: ${{ steps.version.outputs.marketing }}
           BUILD: ${{ steps.version.outputs.build }}
         run: |
-          python3 .github/scripts/asc.py wait-for-build \
+          "$ASC_PYTHON" .github/scripts/asc.py wait-for-build \
             --bundle-id "$BUNDLE_ID" \
             --version "$MARKETING" \
             --build "$BUILD" \
