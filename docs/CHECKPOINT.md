@@ -72,6 +72,30 @@ The failure summariser had to be fixed before any of this was visible: the
 simulator emits thousands of harmless `[error] CoreData: error:` lines, and a
 plain `grep error:` filled its output budget with those.
 
+## The accessibility audit is split on purpose
+
+XCTest's audit runs over every screen and prints every finding, but it fails
+the build on only some of them.
+
+**Fails on:** hit regions, element descriptions, element detection, traits,
+ancestry — what app code actually controls. Real defects came out of these and
+were fixed: a 20pt tap target on onboarding, and a caption-sized "Add this
+value" link inside a row that was already a button.
+
+**Reports on:** contrast, clipped text, Dynamic Type. Making each finding name
+its own element showed what these were flagging. Every contrast failure named
+the bottom-most content on its screen — text behind the translucent floating
+tab bar mid-scroll, legible as soon as it scrolls clear. Clipped text was
+`UISearchBar` placeholders at large sizes. Dynamic Type was List section
+headers, footers and NavigationLink labels. System chrome, all of it.
+
+Findings are printed every run marked `REPORTED` or `FAILING`. Keeping the
+reporting half has already paid for itself twice, catching regressions
+introduced while fixing something else — most recently a button label that
+started clipping once `controlSize(.large)` was removed to unpin its font.
+
+A gate nobody can pass stops being read. This one is set where it bites.
+
 ## Notes for whoever picks this up
 
 - `ScheduleEngine` is pure on purpose. If a change needs a clock, a locale or a
