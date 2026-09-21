@@ -1,5 +1,7 @@
 # Odomind
 
+[![CI](https://github.com/BKimble1/Odomind/actions/workflows/ci.yml/badge.svg)](https://github.com/BKimble1/Odomind/actions/workflows/ci.yml)
+
 **Know your car. Know what's next.**
 
 An iPhone app that tracks vehicle maintenance and is honest about what it knows.
@@ -185,6 +187,9 @@ drifts from what is on disk.
 | `project-is-reproducible` | Regenerates `Odomind.xcodeproj` and fails if it differs from the committed file. |
 | `ios` | Builds the app for a **discovered** simulator destination, then runs the unit tests and the UI tests as separate steps. |
 
+A fourth workflow, `testflight.yml`, is manual and covered under
+[Shipping to TestFlight without a Mac](#shipping-to-testflight-without-a-mac).
+
 The UI tests include XCTest's accessibility audit over every screen. It runs in
 full and prints every finding, but it fails the build only on what app code
 controls — hit regions, element descriptions, element detection, traits,
@@ -210,6 +215,54 @@ tests in the main suite run against recorded fixtures.
 Actions are pinned to major version tags. To pin to commit SHAs instead — the
 stricter choice — resolve each tag once and record the SHA with the tag in a
 trailing comment, then update on a schedule.
+
+### Shipping to TestFlight without a Mac
+
+`.github/workflows/testflight.yml` builds, signs, exports and uploads. Run it
+from **Actions → Odomind TestFlight → Run workflow**; nothing else is needed,
+and no Mac is involved at any point.
+
+Signing is Xcode's own cloud signing. Given an App Store Connect API key and
+`-allowProvisioningUpdates`, Xcode creates and downloads the distribution
+certificate and the provisioning profile itself. That is why this needs no
+`.p12`, no `.mobileprovision` and no base64 keychain blob — none of which
+belong in source control, and all of which are the usual reason a deploy needs
+a Mac to bootstrap.
+
+| Secret | What it is |
+| --- | --- |
+| `ASC_KEY_ID` | The ~10-character key identifier beside the key in App Store Connect → Users and Access → Integrations |
+| `ASC_ISSUER_ID` | The UUID shown above the key list on that page — one per team |
+| `ASC_PRIVATE_KEY` | The whole `AuthKey_XXXXXXXXXX.p8`, PEM or base64 of it |
+| `APPLE_TEAM_ID` | Optional. Looked up from the bundle ID's seed ID when absent |
+
+**Build numbers look after themselves.** The workflow asks App Store Connect
+for the highest build it already holds and adds one, so an upload is never
+rejected as a duplicate. The marketing version stays at the project's unless
+an input overrides it. Neither value is committed: both are passed to
+`xcodebuild` on the command line, which is also how `DEVELOPMENT_TEAM` is
+supplied without putting a team identifier in the repository.
+
+Four things are checked before anything slow runs — the key parses, the app
+record exists, the team resolves, and the project's bundle identifier matches
+the one being shipped. After the archive it verifies the bundle identifier and
+build number baked into the app, and that the icon carries no alpha channel,
+which App Store Connect rejects. The IPA is validated with `altool` before it
+is uploaded, and the build is then polled until Apple stops calling it
+`PROCESSING`.
+
+Inputs worth knowing:
+
+- `unsigned_archive` — compiles and archives with signing off and no Apple
+  credentials at all. Use it to prove the Release build independently of
+  anything to do with certificates.
+- `upload` — off builds and exports the IPA without shipping it.
+- `run_ui_tests` — adds the UI suite, roughly 25 minutes.
+- `skip_tests` — for re-uploading a build that already passed.
+
+Dispatch-only on purpose: a deploy that ran on `pull_request` would hand
+signing and upload credentials to code from a fork. The key is written with
+owner-only permissions and deleted in an `always()` step.
 
 ### Looking at the app without a Mac
 
