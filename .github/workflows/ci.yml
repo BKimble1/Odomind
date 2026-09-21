@@ -55,6 +55,9 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
+      - name: Check that UI tests only look for identifiers the app sets
+        run: python3 .github/scripts/check-ui-identifiers.py .
+
       - name: Regenerate and compare
         run: |
           python3 Tools/generate-xcodeproj.py
