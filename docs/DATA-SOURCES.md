@@ -3,9 +3,9 @@
 This is the honest account of where every value in Odomind comes from, what it
 is used under, and what Odomind refuses to claim.
 
-The same information is in the app, under **Garage → Where the data comes
-from**, because the answer to "how do you know that?" belongs in front of the
-person relying on it.
+The same information is in the app, under **Calendar → the gear → Where the
+data comes from**, because the answer to "how do you know that?" belongs in
+front of the person relying on it.
 
 ## Summary
 
