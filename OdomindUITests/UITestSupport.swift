@@ -93,33 +93,66 @@ extension XCUIApplication {
 
     /// Sets a switch and waits for it to say it changed.
     ///
-    /// Two things this gets right that a bare `tap()` does not.
+    /// Three things this gets right that a bare `tap()` does not.
     ///
-    /// The control has to be addressed *as a switch*. SwiftUI puts an
-    /// identifier on the List row as well as on the control inside it, and a
-    /// query across every descendant returns the row first — tapping that
-    /// delivers a touch that changes nothing. That cost two full CI runs: the
-    /// catalog test reported "the row is not there" and swiped through a list
-    /// that was still filtered, because the toggle meant to unfilter it had
-    /// never moved.
+    /// The control is addressed *as a switch*. SwiftUI puts an identifier on
+    /// the List row as well as on the control inside it, and a query across
+    /// every descendant returns the row first — tapping that delivers a touch
+    /// that changes nothing.
     ///
-    /// And `tap()` returns when the touch is delivered, not when the app has
-    /// acted on it, so the new value is waited for rather than read straight
-    /// back off a busy runner.
+    /// The touch waits for the control to be hittable, not merely to exist.
+    /// This screen is pushed onto a navigation stack, and a tap delivered
+    /// while that push is still animating is swallowed without trace.
+    ///
+    /// And the new value is polled in Swift rather than through an
+    /// `XCTNSPredicateExpectation`. A predicate over an element's `value` is a
+    /// bridged KVC lookup, and a nil out of it reads exactly like a condition
+    /// that has not come true yet — indistinguishable, from the outside, from
+    /// the tap having failed.
+    ///
+    /// On failure it says what it saw, because the alternative is another
+    /// twenty-five minute run to learn one boolean.
     @discardableResult
     func setSwitch(_ identifier: String, on: Bool, timeout: TimeInterval = 10) -> Bool {
         let control = switches[identifier]
-        guard control.waitForExistence(timeout: timeout) else { return false }
+        guard control.waitForExistence(timeout: timeout) else {
+            XCTFail("no switch is exposed with the identifier \(identifier)")
+            return false
+        }
 
         let wanted = on ? "1" : "0"
-        if control.value as? String == wanted { return true }
-        control.tap()
+        func reading() -> String { (control.value as? String) ?? "nil" }
+        if reading() == wanted { return true }
 
-        let settled = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == %@", wanted),
-            object: control
-        )
-        return XCTWaiter().wait(for: [settled], timeout: timeout) == .completed
+        for attempt in 0..<2 {
+            // A control at the top of a `.searchable` list can sit under the
+            // search field until the list is pulled clear of it. One gesture
+            // covers that without claiming to know it is the cause.
+            if attempt > 0 { swipeDown() }
+
+            guard poll(timeout: timeout, until: { control.exists && control.isHittable })
+            else { continue }
+
+            control.tap()
+            if poll(timeout: 3, until: { (control.value as? String) == wanted }) { return true }
+        }
+
+        XCTFail("""
+            the switch \(identifier) would not go to "\(wanted)" — \
+            value "\(reading())", exists \(control.exists), \
+            hittable \(control.isHittable), frame \(control.frame)
+            """)
+        return false
+    }
+
+    /// Waits for a condition by asking in Swift, on a fixed cadence.
+    private func poll(timeout: TimeInterval, until condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            if condition() { return true }
+            Thread.sleep(forTimeInterval: 0.25)
+        } while Date() < deadline
+        return condition()
     }
 
     /// Any element whose accessibility label contains `text`.
