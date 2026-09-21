@@ -9,13 +9,19 @@ struct OnboardingView: View {
     @Environment(AppModel.self) private var model
     @State private var showingAddVehicle = false
 
+    /// A fixed point size does not grow with the owner's text setting, which
+    /// XCTest's accessibility audit reports as partially unsupported Dynamic
+    /// Type. Scaled against a text style, the symbol grows with everything
+    /// else on the screen.
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSymbolSize: CGFloat = 52
+
     var body: some View {
         VStack(spacing: Theme.Spacing.section) {
             Spacer(minLength: 0)
 
             VStack(spacing: Theme.Spacing.medium) {
                 Image(systemName: "car.side")
-                    .font(.system(size: 52, weight: .light))
+                    .font(.system(size: heroSymbolSize, weight: .light))
                     .foregroundStyle(Color.accentColor)
                     .accessibilityHidden(true)
 
@@ -60,10 +66,18 @@ struct OnboardingView: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("onboarding.addVehicle")
 
-                Button("Look around with a sample first") {
+                // A plain text button here was about twenty points tall,
+                // well under the forty-four a finger needs. Bordered gives it
+                // a real target and keeps the two choices clearly ranked.
+                Button {
                     model.addDemoContent()
+                } label: {
+                    Text("Look around with a sample first")
+                        .font(.body)
+                        .frame(maxWidth: .infinity)
                 }
-                .font(.callout)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
                 .accessibilityIdentifier("onboarding.addSample")
             }
         }
@@ -91,7 +105,10 @@ private struct PromiseRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.body.weight(.medium))
                 Text(detail)
-                    .font(.caption)
+                    // Footnote rather than caption: secondary text this small
+                    // sits right on the contrast threshold, and this is the
+                    // first thing anyone reads about what the app will do.
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

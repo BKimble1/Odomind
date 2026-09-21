@@ -167,44 +167,84 @@ struct ValueRow: View {
 /// not have a value it can stand behind, with a way to supply the real one.
 struct UnavailableValueRow: View {
     let label: String
-    var explanation: String = "Not available. Add it from your owner's manual or door placard."
+    var explanation: String = "Add it from your owner's manual or the door placard."
     var action: (() -> Void)?
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-            HStack {
-                Text(label)
-                Spacer()
-                Text("Not available")
+        if let action {
+            // The whole row is the control. A caption-sized "Add this value"
+            // link under it read as a second thing to aim at, and was too
+            // small to hit reliably.
+            Button(action: action) { content }
+                .foregroundStyle(.primary)
+                .accessibilityHint(Text("Record the \(label) for this vehicle"))
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                // Side by side, a long name and "Not available" squeeze each
+                // other until one of them clips. Stacked once the text is
+                // large, neither has to give way.
+                if dynamicTypeSize.isAccessibilitySize {
+                    Text(label)
+                    Text("Not available")
+                        .foregroundStyle(.secondary)
+                } else {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(label)
+                        Spacer(minLength: Theme.Spacing.small)
+                        Text("Not available")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text(explanation)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text(explanation)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let action {
-                Button("Add this value", action: action)
-                    .font(.caption.weight(.medium))
-                    .buttonStyle(.borderless)
+            if action != nil {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
         }
-        .accessibilityElement(children: .contain)
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
     }
 }
 
-/// A prominent action used sparingly: update mileage, log a service.
+/// One of the two actions Today keeps within reach.
+///
+/// Text only. At two-up widths a symbol crowds the label into wrapping, and
+/// neither "Update mileage" nor "Log service" needs a picture to be read.
+/// Only one of the pair is prominent, so the screen has a primary action
+/// rather than two competing blocks of colour.
 struct PrimaryActionButton: View {
     let title: String
-    let symbolName: String
+    var isProminent: Bool = true
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: symbolName)
-                .font(.body.weight(.medium))
-                .frame(maxWidth: .infinity)
+        let label = Text(title)
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity)
+
+        Group {
+            if isProminent {
+                Button(action: action) { label }
+                    .buttonStyle(.borderedProminent)
+            } else {
+                Button(action: action) { label }
+                    .buttonStyle(.bordered)
+            }
         }
-        .buttonStyle(.borderedProminent)
         .controlSize(.large)
     }
 }

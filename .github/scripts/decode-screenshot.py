@@ -18,26 +18,43 @@ import pathlib
 import re
 import sys
 
-CHUNK = re.compile(r"IMG:(\d+):([A-Za-z0-9+/=]+)\s*$")
-MISSING = re.compile(r"IMGMISS:(\S+)")
+CHUNK = re.compile(r"IMG:(\d+):([A-Za-z0-9+/=]{16,})")
+MISSING = re.compile(r"IMGMISS:([A-Za-z0-9._-]+)")
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def normalise(text: str) -> str:
+    """Make a log readable whether it was downloaded or fetched as JSON.
+
+    A log pulled through the API arrives as one long line with newlines
+    escaped, colour codes intact and a timestamp on every line. None of that
+    changes the base64, but it does stop a line-by-line parse finding it.
+    """
+    if "\\n" in text and text.count("\n") < 5:
+        text = text.replace("\\n", "\n")
+    text = ANSI.sub("", text)
+    return text
 
 
 def main(log_path: pathlib.Path, out_path: pathlib.Path) -> int:
-    text = log_path.read_text(errors="replace")
-
-    missing = MISSING.search(text)
-    if missing and not CHUNK.search(text):
-        print(f"the log says {missing.group(1)} was not captured")
-        return 1
+    text = normalise(log_path.read_text(errors="replace"))
 
     chunks: dict[int, str] = {}
-    for line in text.splitlines():
+    for line in text.split("\n"):
+        # The log echoes the script that produced these lines, so skip
+        # anything that is quoting the marker rather than emitting it.
+        if "printf" in line or "echo " in line:
+            continue
         match = CHUNK.search(line)
         if match:
             chunks[int(match.group(1))] = match.group(2)
 
     if not chunks:
-        print(f"no image chunks found in {log_path}")
+        missing = MISSING.search(text)
+        if missing:
+            print(f"the log says {missing.group(1)} was not captured")
+        else:
+            print(f"no image chunks found in {log_path}")
         return 1
 
     order = sorted(chunks)

@@ -52,7 +52,7 @@ final class OdomindJourneyUITests: XCTestCase {
     }
 
     /// Walks onboarding to a garage containing one vehicle.
-    private func addVehicle(odometer: String = "120000") {
+    private func addVehicle(odometer: String = "120000", powertrain: String? = "Gasoline") {
         let start = waitFor(
             app.buttons["onboarding.addVehicle"],
             20,
@@ -66,6 +66,21 @@ final class OdomindJourneyUITests: XCTestCase {
 
         let next = waitFor(app.buttons["addVehicle.next"], 10, "the Next button is missing")
         next.tap()          // identity -> confirm
+
+        // Odomind will not assume a vehicle burns fuel, so engine oil and
+        // everything else that depends on a combustion engine stays out of the
+        // plan until this is answered. Answering it is what a real owner does
+        // on this step, and it is what makes the rest of the journey exist.
+        if let powertrain {
+            let picker = waitFor(
+                app.element(withIdentifier: "confirm.powertrain"),
+                10,
+                "the powertrain picker is missing from the confirmation step"
+            )
+            picker.tap()
+            waitFor(app.buttons[powertrain], 10, "\(powertrain) was not offered").tap()
+        }
+
         next.tap()          // confirm -> mileage
 
         replaceText(odometer, in: app.textFields["addVehicle.odometer"])
@@ -124,6 +139,30 @@ final class OdomindJourneyUITests: XCTestCase {
         XCTAssertTrue(
             app.element(labelContaining: "Needs setup").exists,
             "the Needs setup group should be present"
+        )
+    }
+
+    func testAnUnconfirmedPowertrainKeepsEngineOilOutOfThePlan() {
+        // Skip the confirmation step, the way someone in a hurry would.
+        addVehicle(powertrain: nil)
+
+        app.tabBars.buttons["Maintenance"].tap()
+        waitFor(app.navigationBars["Maintenance"], 10, "the Maintenance tab did not open")
+
+        // Tyre rotation applies to anything with wheels, so the plan is not
+        // empty — this is a filter, not a failure to build a plan.
+        waitFor(
+            app.element(withIdentifier: "maintenance.task.tire-rotation"),
+            10,
+            "a task that applies to every vehicle should still be tracked"
+        )
+
+        // Engine oil depends on there being an engine, and Odomind was never
+        // told there is one. Scheduling it anyway would be the guess the whole
+        // provenance model exists to avoid.
+        XCTAssertFalse(
+            app.element(withIdentifier: "maintenance.task.engine-oil-and-filter").exists,
+            "engine oil must not be scheduled for a vehicle whose powertrain was never confirmed"
         )
     }
 

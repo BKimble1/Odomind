@@ -4,6 +4,7 @@ import OdomindCore
 struct TodayView: View {
     @Environment(AppModel.self) private var model
     @Environment(NavigationRouter.self) private var router
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var showingMileageEntry = false
     @State private var showingServiceLog = false
@@ -49,6 +50,36 @@ struct TodayView: View {
         }
     }
 
+    /// The two actions Today keeps one tap away.
+    ///
+    /// Side by side these are about 150 points wide each, which is not enough
+    /// for "Update mileage" once the text is large: it breaks mid-word into
+    /// "Up / date / mileage". Above the accessibility sizes they stack.
+    @ViewBuilder
+    private var quickActions: some View {
+        let mileage = PrimaryActionButton(title: "Update mileage") {
+            showingMileageEntry = true
+        }
+        .accessibilityIdentifier("today.updateMileage")
+
+        let service = PrimaryActionButton(title: "Log service", isProminent: false) {
+            showingServiceLog = true
+        }
+        .accessibilityIdentifier("today.logService")
+
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: Theme.Spacing.small) {
+                mileage
+                service
+            }
+        } else {
+            HStack(spacing: Theme.Spacing.medium) {
+                mileage
+                service
+            }
+        }
+    }
+
     /// How many tasks a group shows on Today before deferring to Maintenance.
     ///
     /// Anything the owner has to act on is shown in full: what is overdue, what
@@ -77,18 +108,9 @@ struct TodayView: View {
             }
 
             Section {
-                HStack(spacing: Theme.Spacing.medium) {
-                    PrimaryActionButton(title: "Update mileage", symbolName: "gauge.with.dots.needle.33percent") {
-                        showingMileageEntry = true
-                    }
-                    .accessibilityIdentifier("today.updateMileage")
-                    PrimaryActionButton(title: "Log service", symbolName: "checkmark.seal") {
-                        showingServiceLog = true
-                    }
-                    .accessibilityIdentifier("today.logService")
-                }
-                .listRowInsets(EdgeInsets(top: Theme.Spacing.small, leading: 0, bottom: Theme.Spacing.small, trailing: 0))
-                .listRowBackground(Color.clear)
+                quickActions
+                    .listRowInsets(EdgeInsets(top: Theme.Spacing.small, leading: 0, bottom: Theme.Spacing.small, trailing: 0))
+                    .listRowBackground(Color.clear)
             }
 
             if vehicle.isDemo, let disclaimer = model.demoDisclaimer {

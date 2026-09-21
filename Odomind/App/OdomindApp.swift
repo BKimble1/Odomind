@@ -82,10 +82,13 @@ private struct LaunchFailureView: View {
     let message: String
     let retry: () -> Void
 
+    /// Scaled rather than fixed, so the symbol grows with the text beneath it.
+    @ScaledMetric(relativeTo: .largeTitle) private var symbolSize: CGFloat = 44
+
     var body: some View {
         VStack(spacing: Theme.Spacing.large) {
             Image(systemName: "externaldrive.badge.exclamationmark")
-                .font(.system(size: 44))
+                .font(.system(size: symbolSize))
                 .foregroundStyle(.secondary)
             Text("Odomind could not open your data")
                 .font(.title3.weight(.semibold))

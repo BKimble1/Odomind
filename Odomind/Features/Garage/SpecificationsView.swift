@@ -125,10 +125,12 @@ struct SpecificationsView: View {
     }
 
     private func explanation(for kind: SpecificationKind) -> String {
+        // The row already says "Not available" beside the name; repeating it
+        // here just made every row say it twice.
         if kind.isVehiclePlacardOnly {
-            return "Not available. Read it from the placard in your driver's door opening — never from the tire sidewall."
+            return "Read it from the placard in your driver's door opening — never from the tire sidewall."
         }
-        return "Not available. Add it from your owner's manual."
+        return "Add it from your owner's manual."
     }
 }
 

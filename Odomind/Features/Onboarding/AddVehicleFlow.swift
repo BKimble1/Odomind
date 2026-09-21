@@ -241,16 +241,19 @@ private struct ConfirmStep: View {
                         Text(value.displayName).tag(value)
                     }
                 }
+                .accessibilityIdentifier("confirm.powertrain")
                 Picker("Transmission", selection: $draft.configuration.transmission) {
                     ForEach(TransmissionKind.allCases, id: \.self) { value in
                         Text(value.displayName).tag(value)
                     }
                 }
+                .accessibilityIdentifier("confirm.transmission")
                 Picker("Drivetrain", selection: $draft.configuration.drivetrain) {
                     ForEach(DrivetrainLayout.allCases, id: \.self) { value in
                         Text(value.displayName).tag(value)
                     }
                 }
+                .accessibilityIdentifier("confirm.drivetrain")
             } header: {
                 Text("Configuration")
             } footer: {
