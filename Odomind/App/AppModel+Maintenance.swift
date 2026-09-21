@@ -283,6 +283,11 @@ extension AppModel {
                 $0.catalogUpdates.lastFailureMessage = nil
             case .rejected(let reason), .unreachable(let reason):
                 $0.catalogUpdates.lastFailureMessage = reason
+            case .notPublished:
+                // Not a failure. Nothing is wrong with this build, and
+                // recording it as one would leave a red line in Settings
+                // describing somebody else's unfinished chore.
+                $0.catalogUpdates.lastFailureMessage = nil
             }
         }
         return result

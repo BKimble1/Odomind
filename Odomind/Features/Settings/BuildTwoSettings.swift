@@ -309,7 +309,12 @@ struct CatalogUpdateSettingsView: View {
             } header: {
                 Text("Updates")
             } footer: {
-                Text("Automatic checks are part of Odomind Pro and happen occasionally while you are using the app — never at launch, and never in a loop. Manual checks are always available.")
+                VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                    Text("Automatic checks are part of Odomind Pro and happen occasionally while you are using the app — never at launch, and never in a loop. Manual checks are always available.")
+                    // Said here rather than discovered by tapping Check now
+                    // and reading a message that sounds like a fault.
+                    Text("No updated catalog has been published yet, so a check will currently find nothing. The schedules in this build are the ones Odomind is using.")
+                }
             }
 
             if model.openProposalCount > 0 {
@@ -345,7 +350,7 @@ struct CatalogUpdateSettingsView: View {
             return "Up to date — catalog \(version)."
         case .installed(let version):
             return "Installed catalog \(version). It takes effect the next time Odomind opens."
-        case .rejected(let reason), .unreachable(let reason):
+        case .rejected(let reason), .unreachable(let reason), .notPublished(let reason):
             return reason
         }
     }

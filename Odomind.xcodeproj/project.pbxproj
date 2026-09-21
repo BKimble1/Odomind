@@ -44,6 +44,7 @@
 		60714382A7B5FBD79867FF25 /* ProviderTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 260C9AC5F34853A02A52E37C /* ProviderTests.swift */; };
 		6232B75AD64FCEA04180BF4C /* AppModel+Transfer.swift in app */ = {isa = PBXBuildFile; fileRef = 5CA652359563067CF99D8802 /* AppModel+Transfer.swift */; };
 		660C75693E6D3A78BAC64D8A /* VINEntryView.swift in app */ = {isa = PBXBuildFile; fileRef = C16556B6C47E9B524242C745 /* VINEntryView.swift */; };
+		68DE247AEA33EB789779B089 /* BaselineOfferTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 53FBD6BAC673CED98732B2EF /* BaselineOfferTests.swift */; };
 		7208DADD6DC987140F663E8D /* AppModel+Service.swift in app */ = {isa = PBXBuildFile; fileRef = F6EC775E83A78BE95A8DF669 /* AppModel+Service.swift */; };
 		725C96D67D94EE809FC4C738 /* NotificationScheduling.swift in app */ = {isa = PBXBuildFile; fileRef = 59C7329632464778C52BB154 /* NotificationScheduling.swift */; };
 		7B4D85093541E1F0EDEFAD44 /* BackupView.swift in app */ = {isa = PBXBuildFile; fileRef = D292509A131FCFCF8C5BB748 /* BackupView.swift */; };
@@ -87,6 +88,7 @@
 		CA41F174D01659561778DE8D /* NavigationRouter.swift in app */ = {isa = PBXBuildFile; fileRef = F5502659B94E56513DA036BA /* NavigationRouter.swift */; };
 		CBD53A36A6E6DF67EA11197B /* VehicleDrawing.swift in app */ = {isa = PBXBuildFile; fileRef = D505851DF728F121619FFC13 /* VehicleDrawing.swift */; };
 		CDD24AB35F7B85CA5F28E4B1 /* HomeView.swift in app */ = {isa = PBXBuildFile; fileRef = 8E9FE6BCA7E7F53055505F88 /* HomeView.swift */; };
+		CEE0F28F2333B7C4A8C0B063 /* EnrichmentMigrationTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 257AE7BCFCED3F24575A0A49 /* EnrichmentMigrationTests.swift */; };
 		D3EBCCEA2D62FA180375C3F7 /* VehicleIdentityTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 6586D1E5AF9422DE817C2C81 /* VehicleIdentityTests.swift */; };
 		D581BADD6F657A8852711CD8 /* VehicleSilhouettes.swift in app */ = {isa = PBXBuildFile; fileRef = B81BEBFEABE76D937F1F686B /* VehicleSilhouettes.swift */; };
 		D5FD33D2DE5387FD8DA6D757 /* StoreCoding.swift in app */ = {isa = PBXBuildFile; fileRef = 8909F94171E6891C7A5E1A84 /* StoreCoding.swift */; };
@@ -224,9 +226,11 @@
 		081968DA0C1BC0C330F436B9 /* VehiclePhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehiclePhotoService.swift; sourceTree = "<group>"; };
 		B14166184739F71CE3EA0D41 /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
 		1A36F37ED9CB3CE32E166AC2 /* AppTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTestSupport.swift; sourceTree = "<group>"; };
+		53FBD6BAC673CED98732B2EF /* BaselineOfferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineOfferTests.swift; sourceTree = "<group>"; };
 		4553FA11E3535D4611D230A1 /* BuildTwoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildTwoTests.swift; sourceTree = "<group>"; };
 		319CE8630D9091BC0F826FF2 /* CalendarAndTransactionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAndTransactionTests.swift; sourceTree = "<group>"; };
 		77443B2701737D36556ED06B /* ContrastTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastTests.swift; sourceTree = "<group>"; };
+		257AE7BCFCED3F24575A0A49 /* EnrichmentMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrichmentMigrationTests.swift; sourceTree = "<group>"; };
 		5600D040D8A6F377701655C6 /* vpic-ambiguous-engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-ambiguous-engine.json"; sourceTree = "<group>"; };
 		B0FA6651AD2928ADDBB7D8FB /* vpic-partial-ev.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-partial-ev.json"; sourceTree = "<group>"; };
 		DE7CA5A5084E5925CE843403 /* vpic-wrangler-2010.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-wrangler-2010.json"; sourceTree = "<group>"; };
@@ -518,9 +522,11 @@
 				0D4AC19F0B5852AF950FA266,
 				B14166184739F71CE3EA0D41,
 				1A36F37ED9CB3CE32E166AC2,
+				53FBD6BAC673CED98732B2EF,
 				4553FA11E3535D4611D230A1,
 				319CE8630D9091BC0F826FF2,
 				77443B2701737D36556ED06B,
+				257AE7BCFCED3F24575A0A49,
 				7899705A20F0C5975D740017,
 				260C9AC5F34853A02A52E37C,
 				BF29A6AF4DE7245A2BBDC5E1,
@@ -797,9 +803,11 @@
 			files = (
 				955A93FD048CC67777069046 /* AppModelTests.swift */,
 				8F90CD8F492B274607284E8D /* AppTestSupport.swift */,
+				68DE247AEA33EB789779B089 /* BaselineOfferTests.swift */,
 				02FA06C3C86DC943702AEF63 /* BuildTwoTests.swift */,
 				B0659432DE3852D430F5C655 /* CalendarAndTransactionTests.swift */,
 				A28029E565BC42B0F9DA2E26 /* ContrastTests.swift */,
+				CEE0F28F2333B7C4A8C0B063 /* EnrichmentMigrationTests.swift */,
 				F250EE33134ECC955B1C34CD /* PartsQueryTests.swift */,
 				60714382A7B5FBD79867FF25 /* ProviderTests.swift */,
 				4012BE4586A980F0220D1D43 /* ReminderAndBackupTests.swift */,

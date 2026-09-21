@@ -77,6 +77,59 @@ final class BuildTwoTests: XCTestCase {
         XCTAssertNil(store.loadInstalled(notOlderThan: bundled))
     }
 
+    func testAMissingManifestIsReportedAsNotPublishedRatherThanAnOutage() async throws {
+        // Build 3 finding: the manifest location has never held a file — the
+        // `catalog` ref does not exist on the repository — so every check
+        // answered "the update service did not answer", which reads as an
+        // outage and blames the wrong thing. The host answered perfectly
+        // well; nobody has published anything.
+        StubURLProtocol.reset()
+        defer { StubURLProtocol.reset() }
+        StubURLProtocol.handler = { _ in .init(statusCode: 404, body: Data("Not Found".utf8)) }
+
+        let bundled = try XCTUnwrap(CatalogService().catalog)
+        let service = CatalogUpdateService(
+            store: CatalogUpdateStore(directory: Self.scratchDirectory()),
+            session: StubURLProtocol.makeSession(),
+            manifestURL: CatalogUpdateService.manifestURL
+        )
+        let result = await service.check(against: bundled)
+
+        guard case .notPublished = result else {
+            return XCTFail("a 404 on the manifest means nothing is published, got \(result)")
+        }
+    }
+
+    func testARealOutageIsStillReportedAsAnOutage() async throws {
+        StubURLProtocol.reset()
+        defer { StubURLProtocol.reset() }
+        StubURLProtocol.handler = { _ in .init(statusCode: 503, body: Data()) }
+
+        let bundled = try XCTUnwrap(CatalogService().catalog)
+        let service = CatalogUpdateService(
+            store: CatalogUpdateStore(directory: Self.scratchDirectory()),
+            session: StubURLProtocol.makeSession(),
+            manifestURL: CatalogUpdateService.manifestURL
+        )
+        let result = await service.check(against: bundled)
+
+        guard case .unreachable = result else {
+            return XCTFail("a 503 is the service being down, got \(result)")
+        }
+    }
+
+    func testTheUpdateLocationIsTheHostTheUpdaterPinsTo() {
+        // The pinned-host check is only worth anything while the shipped
+        // manifest URL is actually on that host.
+        XCTAssertEqual(CatalogUpdateService.manifestURL.scheme, "https")
+        XCTAssertEqual(CatalogUpdateService.manifestURL.host, CatalogUpdateService.catalogHost)
+    }
+
+    private static func scratchDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("CatalogTest-\(UUID().uuidString)", isDirectory: true)
+    }
+
     // MARK: - Search parsing
     //
     // The planner replaced ParsedVehicleQuery. Its behaviour is covered in

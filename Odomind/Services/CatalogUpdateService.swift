@@ -22,6 +22,13 @@ enum CatalogUpdateResult: Equatable {
     case installed(version: String)
     case rejected(String)
     case unreachable(String)
+    /// The host answered and said there is no manifest there. Kept apart from
+    /// `unreachable` because they mean opposite things to whoever reads them:
+    /// one is a network Odomind should try again later, the other is a
+    /// publishing step nobody has taken yet. Showing "the update service did
+    /// not answer" for a location that has never held a file is a lie about
+    /// whose fault it is.
+    case notPublished(String)
 }
 
 /// Where an installed catalog lives on disk, and the rules for trusting one.
@@ -143,7 +150,16 @@ struct CatalogUpdateService {
         let manifest: CatalogManifest
         do {
             let (data, response) = try await session.data(from: manifestURL)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            guard let http = response as? HTTPURLResponse else {
+                return .unreachable("The update service did not answer.")
+            }
+            // 404 and 410 are the host telling us there is nothing there.
+            // 403 is what raw.githubusercontent.com returns for a ref it will
+            // not serve, which amounts to the same thing from here.
+            if http.statusCode == 404 || http.statusCode == 410 || http.statusCode == 403 {
+                return .notPublished("No catalog updates have been published yet. Odomind is using the schedules that shipped with this build.")
+            }
+            guard (200..<300).contains(http.statusCode) else {
                 return .unreachable("The update service did not answer.")
             }
             manifest = try CatalogLoader.makeDecoder().decode(CatalogManifest.self, from: data)

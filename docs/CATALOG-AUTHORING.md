@@ -143,3 +143,62 @@ asserted in `CatalogUpdateTests`.
 different version is rejected with a readable message rather than partially
 decoded. Bump it only when the decoded shape changes incompatibly, and add a
 test that the old shape is refused.
+
+## Publishing an update — not yet done, and what it takes
+
+Verified on 2026-09-21 against the live repository:
+
+```
+$ curl -o /dev/null -w '%{http_code}' \
+    https://raw.githubusercontent.com/BKimble1/Odomind/catalog/manifest.json
+404
+```
+
+The `catalog` ref does not exist. The branch list is
+`claude/laughing-franklin-89ryeu`, `claude/odomind-build-2-run4k8` and
+`codex/testflight-windows` — no `catalog`, and no `main`. So the update
+feature in the shipped app has never had anything to fetch, and never will
+until somebody publishes.
+
+The app no longer pretends otherwise. A 404, 410 or 403 on the manifest
+returns `.notPublished` and says "No catalog updates have been published
+yet"; only a genuine network failure or a 5xx is reported as the service
+being unreachable. Settings says the same thing in the Updates footer
+before you tap Check now, so it is not something you discover by reading
+what looks like an error.
+
+**This is the remaining owner action, and it is deliberately not taken
+here**: publishing means pushing a branch this session has no permission to
+create. To turn the feature on:
+
+1. Create an orphan branch named `catalog` on `BKimble1/Odomind`
+   (`git switch --orphan catalog`). It holds published data only — no code,
+   so a bad catalog can never be a bad build.
+2. Put the catalog file on it, at a stable path, e.g. `odomind-catalog.json`.
+3. Beside it, `manifest.json`:
+
+   ```json
+   {
+     "catalogVersion": "2026.10.1",
+     "schemaVersion": 1,
+     "publishedOn": "2026-10-01T00:00:00Z",
+     "url": "https://raw.githubusercontent.com/BKimble1/Odomind/catalog/odomind-catalog.json",
+     "sha256": "<lowercase hex sha256 of that exact file>",
+     "byteCount": <its exact size in bytes>,
+     "summary": "One line the owner will read."
+   }
+   ```
+
+   `shasum -a 256 odomind-catalog.json` and `wc -c < odomind-catalog.json`
+   produce the last two. Both are checked: a mismatch on either is refused,
+   and the installed catalog is left alone.
+4. `catalogVersion` must be numerically newer than the bundled one, the
+   `url` must be HTTPS on `raw.githubusercontent.com`, and the file must
+   pass `odomind-catalog validate --strict`. A downloaded catalog is held
+   to exactly the bar CI holds the bundled one to — otherwise the easiest
+   way to ship an unreviewed value would be to publish it rather than
+   commit it.
+
+Until step 1 happens, "Check now" correctly reports that nothing has been
+published. That is an accurate description of the world, not a fault in the
+build.
