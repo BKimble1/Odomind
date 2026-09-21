@@ -13,6 +13,11 @@ final class ShoppingLocationTests: XCTestCase {
 
     /// Answers on command, so a test can hold a fix open and change its mind
     /// while it is in flight.
+    ///
+    /// Explicitly main-actor isolated: a nested type does not inherit the
+    /// enclosing type's isolation, and `LocationFixProviding` is
+    /// `@MainActor`.
+    @MainActor
     private final class StubLocationProvider: LocationFixProviding {
         var authorizationStatus: CLAuthorizationStatus = .notDetermined
         var isAuthorized: Bool {
