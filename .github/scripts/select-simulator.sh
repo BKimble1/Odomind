@@ -66,6 +66,17 @@ if not candidates:
 candidates.sort(reverse=True)
 _, _, name, udid = candidates[0]
 sys.stderr.write("Selected simulator: %s (%s)%s\n" % (name, udid, " [small]" if prefer_small else ""))
+if prefer_small and not ("SE" in name or "mini" in name):
+    # Said out loud rather than quietly claiming a small-screen pass that was
+    # taken on whatever the image happened to ship. The runner image decides
+    # which simulators exist, and it changes.
+    sys.stderr.write(
+        "NOTE: no SE or mini is installed on this image; %s is the narrowest available.\n" % name
+    )
+device_path = os.environ.get("GITHUB_OUTPUT")
+if device_path:
+    with open(device_path, "a", encoding="utf-8") as handle:
+        handle.write("device=%s\n" % name)
 print("platform=iOS Simulator,id=%s" % udid)
 PY
 )"

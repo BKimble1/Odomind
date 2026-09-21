@@ -189,21 +189,54 @@ final class OdomindScreenshotTests: XCTestCase {
         search.typeText("wrangler")
         // The index answers without a network, so this is a screenshot of
         // real results rather than of a spinner.
-        let firstResult = fresh.buttons.matching(identifier: "addVehicle.result").firstMatch
-        _ = firstResult.waitForExistence(timeout: 10)
+        let firstResult = fresh.descendants(matching: .any)
+            .matching(identifier: "addVehicle.result").firstMatch
+        XCTAssertTrue(
+            firstResult.waitForExistence(timeout: 15),
+            "a bare model name should find something without a year typed"
+        )
         shot("build3-02-yearless-search")
 
         // 3. The configuration step. In a UI-test build the options provider
         //    is off — a screenshot run must not depend on somebody else's
         //    uptime — so this captures the fallback questions. The
         //    provider-backed variant is on the device-check list.
-        if firstResult.exists {
-            firstResult.tap()
-            if fresh.buttons["addVehicle.finish"].waitForExistence(timeout: 15) {
-                shot("build3-03-configuration")
-                fresh.buttons["addVehicle.finish"].tap()
-            }
+        firstResult.tap()
+
+        // find -> confirm. The flow has three steps, not two; walking it as
+        // though tapping a result finished the job is how this capture would
+        // have come back as the search screen twice.
+        let next = fresh.buttons["addVehicle.next"]
+        XCTAssertTrue(next.waitForExistence(timeout: 10), "the Next button is missing")
+        next.tap()
+
+        XCTAssertTrue(
+            fresh.textFields["addVehicle.odometer"].waitForExistence(timeout: 10),
+            "choosing a result should reach the confirmation step"
+        )
+        shot("build3-03-configuration")
+
+        // The options provider is off in a UI-test build — a screenshot run
+        // must not depend on somebody else's uptime — so this is the fallback
+        // question. Answering it is what makes the oil job exist, and the oil
+        // job is what the parts capture below is reached through.
+        let powertrain = fresh.element(withIdentifier: "confirm.powertrain")
+        if powertrain.waitForExistence(timeout: 5) {
+            powertrain.tap()
+            let gasoline = fresh.buttons["Gasoline"]
+            if gasoline.waitForExistence(timeout: 5) { gasoline.tap() }
         }
+
+        let odometer = fresh.textFields["addVehicle.odometer"]
+        odometer.tap()
+        odometer.typeText("120000")
+
+        next.tap()          // confirm -> plan
+        XCTAssertTrue(
+            fresh.buttons["addVehicle.finish"].waitForExistence(timeout: 15),
+            "the Add vehicle button is missing"
+        )
+        fresh.buttons["addVehicle.finish"].tap()
 
         guard fresh.navigationBars["Home"].waitForExistence(timeout: 20) else {
             XCTFail("Home did not appear after adding a vehicle")
@@ -212,27 +245,35 @@ final class OdomindScreenshotTests: XCTestCase {
         shot("build3-04-home")
 
         // 4. Parts, reached from a job rather than typed again.
+        //
+        // Queried by identifier rather than by element type throughout. A
+        // NavigationLink in a List is reported as a button on one OS version
+        // and as a cell on another, and `app.buttons[...]` quietly not
+        // existing would make this capture go missing rather than fail —
+        // which is the harder kind of wrong to notice in a screenshot run.
         fresh.tabBars.buttons["Jobs"].tap()
         let job = fresh.element(withIdentifier: "jobs.task.engine-oil-and-filter")
-        if job.waitForExistence(timeout: 10) {
-            job.tap()
-            let parts = fresh.buttons["task.findParts"]
-            if fresh.scrollTo(parts, hittable: true) {
-                parts.tap()
-                if fresh.navigationBars["Parts"].waitForExistence(timeout: 10) {
-                    shot("build3-05-parts-from-a-job")
+        XCTAssertTrue(job.waitForExistence(timeout: 10), "the oil job is missing from Jobs")
+        job.tap()
 
-                    // 5. The shopping area control, and what it offers.
-                    let area = fresh.buttons["shopping.location"]
-                    if area.waitForExistence(timeout: 5) {
-                        area.tap()
-                        if fresh.navigationBars["Shopping area"].waitForExistence(timeout: 8) {
-                            shot("build3-06-location")
-                        }
-                    }
-                }
-            }
-        }
+        let parts = fresh.element(withIdentifier: "task.findParts")
+        XCTAssertTrue(
+            fresh.scrollTo(parts, hittable: true),
+            "Find parts should be reachable on a job — saw \(fresh.visibleRowLabels())"
+        )
+        parts.tap()
+        XCTAssertTrue(fresh.navigationBars["Parts"].waitForExistence(timeout: 10), "Parts did not open")
+        shot("build3-05-parts-from-a-job")
+
+        // 5. The shopping area control, and what it offers.
+        let area = fresh.element(withIdentifier: "shopping.location")
+        XCTAssertTrue(area.waitForExistence(timeout: 8), "the shopping area control is missing from Parts")
+        area.tap()
+        XCTAssertTrue(
+            fresh.navigationBars["Shopping area"].waitForExistence(timeout: 8),
+            "the area picker did not open"
+        )
+        shot("build3-06-location")
     }
 
     func testCaptureOnboarding() {

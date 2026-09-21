@@ -177,6 +177,11 @@ jobs:
           SIMULATOR_SIZE: small
         run: ./.github/scripts/select-simulator.sh
 
+      # Named in the log, because "the smallest supported display" is a claim
+      # about which device this ran on and the runner image decides that.
+      - name: Say which device this is
+        run: echo "SMALLDEVICE:${{ steps.simulator.outputs.device }}"
+
       - name: Build for testing
         run: |
           set -o pipefail
