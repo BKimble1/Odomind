@@ -11,7 +11,8 @@ person relying on it.
 
 | Source | Used for | Redistributable | Ships in the app |
 | --- | --- | --- | --- |
-| NHTSA vPIC | VIN decoding, make/model lookup | **No** | No — queried at runtime, cached on device |
+| NHTSA vPIC | VIN decoding, make/model lookup | Not established | No — queried at runtime, cached on device |
+| Odomind make list | Routing a search to the right make | Yes | Yes — 43 names, written for Odomind |
 | Odomind maintenance templates | Vehicle-independent task templates | Yes | Yes |
 | Odomind engine notes | Task-applicability facts (e.g. belt vs chain) | Yes | Yes |
 
@@ -37,12 +38,48 @@ transmission style and drive type, and listing models for a make and year.
 `GetParts` is **not** used and is not an aftermarket parts catalog: it returns
 manufacturer regulatory document submissions under 49 CFR Parts 565 and 566.
 
-**Terms.** vPIC is published by a U.S. federal agency. Works of the U.S.
-federal government are generally not subject to domestic copyright
-(17 U.S.C. § 105), but NHTSA publishes no explicit open-data licence for vPIC
-and no terms granting bulk redistribution. Odomind therefore treats it as
-**query-at-runtime only**: responses are cached on the owner's device for the
-session and never shipped as a dataset.
+**What vPIC does not solve, and Odomind does not pretend it does.** Complete
+manufacturer service schedules, oil grades and capacities, replacement-part
+fitment, and every trim and option combination are all outside it. A vPIC match
+identifies a vehicle. It does not say what fluid that vehicle takes, when it is
+due for anything, or which filter fits it. The app's copy is written to that
+boundary, and the type system helps: `VehicleIdentificationProvider` cannot
+return a specification, because identification and specification are different
+problems with different sources.
+
+**The make list is Odomind's own.** vPIC's all-makes endpoint returns thousands
+of entries, including trailer and industrial-equipment manufacturers, which is
+accurate and useless as a suggestion list. Odomind carries a list of 43 common
+consumer makes, written for this app, purely to decide which make to *ask vPIC
+about*. Every model name the owner sees comes from the provider. A make that is
+not on the list is not blocked: typing it still reaches the provider, and manual
+entry always works.
+
+**Terms — reviewed for Build 2.** Build 1's note here said vPIC carried no
+public-use permission. That was too strong, and it is corrected.
+
+What is established: the API is free, public, and needs no registration and no
+API key. NHTSA's own FAQ says so, asks that large batch jobs run outside US
+business hours, and applies automated rate control rather than a quota. Those
+are operating conditions, not a licence restriction, and Odomind's use — a
+handful of requests while somebody adds a car — is nowhere near them. NHTSA
+also publishes standalone VIN-decoding databases for download, which is not
+the behaviour of an agency withholding public use.
+
+What is **not** established, and what Build 1 conflated with it: an explicit
+open-data licence granting **redistribution**. Works of the U.S. federal
+government are generally outside domestic copyright (17 U.S.C. § 105), and that
+is a reasonable basis for believing redistribution would be fine — but it is an
+inference, not a published grant, and it says nothing about other jurisdictions.
+
+So the behaviour is unchanged and the reasoning is now accurate: Odomind queries
+vPIC at runtime and caches on the owner's device. It does not ship a vPIC
+dataset, because no published term says it may. If NHTSA publishes an explicit
+licence, this becomes a straightforward change.
+
+**Rechecked.** September 2026, against
+<https://vpic.nhtsa.dot.gov/api/home/index/faq>. Recheck before relying on it:
+terms change, and nothing here is legal advice.
 
 **Attribution.** "Vehicle identification data from the NHTSA Product
 Information Catalog and Vehicle Listing (vPIC)." Shown in the app.
@@ -120,8 +157,28 @@ number that nobody checked would be worse than shipping none: an owner who trust
 a wrong oil capacity ends up with a wrong oil level.
 
 Instead, every one of those fields shows as "Not available" with a one-tap path
-to record the real value from the owner's manual and the placard in the driver's
-door opening. Once recorded, it is used everywhere a manufacturer value would be.
+to record the real value, and the hint says **where that particular value
+actually lives**. Build 1 told everyone to check the door placard, which is
+right for original tyre size and cold pressures and wrong for a battery group
+size, a filter part number or a fluid capacity. `SpecificationKind.sourceHint`
+now carries a per-field answer. Once recorded, the value is used everywhere a
+manufacturer value would be.
+
+**Build 2 tried and failed to add sourced values for the owner's Jeep.** The
+authoring host's network policy blocks manufacturer sites and NHTSA outright, so
+no value could be retrieved, let alone checked against a citable source and
+reviewed for redistribution. Inventing one was never an option. This is an
+external dependency, recorded as one: it needs a session with reachable
+manufacturer documentation, not more code.
+
+**Installed equipment is separate from factory specification.** Every
+`Specification` carries an `EquipmentBasis` — factory, installed now, or the
+owner's preference — so a Jeep on aftermarket wheels and tyres can record what
+is actually fitted without overwriting what the factory published. Owner entries
+win where they exist and the superseded catalog value stays visible. And a cold
+tyre pressure is never derived from a sidewall maximum: `isVehiclePlacardOnly`
+marks the fields where that inference is forbidden, because a sidewall number is
+a maximum and not an operating pressure.
 
 Drivetrain is deliberately not pre-filled for that profile either: the JK
 Wrangler was sold in both two- and four-wheel-drive forms, and that answer
@@ -134,13 +191,40 @@ The procedure — and what the validator will reject — is in
 
 ## Catalog updates
 
-This release ships one catalog inside the app binary. There is no update
-service, and the app says exactly that rather than showing a "live database"
-badge it cannot back up.
+A catalog always ships inside the app binary and is the floor. On top of that,
+`CatalogUpdateService` can fetch a newer reviewed one.
 
-The machinery for updates is nonetheless in place and tested: the catalog is
-versioned and schema-validated, and `PlanBuilder.applyCatalogUpdate` parks a
-changed schedule as a **proposal** rather than applying it. The owner's active
-schedule keeps running until they accept the change, and an owner's own
-override is never overwritten. What a remote catalog would additionally need is
-listed in [ARCHITECTURE.md](ARCHITECTURE.md#future-remote-catalog).
+**The trust model, stated as what it is.** Authenticity comes from TLS to one
+pinned host: Odomind fetches the manifest over HTTPS from a fixed URL and
+refuses a catalog URL that is not HTTPS on that same host. The SHA-256 in the
+manifest proves the downloaded file matches the manifest that described it —
+that catches a truncated, corrupted or proxy-mangled download, and it is **not**
+a signature. The manifest and the hash come from the same place, so anyone able
+to serve a forged manifest could serve a matching hash. Making it a real
+authenticity check means a detached signature verified against a public key
+compiled into the app. That is not built, and the code says so where somebody
+would otherwise assume otherwise.
+
+**What an update has to survive before it is installed.** Schema version must
+match this build's. Version must be strictly newer, compared numerically so
+2026.10.2 beats 2026.9.10. The declared byte count must match and be plausible.
+The checksum must match. It must parse. It must describe itself consistently.
+And it must pass `CatalogValidator` with no errors — the same gate CI runs with
+`--strict`. An update that would fail the project's own check does not get
+installed on a phone.
+
+**Failure leaves everything alone.** Installation writes to a staging file and
+swaps it in with `replaceItemAt`, so there is no half-installed state to
+recover from. A corrupt, unreadable, older or unreachable update leaves the
+previous catalog in charge, and a stale installed file that is older than the
+bundled one is ignored on load — a file on disk must not undo a fix that shipped
+in the app.
+
+**Nothing silently changes an owner's schedule.** `PlanBuilder.applyCatalogUpdate`
+parks changed guidance as a **proposal**. The owner's active schedule keeps
+running until they accept it, and an owner's own override is never overwritten.
+
+**Source coverage is a separate question from whether the updater works.** The
+updater works and is tested. It has nothing to publish yet, because the sourcing
+problem above is unsolved. Those two facts are kept apart deliberately: the app
+does not say it is checking for updates as a way of implying it has data.

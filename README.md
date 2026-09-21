@@ -21,8 +21,10 @@ Built by Idlery Services LLC. This repository is public for review; see
 
 ## What it does
 
-- **Add a vehicle** by year/make/model, or by VIN — typed or scanned with the
-  camera. The VIN lookup is optional and asks before it sends anything.
+- **Find a vehicle** by typing something like "2010 Jeep Wrangler". The models
+  come back from NHTSA's own lookup service. Typing it in by hand always works
+  and works offline; a VIN — typed or scanned — also fills in the engine and
+  drivetrain, and asks before it sends anything.
 - **Confirm the configuration** that decides which tasks apply. Anything left
   unconfirmed keeps the dependent tasks out of your plan rather than guessing.
 - **Record mileage** in one field, whenever you think of it.
@@ -35,8 +37,14 @@ Built by Idlery Services LLC. This repository is public for review; see
 - **Keep specifications** from your manual and door placard, used everywhere.
 - **Get reminders** for deadlines it is confident about, and clearly-labelled
   estimates for the ones it is projecting.
-- **Give a vehicle a photo**, so a two-car garage is readable at a glance. It
-  stays on the phone, travels in the backup, and is never read for anything.
+- **See your car**, drawn. Odomind has matched illustrations for some vehicles
+  and a body-style drawing for the rest, in a colour you pick — or your own
+  photo, which stays on the phone and travels in the backup.
+- **Find parts** with what Odomind knows about your vehicle already filled in,
+  and parts shops near you, without giving up your location if you would rather
+  type a postal code.
+- **See everything on one calendar**: work you recorded, appointments you
+  booked, real deadlines and clearly-labelled estimates, told apart.
 - **Take your records with you** — CSV, a printable PDF, or a complete backup.
 
 ## What it will not do
@@ -87,17 +95,11 @@ container, not the signature. A paid Apple Developer account raises that to a
 year. This catches people out because it looks like a crash rather than an
 expiry.
 
-### TestFlight, later
+### Or take the TestFlight build
 
-Nothing here blocks distribution; it simply has not been set up.
-
-1. Create the App ID and app record in App Store Connect.
-2. Set `DEVELOPMENT_TEAM` and a unique `PRODUCT_BUNDLE_IDENTIFIER` (both in
-   `Tools/generate-xcodeproj.py` so they survive regeneration).
-3. Archive and upload, or add a CI job using an App Store Connect API key held
-   in GitHub secrets.
-4. Keep that job off pull-request triggers. CI here is deliberately read-only
-   and receives no signing secrets, so contributed code can never reach one.
+Odomind ships to TestFlight from CI, with no Mac involved. See
+[Shipping to TestFlight without a Mac](#shipping-to-testflight-without-a-mac)
+for how that works and how to run it.
 
 ---
 
@@ -286,16 +288,36 @@ request.
 
 ## Privacy
 
-- Your records stay on your device. No account, no analytics, no advertising.
-- The one external request Odomind can make is a VIN lookup to NHTSA vPIC. It
-  names the destination and asks before the first one, and you can always skip
-  it and type the vehicle in by hand.
+Your records stay on your device. No account, no analytics, no advertising,
+and nothing is uploaded.
+
+Odomind can make five kinds of outbound request, every one of them started by
+something you did:
+
+| Request | When | What is sent |
+| --- | --- | --- |
+| Vehicle model lookup | You type a year and make into the search field | The year and the make |
+| VIN decode | You ask for one, after a disclosure naming the destination | The VIN |
+| Nearby parts shops | You tap **Near me** or type a postal code | A coarse location or the postal code, to Apple's map search |
+| Opening a retailer | You tap a retailer | Nothing — your browser opens their search for the year, make, model and part |
+| Maintenance catalog update | You tap **Check now**, or turn on automatic checks | Nothing about you |
+
+App Store purchases go through Apple, which is the only party that ever sees
+payment information.
+
+What never leaves the device: your VIN outside a lookup you asked for, your
+mileage, your service history, your receipts, your notes, your photos, and any
+receipt text. Receipt scanning runs on the phone.
+
 - Your VIN is stored locally, shown as its last six characters, never written to
-  a log or an error report, and left out of exports unless you switch it on.
+  a log or an error report, and left out of exports unless you switch it on. It
+  is never put in a retailer URL.
 - Notification permission is asked for when you turn a reminder on. Camera
-  permission when you scan a VIN. **Calendar permission is never requested** —
-  on iOS 17 and later the system's event editor runs outside the app with its
-  own access.
+  permission when you scan a VIN. Location permission when you tap **Near me**,
+  and never as a condition of tracking maintenance. Calendar permission is
+  **write-only**, asked for when you export a batch of dates — a single event
+  goes through the system's own editor, which needs no permission at all, and
+  Odomind never reads your calendar.
 - Delete-vehicle and delete-all-data remove the records, the receipt files on
   disk, and every pending reminder.
 

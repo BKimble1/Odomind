@@ -144,7 +144,8 @@ final class OdomindStoreTests: XCTestCase {
             selectedVehicleID: first.id,
             hasCompletedOnboarding: true,
             catalogVersionLastSeen: nil,
-            reminders: .default
+            reminders: .default,
+            preferences: .default
         ))
 
         try store.deleteVehicle(id: first.id)
