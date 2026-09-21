@@ -123,6 +123,19 @@ jobs:
               --powertrain gasoline --displacement 3.5
           } 2>&1 | tee "$RUNNER_TEMP/catalog.log"
 
+      # Repeated to stdout as well as to the step summary, and last, because
+      # a job log is the only channel off a runner this repository can read
+      # and only its tail is cheap to fetch. The summary was landing two
+      # hundred lines above the end.
+      - name: Say it again at the end of the log
+        if: always()
+        run: |
+          echo "=== matrix summary, repeated for the log tail ==="
+          sed -n '/=== summary ===/,$p' "$RUNNER_TEMP/matrix.log" 2>/dev/null || echo "no summary"
+          echo "=== what each provider spells things ==="
+          grep -E "fueleconomy.gov (lists|spells|does not list)|exact name match|no exact name|NO MATCH" \
+            "$RUNNER_TEMP/matrix.log" 2>/dev/null || echo "no spelling lines"
+
       - name: Report
         if: always()
         run: |
