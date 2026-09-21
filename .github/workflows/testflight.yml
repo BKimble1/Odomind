@@ -37,6 +37,11 @@ on:
         type: boolean
         required: false
         default: true
+      unsigned_archive:
+        description: "Prove the Release build and archive with no Apple credentials at all. Never uploads."
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -70,6 +75,7 @@ jobs:
       # --break-system-packages would trade a clear error for the risk of a
       # broken Homebrew later in the same job.
       - name: Install the App Store Connect client's one dependency
+        if: ${{ !inputs.unsigned_archive }}
         run: |
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/venv"
@@ -81,6 +87,7 @@ jobs:
       # Written to the location altool searches, with owner-only permissions,
       # and removed in the always() cleanup at the end of the job.
       - name: Stage the App Store Connect API key
+        if: ${{ !inputs.unsigned_archive }}
         id: key
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -118,6 +125,7 @@ jobs:
       # Fails in seconds on a bad key or a missing app record, rather than
       # twenty minutes into an archive.
       - name: Preflight App Store Connect
+        if: ${{ !inputs.unsigned_archive }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -131,6 +139,7 @@ jobs:
             | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Check the signing inputs agree
+        if: ${{ !inputs.unsigned_archive }}
         id: signing
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -191,6 +200,7 @@ jobs:
           # the shell.
           INPUT_MARKETING_VERSION: ${{ inputs.marketing_version }}
           INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+          UNSIGNED: ${{ inputs.unsigned_archive }}
         run: |
           set -euo pipefail
           version="${INPUT_MARKETING_VERSION}"
@@ -200,7 +210,13 @@ jobs:
 
           build="${INPUT_BUILD_NUMBER}"
           if [ -z "$build" ]; then
-            build="$("$ASC_PYTHON" .github/scripts/asc.py next-build-number --bundle-id "$BUNDLE_ID")"
+            if [ "${UNSIGNED:-false}" = "true" ]; then
+              # No credentials in this mode, so nothing to ask Apple. The run
+              # number is monotonic, which is all an unsigned archive needs.
+              build="${GITHUB_RUN_NUMBER}"
+            else
+              build="$("$ASC_PYTHON" .github/scripts/asc.py next-build-number --bundle-id "$BUNDLE_ID")"
+            fi
           fi
 
           case "$version" in
@@ -281,24 +297,40 @@ jobs:
           KEY_PATH: ${{ steps.key.outputs.path }}
           MARKETING: ${{ steps.version.outputs.marketing }}
           BUILD: ${{ steps.version.outputs.build }}
+          UNSIGNED: ${{ inputs.unsigned_archive }}
         run: |
           set -o pipefail
-          xcodebuild archive \
-            -project "$PROJECT" \
-            -scheme "$SCHEME" \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/Odomind.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            -skipMacroValidation \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            MARKETING_VERSION="$MARKETING" \
-            CURRENT_PROJECT_VERSION="$BUILD" \
-            2>&1 | tee "$RUNNER_TEMP/archive.log"
+          common=(
+            -project "$PROJECT"
+            -scheme "$SCHEME"
+            -configuration Release
+            -destination 'generic/platform=iOS'
+            -archivePath "$RUNNER_TEMP/Odomind.xcarchive"
+            -skipMacroValidation
+            MARKETING_VERSION="$MARKETING"
+            CURRENT_PROJECT_VERSION="$BUILD"
+          )
+
+          if [ "$UNSIGNED" = "true" ]; then
+            # Compiles and archives exactly the same code, just without
+            # asking Apple for anything. Proves the Release build, the
+            # assets and the Info.plist independently of any credential.
+            echo "Unsigned archive: no Apple credentials are used."
+            xcodebuild archive "${common[@]}" \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              2>&1 | tee "$RUNNER_TEMP/archive.log"
+          else
+            xcodebuild archive "${common[@]}" \
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "$KEY_PATH" \
+              -authenticationKeyID "$ASC_KEY_ID" \
+              -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+              DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+              CODE_SIGN_STYLE=Automatic \
+              2>&1 | tee "$RUNNER_TEMP/archive.log"
+          fi
 
       - name: Confirm the archive is what it should be
         env:
@@ -330,6 +362,7 @@ jobs:
           echo "Archive verified: $id, $short ($build), icon opaque." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Export a signed IPA
+        if: ${{ !inputs.unsigned_archive }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -350,7 +383,7 @@ jobs:
           echo "Exported $(basename "$ipa") ($(du -h "$ipa" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload to App Store Connect
-        if: ${{ inputs.upload }}
+        if: ${{ inputs.upload && !inputs.unsigned_archive }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -370,7 +403,7 @@ jobs:
           echo "Uploaded to App Store Connect." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Wait for TestFlight processing
-        if: ${{ inputs.upload }}
+        if: ${{ inputs.upload && !inputs.unsigned_archive }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -429,6 +462,21 @@ jobs:
             echo "| Uploaded | ${{ inputs.upload && 'yes' || 'no — export only' }} |"
             echo "| Result | ${{ job.status }} |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Last on purpose. Reading a failed run means tailing its log, and the
+      # reason otherwise sits above a hundred lines of artifact plumbing.
+      - name: Why this run stopped
+        if: failure()
+        run: |
+          echo "================ WHY THIS RUN STOPPED ================"
+          for log in validate upload export archive; do
+            f="$RUNNER_TEMP/$log.log"
+            [ -f "$f" ] || continue
+            echo "--- $log.log (last errors) ---"
+            grep -iE "error:|error |failed|denied|No profile|No signing certificate|Provisioning" "$f" \
+              | grep -viE "0 errors|warning: " | tail -15 || true
+          done
+          echo "======================================================"
 
       # Runs whatever happened, including on cancellation.
       - name: Remove the API key from the runner
