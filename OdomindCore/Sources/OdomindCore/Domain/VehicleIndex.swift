@@ -54,15 +54,37 @@ public struct VehicleIndex: Codable, Sendable, Equatable {
 
     // MARK: - Lookups
 
-    /// The make a word names, if any. Tries the alias table, then an exact
-    /// name match, then a normalised one so "mercedes benz" finds
-    /// "MERCEDES-BENZ".
-    public func make(named text: String) -> String? {
+    /// A make somebody is plausibly naming: shorthand, or one of the makes
+    /// that actually sells cars.
+    ///
+    /// Kept separate from `anyMake(named:)` because vPIC's full list has
+    /// 12,364 entries and some of them collide with model names. "WRANGLER"
+    /// is in there — a trailer manufacturer — so resolving against the full
+    /// list first made a search for "wrangler" ask about a make nobody meant
+    /// instead of finding the Jeep. Real data, found by a test running
+    /// against the real index.
+    public func passengerMake(named text: String) -> String? {
+        let normalised = VehicleTextMatch.normalise(text)
+        guard !normalised.isEmpty else { return nil }
+        if let aliased = aliases[normalised] { return aliased }
+        let key = VehicleTextMatch.key(text)
+        return passengerMakes.first { VehicleTextMatch.key($0) == key }
+    }
+
+    /// Any make vPIC knows, including the obscure ones. Consulted only after
+    /// model interpretations have been ruled out, so a genuinely unusual make
+    /// still works without hijacking an ordinary model name.
+    public func anyMake(named text: String) -> String? {
         let normalised = VehicleTextMatch.normalise(text)
         guard !normalised.isEmpty else { return nil }
         if let aliased = aliases[normalised] { return aliased }
         let key = VehicleTextMatch.key(text)
         return makes.first { VehicleTextMatch.key($0) == key }
+    }
+
+    /// Prefers a passenger make, falling back to the full list.
+    public func make(named text: String) -> String? {
+        passengerMake(named: text) ?? anyMake(named: text)
     }
 
     /// Makes worth suggesting for a partly typed name, best first.

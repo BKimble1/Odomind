@@ -81,21 +81,19 @@ public enum VehicleQueryPlanner {
             return VehicleQuery(modelYear: year, intent: .tooShort, raw: raw)
         }
 
-        // A make can be more than one word, so try the longest leading run
-        // first: "land rover discovery" must not resolve to a make of "land".
-        for length in stride(from: min(tokens.count, 3), through: 1, by: -1) {
-            let leading = tokens.prefix(length).joined(separator: " ")
-            guard let make = index.make(named: leading) else { continue }
-            let rest = Array(tokens.dropFirst(length))
-            return VehicleQuery(
-                modelYear: year,
-                intent: rest.isEmpty ? .make(make) : .makeAndModel(make: make, tokens: rest),
-                raw: raw
-            )
+        // Order matters here, and it is not obvious.
+        //
+        // A make can be more than one word, so the longest leading run is
+        // tried first: "land rover discovery" must not resolve to a make of
+        // "land". But only against makes that actually sell cars — vPIC's
+        // full list contains "WRANGLER", so consulting it first turned a
+        // search for a Jeep into a search for a trailer manufacturer.
+        if let resolved = leadingMake(tokens, using: { index.passengerMake(named: $0) }) {
+            return VehicleQuery(modelYear: year, intent: resolved, raw: raw)
         }
 
-        // No make named, so the words are probably a model. Ask the index who
-        // builds it.
+        // Then the words as a model. This is what makes a bare "wrangler"
+        // answerable, and it has to come before the full make list.
         let candidates = index.makesOffering(modelTokens: tokens).map {
             MakeCandidate(make: $0.make, model: $0.model, quality: $0.match.quality)
         }
@@ -103,12 +101,31 @@ public enum VehicleQueryPlanner {
             return VehicleQuery(modelYear: year, intent: .model(tokens: tokens, candidates: candidates), raw: raw)
         }
 
-        // Nothing offers it. Still part-way through typing a make?
+        // Only now the long tail, so a genuinely unusual make still works.
+        if let resolved = leadingMake(tokens, using: { index.anyMake(named: $0) }) {
+            return VehicleQuery(modelYear: year, intent: resolved, raw: raw)
+        }
+
+        // Still part-way through typing a make?
         let partial = index.makes(matching: working)
         if !partial.isEmpty {
             return VehicleQuery(modelYear: year, intent: .makeSuggestions(partial), raw: raw)
         }
 
         return VehicleQuery(modelYear: year, intent: .unrecognised(tokens: tokens), raw: raw)
+    }
+
+    /// The longest leading run of words that `resolve` recognises as a make.
+    private static func leadingMake(
+        _ tokens: [String],
+        using resolve: (String) -> String?
+    ) -> VehicleQuery.Intent? {
+        for length in stride(from: min(tokens.count, 3), through: 1, by: -1) {
+            let leading = tokens.prefix(length).joined(separator: " ")
+            guard let make = resolve(leading) else { continue }
+            let rest = Array(tokens.dropFirst(length))
+            return rest.isEmpty ? .make(make) : .makeAndModel(make: make, tokens: rest)
+        }
+        return nil
     }
 }

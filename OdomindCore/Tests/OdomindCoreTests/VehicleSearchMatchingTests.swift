@@ -78,6 +78,36 @@ final class VehicleSearchMatchingTests: XCTestCase {
         XCTAssertEqual(candidates.first?.model, "Wrangler")
     }
 
+    func testAModelNameThatIsAlsoSomebodysMakeIsStillTreatedAsAModel() {
+        // vPIC's make list has 12,364 entries and "WRANGLER" is one of them —
+        // an equipment manufacturer, not the Jeep. Resolving against the full
+        // list before considering models turned a search for a Wrangler into
+        // a search for that company. Found by running against the real index.
+        XCTAssertNotNil(index.anyMake(named: "wrangler"), "the collision this guards against still exists")
+        XCTAssertNil(index.passengerMake(named: "wrangler"), "but it is not a make anyone shopping for a car means")
+
+        guard case .model(_, let candidates) = plan("wrangler").intent else {
+            return XCTFail("a model name must win over an obscure like-named make")
+        }
+        XCTAssertEqual(candidates.first?.make, "JEEP")
+    }
+
+    func testAGenuinelyObscureMakeStillResolves() throws {
+        // The long tail is still reachable, just consulted after models.
+        guard let obscure = index.makes.first(where: { name in
+            index.passengerMake(named: name) == nil
+                && index.makesOffering(modelTokens: VehicleTextMatch.tokens(name)).isEmpty
+                && !name.contains(" ")
+                && name.count > 5
+        }) else {
+            throw XCTSkip("no suitable obscure make in this index")
+        }
+        guard case .make(let resolved) = plan(obscure).intent else {
+            return XCTFail("\(obscure) should still resolve as a make")
+        }
+        XCTAssertEqual(resolved, obscure)
+    }
+
     func testAModelOnItsOwnWorksForOtherMakesToo() {
         guard case .model(_, let candidates) = plan("camry").intent else {
             return XCTFail("expected model candidates")
