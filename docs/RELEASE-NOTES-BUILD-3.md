@@ -8,9 +8,15 @@ Paste the **What to test** section into App Store Connect's TestFlight notes.
 
 **Finding your car.** Type how you actually talk about it. "Wrangler" on its
 own works now, and so does "camry", "f150", "chevy silverado" and "jeep
-wrangler 2010". No year needed first — Odomind asks for the year *after* you
-have chosen, when it knows which years that model was even built. Extra words
-like "unlimited" or "sport" narrow the list rather than emptying it.
+wrangler 2010". No year needed first: you pick the car, then the year, and
+that order is the whole reason a search like "wrangler" works at all. Extra
+words like "unlimited" or "sport" narrow the list rather than emptying it.
+
+Odomind offers every year back to 1981. It does **not** know which years your
+model was built — no free source will tell it — so if you pick a year nothing
+was published for, it says so instead of making up a list of engines. Skipping
+the year is fine too; you get asked the two questions directly on the next
+screen instead.
 
 **Which engine is yours.** After you pick a vehicle, Odomind asks a service
 which engine, gearbox and driven wheels that year, make and model was actually

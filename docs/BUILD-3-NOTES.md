@@ -20,7 +20,7 @@ by returning 24 Jeep models.
 | Search by make alone, or part of a make | Implemented and verified |
 | Either word order, and common shorthand (chevy, vw, mercedes) | Implemented and verified |
 | Extra trim words narrow rather than eliminate | Implemented and verified |
-| Year asked for after selection, not before searching | Implemented and verified |
+| Year asked for after selection, not before searching | Implemented and verified — **but this row was wrong until `01e2887`.** The year came out of the precondition and nothing was added to ask for it afterwards. See "What the first screenshots showed". |
 | Request invalidation on every input transition and on dismissal | Implemented and verified |
 | Atomic vehicle selection — no VIN, trim or configuration carried over | Implemented and verified |
 | Real photographs with licence and attribution | Implemented, **device check needed** — the simulator run does not reach Commons |
@@ -40,7 +40,7 @@ by returning 24 Jeep models.
 | Home hierarchy simplification | Implemented and verified |
 | Untracked job opens that job, not the catalog library | Implemented and verified |
 | Parts specifications follow the category searched for | Implemented and verified |
-| Engine/trim options from a provider rather than a picker | Implemented and verified |
+| Engine/trim options from a provider rather than a picker | Implemented; unit-verified against recorded responses. Two live defects fixed since the row was first written: unreachable on the yearless path, and an empty answer for every make vPIC spells in capitals. Live evidence is the capture run and the validation matrix, not the unit tests. |
 | Catalog updates say "nothing published" rather than "service down" | Implemented and verified; **publishing is an owner action, see CATALOG-AUTHORING.md** |
 
 ## Validation matrix — three real configurations
