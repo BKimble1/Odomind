@@ -136,6 +136,7 @@ enum VehicleRoute: Hashable {
     case configuration(UUID)
     case odometerHistory(UUID)
     case artwork(UUID)
+    case spending(UUID)
 }
 
 /// Recorded work.

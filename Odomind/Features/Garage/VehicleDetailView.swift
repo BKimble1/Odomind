@@ -1,5 +1,4 @@
 import SwiftUI
-import PhotosUI
 import UIKit
 import OdomindCore
 
@@ -12,8 +11,6 @@ struct VehicleDetailView: View {
     @State private var nickname = ""
     @State private var showingDeleteConfirmation = false
     @State private var didLoad = false
-    @State private var photoItem: PhotosPickerItem?
-    @State private var photo: UIImage?
 
     private var vehicle: Vehicle? { model.snapshot.vehicle(id: vehicleID) }
 
@@ -36,6 +33,21 @@ struct VehicleDetailView: View {
     @ViewBuilder
     private func content(_ vehicle: Vehicle) -> some View {
         List {
+            Section {
+                VehiclePortrait(vehicle: vehicle, height: 140)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                NavigationLink(value: VehicleRoute.artwork(vehicleID)) {
+                    Label("Change the picture", systemImage: "photo")
+                }
+                .accessibilityIdentifier("vehicle.artwork")
+            } footer: {
+                Text(VehicleArtworkResolver.resolve(
+                    vehicle: vehicle,
+                    hasPhoto: vehicle.photoAttachmentID.flatMap { model.snapshot.attachment(id: $0) } != nil
+                ).disclosure)
+            }
+
             Section("Name") {
                 TextField("Nickname", text: $nickname)
                     .onSubmit { saveNickname(vehicle) }
@@ -44,7 +56,6 @@ struct VehicleDetailView: View {
                     .foregroundStyle(.secondary)
             }
 
-            photoSection(vehicle)
 
             Section("Identity") {
                 ValueRow(label: "Year", value: vehicle.identity.modelYear.map(String.init) ?? "Not set")
@@ -76,6 +87,10 @@ struct VehicleDetailView: View {
                 NavigationLink(value: VehicleRoute.odometerHistory(vehicleID)) {
                     Label("Odometer history", systemImage: "gauge.with.dots.needle.33percent")
                 }
+                NavigationLink(value: VehicleRoute.spending(vehicleID)) {
+                    Label("Spending", systemImage: "chart.bar.xaxis")
+                }
+                .accessibilityIdentifier("vehicle.spending")
             }
 
             if !vehicle.configuration.openQuestions.isEmpty {
@@ -126,18 +141,6 @@ struct VehicleDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
-        // Keyed on the identifier, so the picture reloads when the photo is
-        // replaced or removed and is read from disk once rather than on every
-        // pass through the body.
-        .task(id: vehicle.photoAttachmentID) {
-            photo = vehicle.photoAttachmentID
-                .flatMap { model.attachmentData($0) }
-                .flatMap { UIImage(data: $0) }
-        }
-        .onChange(of: photoItem) { _, newValue in
-            guard let newValue else { return }
-            Task { await attachPhoto(newValue, to: vehicle) }
-        }
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
@@ -157,68 +160,7 @@ struct VehicleDetailView: View {
         }
     }
 
-    /// A picture of the vehicle, which is decoration rather than a record.
-    ///
-    /// It earns its place by making a two-car garage readable at a glance, and
-    /// it is held to the same rule as everything else here: on this device,
-    /// inside the backup, nowhere else.
-    @ViewBuilder
-    private func photoSection(_ vehicle: Vehicle) -> some View {
-        Section {
-            if let photo {
-                // A fixed-height container with the picture overlaid on it,
-                // rather than a sized image: `scaledToFill` on a frame that
-                // proposes the full width can overflow it, and this way the
-                // row's height is decided before the image is drawn into it.
-                Color.clear
-                    .frame(height: 180)
-                    .overlay {
-                        Image(uiImage: photo)
-                            .resizable()
-                            .scaledToFill()
-                    }
-                    .clipped()
-                    .listRowInsets(EdgeInsets())
-                    // A photo of a car says nothing a screen reader needs that
-                    // the vehicle's own name does not already say, and Odomind
-                    // will not describe an image it has not looked at.
-                    .accessibilityHidden(true)
-            }
 
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                Label(
-                    vehicle.photoAttachmentID == nil ? "Add a photo" : "Replace the photo",
-                    systemImage: "camera"
-                )
-            }
-            .accessibilityIdentifier("vehicle.photoPicker")
-
-            if vehicle.photoAttachmentID != nil {
-                Button("Remove the photo", role: .destructive) {
-                    model.setPhoto(nil, for: vehicle)
-                }
-                .accessibilityIdentifier("vehicle.removePhoto")
-            }
-        } header: {
-            Text("Photo")
-        } footer: {
-            Text("Stored on this device with your records and included in a backup. Odomind does not upload it and does not read anything from it.")
-        }
-    }
-
-    private func attachPhoto(_ item: PhotosPickerItem, to vehicle: Vehicle) async {
-        defer { photoItem = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self) else {
-            model.alert = AppAlert(
-                title: "Could not read that photo",
-                message: "Odomind could not load the image you picked.",
-                recoverySuggestion: "Try a different photo, or take a new one."
-            )
-            return
-        }
-        guard let id = model.addAttachment(data: data, contentType: "image/jpeg") else { return }
-        model.setPhoto(id, for: vehicle)
-    }
 
     private func saveNickname(_ vehicle: Vehicle) {
         let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)

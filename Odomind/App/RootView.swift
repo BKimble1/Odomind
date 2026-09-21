@@ -80,6 +80,7 @@ struct OdomindDestinations: ViewModifier {
                 case .configuration(let id): ConfigurationEditor(vehicleID: id)
                 case .odometerHistory(let id): OdometerHistoryView(vehicleID: id)
                 case .artwork(let id): VehicleArtworkPicker(vehicleID: id)
+                case .spending(let id): SpendingReportView(vehicleID: id)
                 }
             }
             .navigationDestination(for: RecordRoute.self) { route in

@@ -11,7 +11,7 @@ struct AddVehicleFlow: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var draft = VehicleDraft()
-    @State private var step: Step = .identity
+    @State private var step: Step = .find
     @State private var didPrepare = false
 
     /// Three steps, and the last two are skippable.
