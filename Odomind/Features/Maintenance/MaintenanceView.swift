@@ -101,7 +101,7 @@ struct MaintenanceView: View {
                 .listStyle(.insetGrouped)
             }
         }
-        .searchable(text: $searchText, prompt: "Search your tasks")
+        .searchable(text: $searchText, prompt: "Search tasks")
     }
 
     private func filter(_ evaluations: [ScheduleEvaluation]) -> [ScheduleEvaluation] {

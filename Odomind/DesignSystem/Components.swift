@@ -234,9 +234,15 @@ struct PrimaryActionButton: View {
     let action: () -> Void
 
     var body: some View {
+        // Height comes from padding rather than `controlSize(.large)`. A large
+        // control size pins the button's own font, which the accessibility
+        // audit reports as partially unsupported Dynamic Type, and a fixed
+        // height is what clipped the longer label on this pair.
         let label = Text(title)
             .font(.body.weight(.medium))
+            .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
 
         Group {
             if isProminent {
@@ -247,6 +253,5 @@ struct PrimaryActionButton: View {
                     .buttonStyle(.bordered)
             }
         }
-        .controlSize(.large)
     }
 }

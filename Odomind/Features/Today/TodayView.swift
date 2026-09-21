@@ -261,12 +261,17 @@ struct MileageSummaryRow: View {
             if let estimate = model.estimate(for: vehicle.id) {
                 switch estimate {
                 case .available(let value):
+                    // Wraps rather than truncates: the audit found this line
+                    // clipped, and it is the sentence that explains where the
+                    // estimate came from.
                     Label(value.explanation, systemImage: "chart.line.uptrend.xyaxis")
                         .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
                         .foregroundStyle(.secondary)
                 case .unavailable(let reason):
                     Label(reason.message, systemImage: "chart.line.flattrend.xyaxis")
                         .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
                         .foregroundStyle(.secondary)
                 }
             }

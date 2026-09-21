@@ -16,6 +16,26 @@ struct OnboardingView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heroSymbolSize: CGFloat = 52
 
     var body: some View {
+        // Scrollable, because this screen has no way to shed content. As a
+        // plain VStack it clipped its own text — the audit found five clipped
+        // elements here, including the tagline and every promise row. The
+        // GeometryReader keeps the old centred look when everything fits and
+        // lets it scroll when it does not.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Theme.Spacing.section)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .background(Color(.systemGroupedBackground))
+        .sheet(isPresented: $showingAddVehicle) {
+            AddVehicleFlow()
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: Theme.Spacing.section) {
             Spacer(minLength: 0)
 
@@ -72,7 +92,7 @@ struct OnboardingView: View {
                 Button {
                     model.addDemoContent()
                 } label: {
-                    Text("Look around with a sample first")
+                    Text("Try a sample vehicle")
                         .font(.body)
                         .frame(maxWidth: .infinity)
                 }
@@ -80,12 +100,6 @@ struct OnboardingView: View {
                 .controlSize(.large)
                 .accessibilityIdentifier("onboarding.addSample")
             }
-        }
-        .padding(Theme.Spacing.section)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
-        .sheet(isPresented: $showingAddVehicle) {
-            AddVehicleFlow()
         }
     }
 }

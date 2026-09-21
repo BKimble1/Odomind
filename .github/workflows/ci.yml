@@ -5,6 +5,13 @@ on:
     branches:
       - main
       - "claude/**"
+    # A documentation-only push has nothing for the simulator to run, and it
+    # cancels whatever is already in flight. Pull requests stay unfiltered: a
+    # review gate should run everything.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
   pull_request:
   workflow_dispatch:
 
