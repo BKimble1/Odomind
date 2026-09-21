@@ -100,6 +100,26 @@ stages. To add version 2:
 For anything stored as JSON, prefer a `Codable` change with a version field over
 a store migration: it is testable without a simulator.
 
+### The backup format
+
+`BackupArchive.formatVersion` is checked for **exact** equality on import, and a
+mismatch is reported to the owner as "This backup uses format version N. This
+version of Odomind reads version M." rather than being read on a guess.
+`testUnsupportedFormatVersionIsRejected` covers it.
+
+That strictness is correct while there is only one version, but it means the
+first bump makes every existing backup unreadable unless the reader is taught
+about the old shape in the same change. So when bumping
+`BackupArchive.currentFormatVersion`:
+
+1. Keep a decodable description of the previous shape rather than deleting it.
+2. Widen the import check to accept the versions you can actually read, and
+   convert older archives forward on load.
+3. Add a test that imports an archive at the previous version.
+
+A refused import is a safe failure; a silently misread one is not. Do not
+loosen the check without doing the work in step 2.
+
 ## The schedule engine
 
 `ScheduleEngine` is an enum of static functions. It takes a `ScheduleContext`
