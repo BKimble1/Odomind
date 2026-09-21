@@ -105,7 +105,7 @@ jobs:
           for file in "$RUNNER_TEMP"/small/*.jpg; do
             name=$(basename "$file" .jpg)
             echo "IMGSTART:$name:$(wc -c < "$file" | tr -d ' ')"
-            base64 -b 0 "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+            base64 -i "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
             echo "IMGEND:$name"
           done
 
@@ -206,6 +206,6 @@ jobs:
                  -s formatOptions "${{ inputs.quality }}" \
                  "$source" --out "$RUNNER_TEMP/small/$name.jpg" >/dev/null
             echo "IMGSTART:small-$name:$(wc -c < "$RUNNER_TEMP/small/$name.jpg" | tr -d ' ')"
-            base64 -b 0 "$RUNNER_TEMP/small/$name.jpg" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+            base64 -i "$RUNNER_TEMP/small/$name.jpg" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
             echo "IMGEND:small-$name"
           done

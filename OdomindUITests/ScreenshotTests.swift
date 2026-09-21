@@ -209,6 +209,7 @@ final class OdomindScreenshotTests: XCTestCase {
         let next = fresh.buttons["addVehicle.next"]
         XCTAssertTrue(next.waitForExistence(timeout: 10), "the Next button is missing")
         next.tap()
+        // Same rule for everything below: scroll, do not wait.
 
         XCTAssertTrue(
             fresh.textFields["addVehicle.odometer"].waitForExistence(timeout: 10),
@@ -220,14 +221,26 @@ final class OdomindScreenshotTests: XCTestCase {
         // must not depend on somebody else's uptime — so this is the fallback
         // question. Answering it is what makes the oil job exist, and the oil
         // job is what the parts capture below is reached through.
+        //
+        // Scrolled to, not waited for. On an iPhone SE this question sits
+        // below the fold, and a row a Form has not realised is not in the
+        // accessibility tree — so waiting skipped it, the powertrain went
+        // unanswered, and the app then correctly left engine oil out of the
+        // plan. The failure read as "the oil job is missing" and the app was
+        // right. This is the same mistake as the one in the journey helper,
+        // made again in the test written alongside the fix for it.
         let powertrain = fresh.element(withIdentifier: "confirm.powertrain")
-        if powertrain.waitForExistence(timeout: 5) {
-            powertrain.tap()
-            let gasoline = fresh.buttons["Gasoline"]
-            if gasoline.waitForExistence(timeout: 5) { gasoline.tap() }
-        }
+        XCTAssertTrue(
+            fresh.scrollTo(powertrain, hittable: true),
+            "the powertrain question should be reachable — saw \(fresh.visibleRowLabels())"
+        )
+        powertrain.tap()
+        let gasoline = fresh.buttons["Gasoline"]
+        XCTAssertTrue(gasoline.waitForExistence(timeout: 5), "Gasoline was not offered")
+        gasoline.tap()
 
         let odometer = fresh.textFields["addVehicle.odometer"]
+        XCTAssertTrue(fresh.scrollTo(odometer, hittable: true), "the odometer field is missing")
         odometer.tap()
         odometer.typeText("120000")
 
@@ -253,7 +266,10 @@ final class OdomindScreenshotTests: XCTestCase {
         // which is the harder kind of wrong to notice in a screenshot run.
         fresh.tabBars.buttons["Jobs"].tap()
         let job = fresh.element(withIdentifier: "jobs.task.engine-oil-and-filter")
-        XCTAssertTrue(job.waitForExistence(timeout: 10), "the oil job is missing from Jobs")
+        XCTAssertTrue(
+            fresh.scrollTo(job, hittable: true),
+            "the oil job is missing from Jobs — saw \(fresh.visibleRowLabels())"
+        )
         job.tap()
 
         let parts = fresh.element(withIdentifier: "task.findParts")
