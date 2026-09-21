@@ -474,6 +474,43 @@ final class VehicleSearchTests: XCTestCase {
         XCTAssertEqual(count, 0, "suggesting a make needs no request")
     }
 
+    func testIndexResultsAreNotReplacedByASpinner() async throws {
+        // The index puts real results on screen the instant somebody types a
+        // model name. Showing a spinner over them while the provider confirms
+        // the same thing is a flicker that makes them pointless.
+        let provider = ScriptedModelProvider()
+        let search = await makeSearch(provider)
+
+        search.search("wrangler", debounce: .zero)
+
+        guard case .results(let immediate) = search.state else {
+            return XCTFail("the index should answer immediately, got \(search.state)")
+        }
+        XCTAssertEqual(immediate.first?.model, "Wrangler")
+
+        // The provider has been asked and has not answered. The screen must
+        // still show what the index found.
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called)
+        XCTAssertTrue(search.state.hasResults, "a pending confirmation must not blank the results")
+    }
+
+    func testAProviderOutageDoesNotTakeAwayAGoodAnswer() async throws {
+        let provider = StubIdentificationProvider(error: .notConnected)
+        let search = await makeSearch(provider)
+
+        search.search("wrangler", debounce: .zero)
+        guard case .results = search.state else {
+            return XCTFail("the index should answer immediately")
+        }
+
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(
+            search.state.hasResults,
+            "an outage is a reason to stop confirming, not to remove a correct answer"
+        )
+    }
+
     // MARK: - Races
 
     func testASlowAnswerForAnEarlierQueryIsDiscarded() async throws {

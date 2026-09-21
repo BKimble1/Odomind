@@ -60,6 +60,14 @@ final class VehicleSearchModel {
         case results([VehicleSearchResult])
         case empty(String)
         case offline(String)
+
+        /// Whether there is already something useful on screen. Used to
+        /// decide whether a spinner or an error would be an improvement on
+        /// what the owner can already see.
+        var hasResults: Bool {
+            if case .results(let results) = self { return !results.isEmpty }
+            return false
+        }
     }
 
     private(set) var state: State = .idle
@@ -181,7 +189,11 @@ final class VehicleSearchModel {
     /// would not inherit this actor, and the generation check has to happen
     /// where the state is.
     private func run(_ mine: Int, debounce: Duration, make: String, year: Int?, narrowing tokens: [String]) {
-        state = .searching
+        // Only show a spinner when there is nothing better to look at. For a
+        // model query the index has already put real results on screen, and
+        // replacing them with a spinner while the provider confirms the same
+        // thing is a flicker that makes the instant suggestions pointless.
+        if !state.hasResults { state = .searching }
         searchTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: debounce)
@@ -210,10 +222,15 @@ final class VehicleSearchModel {
             } catch let error as ProviderError {
                 guard generation == mine else { return }
                 if error == .cancelled { return }
+                // Keep what the index found. A provider outage is a reason to
+                // stop confirming, not a reason to take away a correct answer
+                // the owner is already looking at.
+                guard !state.hasResults else { return }
                 state = .offline(error.errorDescription ?? "The vehicle lookup service is not available.")
                 return
             } catch {
                 guard generation == mine else { return }
+                guard !state.hasResults else { return }
                 state = .offline("The vehicle lookup service is not available.")
                 return
             }
@@ -234,6 +251,8 @@ final class VehicleSearchModel {
         }
 
         if results.isEmpty {
+            // Same rule: do not replace a usable answer with "no match".
+            guard !state.hasResults else { return }
             state = .empty(
                 all.isEmpty
                     ? "The vehicle service had no models for \(make)."
