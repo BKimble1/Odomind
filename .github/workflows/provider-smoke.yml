@@ -48,3 +48,38 @@ jobs:
               echo "falls back to manual vehicle entry whenever the provider is unavailable."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  build3:
+    name: Build 3 capability probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # Reports rather than gates. The point is evidence about what each
+      # provider actually returns, gathered somewhere that can reach them —
+      # the authoring host's egress allows GitHub and nothing else.
+      - name: Probe every capability Build 3 needs
+        id: probe
+        continue-on-error: true
+        run: ./.github/scripts/probe-providers.py | tee "$RUNNER_TEMP/probe.log"
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Build 3 provider probe"
+            echo ""
+            echo '```'
+            sed -n '/=== summary ===/,$p' "$RUNNER_TEMP/probe.log" 2>/dev/null || echo "probe produced no summary"
+            echo '```'
+            echo ""
+            echo "<details><summary>Full probe output</summary>"
+            echo ""
+            echo '```'
+            cat "$RUNNER_TEMP/probe.log" 2>/dev/null || true
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
