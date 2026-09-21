@@ -115,42 +115,53 @@ extension View {
     }
 }
 
-/// The vehicle switcher shown at the top of Home, Jobs and Calendar.
+/// The selected vehicle, shown at the top of Home, Jobs and Calendar.
 ///
-/// Hidden entirely when there is one real vehicle, so single-vehicle use never
-/// pays for multi-vehicle support. The sample vehicle does not count towards
-/// that: seeding a demo must not conjure a picker the owner did not need.
+/// It is a switcher only when there is somewhere to switch to. The name shows
+/// either way, which is the change Build 3 asked for: "which car is this
+/// about" is the first question every screen underneath answers, and hiding
+/// the control entirely for the single-vehicle owner — the common case, now
+/// that the free allowance is one — left that question answered nowhere once
+/// Home stopped repeating the name in a card of its own.
 struct VehiclePickerBar: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        // More than one vehicle the owner actually added, or the sample is
-        // the one selected — otherwise there is nothing to switch between and
-        // the control is a decoy.
-        if let selected = model.selectedVehicle,
-           model.snapshot.vehicles.filter { !$0.isDemo }.count > 1 || selected.isDemo {
-            Menu {
-                ForEach(model.snapshot.vehicles) { vehicle in
-                    Button {
-                        model.selectVehicle(vehicle.id)
-                    } label: {
-                        if vehicle.id == selected.id {
-                            Label(vehicle.displayName, systemImage: "checkmark")
-                        } else {
-                            Text(vehicle.displayName)
+        if let selected = model.selectedVehicle {
+            if model.snapshot.vehicles.count > 1 {
+                Menu {
+                    ForEach(model.snapshot.vehicles) { vehicle in
+                        Button {
+                            model.selectVehicle(vehicle.id)
+                        } label: {
+                            if vehicle.id == selected.id {
+                                Label(vehicle.displayName, systemImage: "checkmark")
+                            } else {
+                                Text(vehicle.displayName)
+                            }
                         }
                     }
+                } label: {
+                    HStack(spacing: Theme.Spacing.tight) {
+                        Text(selected.displayName)
+                            .font(.body.weight(.medium))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2)
+                    }
                 }
-            } label: {
-                HStack(spacing: Theme.Spacing.tight) {
-                    Text(selected.displayName)
-                        .font(.body.weight(.medium))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2)
-                }
+                .accessibilityLabel(Text("Selected vehicle: \(selected.displayName). Double tap to switch."))
+                .accessibilityIdentifier("vehiclePicker")
+            } else {
+                // No chevron, because there is nothing behind it. A control
+                // that opens a menu containing only the thing you are already
+                // looking at is a decoy.
+                Text(selected.displayName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .lineLimit(1)
+                    .accessibilityLabel(Text("Vehicle: \(selected.displayName)"))
+                    .accessibilityIdentifier("vehiclePicker")
             }
-            .accessibilityLabel(Text("Selected vehicle: \(selected.displayName). Double tap to switch."))
-            .accessibilityIdentifier("vehiclePicker")
         }
     }
 }

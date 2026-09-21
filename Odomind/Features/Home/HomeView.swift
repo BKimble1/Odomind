@@ -4,14 +4,18 @@ import OdomindCore
 /// Home: which vehicle, what is coming, and the two things an owner actually
 /// does — record mileage and record work.
 ///
-/// The hierarchy is deliberate and is a direct answer to Build 1's Today
-/// screen. The vehicle header is one row rather than a card that repeated the
-/// vehicle's name under its own title. Search comes next because "what is this
-/// job" and "what part do I need" are the questions people arrive with. Then a
-/// short agenda of things that can actually be acted on. Then logging.
+/// The hierarchy is the one Build 3 asked for, top to bottom: the vehicle at
+/// upper left and the shopping area at upper right, then one compact overview
+/// with a single way to edit mileage, then one search field with an explicit
+/// Jobs/Parts choice, then the week and a short agenda. "Log service" is
+/// pinned above the tab bar so the primary action is never the thing you have
+/// to scroll past four due jobs to reach.
 ///
-/// What is gone: the green all-clear shown while fifteen tasks had no history,
-/// and the fifteen setup alerts underneath it.
+/// What is gone since Build 2: the card that repeated the vehicle's name under
+/// the navigation bar that already said it, the second "Update mileage" button
+/// that did the same thing as the pencil two rows above it, and the rounded
+/// plate drawn around every one of five sections. Rows sit on the page and are
+/// separated by hairlines, which is what a list looks like.
 struct HomeView: View {
     /// Shown only to somebody who already had a garage before these questions
     /// existed. See `AppModel.shouldOfferPermissionCatchUp`.
@@ -36,6 +40,13 @@ struct HomeView: View {
             case .parts: return "Parts"
             }
         }
+
+        var placeholder: String {
+            switch self {
+            case .jobs: return "Search jobs — oil, brakes, tires"
+            case .parts: return "Search parts — oil filter, wiper blade"
+            }
+        }
     }
 
     var body: some View {
@@ -50,7 +61,10 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Home")
-            .background(Theme.Palette.page)
+            // White in light, near-black in dark. With the section plates gone
+            // the rows need a surface of their own to sit on, and the page
+            // grey underneath a plateless list only looks unfinished.
+            .background(Theme.Palette.raised)
             .toolbar {
                 // Vehicle upper left, shopping area upper right — the two
                 // standing choices every screen below depends on.
@@ -91,65 +105,88 @@ struct HomeView: View {
     @ViewBuilder
     private func content(for vehicle: Vehicle) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.large) {
-                Card(padding: Theme.Spacing.medium) {
-                    VehicleHeaderRow(vehicle: vehicle) { showingMileageEntry = true }
-                }
+            VStack(alignment: .leading, spacing: Theme.Spacing.section) {
+                MileageOverview(vehicle: vehicle) { showingMileageEntry = true }
+                    .padding(.horizontal, Theme.Spacing.large)
 
                 searchSection(for: vehicle)
 
                 if searchText.isEmpty {
                     upNextSection(for: vehicle)
-                    actionsSection(for: vehicle)
                     recentSection(for: vehicle)
                 }
 
                 if vehicle.isDemo, let disclaimer = model.demoDisclaimer {
                     QuietNote(text: disclaimer, symbolName: "exclamationmark.triangle")
-                        .padding(.horizontal, Theme.Spacing.tight)
+                        .padding(.horizontal, Theme.Spacing.large)
                 }
 
                 // Somebody upgrading already has a garage and has never been
                 // asked these. One quiet row, dismissed for good either way —
                 // not the whole welcome sequence replayed at them.
                 if model.shouldOfferPermissionCatchUp {
-                    Button {
-                        showingPermissionCatchUp = true
-                    } label: {
-                        HStack(spacing: Theme.Spacing.medium) {
-                            Image(systemName: "bell.badge")
-                                .foregroundStyle(Theme.Palette.accent)
-                                .accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Finish setting up")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(Theme.Palette.primaryText)
-                                Text("Reminders and nearby shops are still off.")
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.Palette.secondaryText)
-                            }
-                            Spacer(minLength: Theme.Spacing.small)
-                            Button("Not now") { model.markPermissionSetupSeen() }
-                                .font(.caption)
-                                .foregroundStyle(Theme.Palette.secondaryText)
-                                .buttonStyle(.tappableText)
-                                .accessibilityIdentifier("home.permissionsDismiss")
-                        }
-                        .padding(Theme.Spacing.medium)
-                        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("home.permissionsCatchUp")
+                    permissionCatchUpRow
+                        .padding(.horizontal, Theme.Spacing.large)
                 }
             }
-            .padding(Theme.Spacing.large)
+            .padding(.vertical, Theme.Spacing.large)
         }
         .scrollDismissesKeyboard(.interactively)
+        // The one primary action, kept where a thumb is and where four due
+        // jobs cannot push it off the bottom of the screen. `safeAreaInset`
+        // is what keeps it clear of the tab bar and above the keyboard, and
+        // it insets the scroll content so the last row is still reachable.
+        .safeAreaInset(edge: .bottom, spacing: 0) { logServiceBar }
         .refreshable {
             model.refresh()
             await model.syncReminders()
         }
+    }
+
+    private var logServiceBar: some View {
+        VStack(spacing: 0) {
+            Divider().overlay(Theme.Palette.separator)
+            PrimaryActionButton(title: "Log service", symbolName: "checkmark.seal") {
+                showingServiceLog = true
+            }
+            .accessibilityIdentifier("home.logService")
+            .padding(.horizontal, Theme.Spacing.large)
+            .padding(.top, Theme.Spacing.medium)
+            .padding(.bottom, Theme.Spacing.small)
+        }
+        .background(.bar)
+    }
+
+    @ViewBuilder
+    private var permissionCatchUpRow: some View {
+        Button {
+            showingPermissionCatchUp = true
+        } label: {
+            HStack(spacing: Theme.Spacing.medium) {
+                Image(systemName: "bell.badge")
+                    .foregroundStyle(Theme.Palette.accent)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Finish setting up")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.Palette.primaryText)
+                    Text("Reminders and nearby shops are still off.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                }
+                Spacer(minLength: Theme.Spacing.small)
+                Button("Not now") { model.markPermissionSetupSeen() }
+                    .font(.caption)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+                    .buttonStyle(.tappableText)
+                    .accessibilityIdentifier("home.permissionsDismiss")
+            }
+            .padding(Theme.Spacing.medium)
+            .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("home.permissionsCatchUp")
     }
 
     // MARK: - Search
@@ -161,7 +198,7 @@ struct HomeView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .accessibilityHidden(true)
-                TextField("Search jobs and parts", text: $searchText)
+                TextField(searchScope.placeholder, text: $searchText)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("home.search")
@@ -177,19 +214,27 @@ struct HomeView: View {
             }
             .padding(.horizontal, Theme.Spacing.medium)
             .padding(.vertical, Theme.Spacing.medium)
-            .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .padding(.horizontal, Theme.Spacing.large)
 
-            if !searchText.isEmpty {
-                // The query survives the switch, which is the whole point of
-                // having the segments here rather than two separate screens.
-                Picker("What to search", selection: $searchScope) {
-                    ForEach(SearchScope.allCases, id: \.self) { scope in
-                        Text(scope.title).tag(scope)
-                    }
+            // Always visible, not revealed on the first keystroke: the choice
+            // between a job and a part is the thing that decides what typing
+            // will do, so it has to be legible before you type. The query
+            // survives the switch, which is why this is one field and not two
+            // screens.
+            Picker("What to search", selection: $searchScope) {
+                ForEach(SearchScope.allCases, id: \.self) { scope in
+                    Text(scope.title).tag(scope)
                 }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("home.searchScope")
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("home.searchScope")
+            .padding(.horizontal, Theme.Spacing.large)
 
+            // The gutter is applied per element rather than to the whole
+            // stack, because result rows carry their own and would otherwise
+            // be indented twice.
+            if !searchText.isEmpty {
                 switch searchScope {
                 case .jobs: jobResults(for: vehicle)
                 case .parts: partResults(for: vehicle)
@@ -202,54 +247,46 @@ struct HomeView: View {
     private func jobResults(for vehicle: Vehicle) -> some View {
         let results = model.searchJobs(query: searchText, vehicle: vehicle)
         if results.isEmpty {
-            Card {
-                VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    Text("Nothing matching “\(searchText)”")
-                        .font(.subheadline.weight(.medium))
-                    Text("Try a simpler word — “oil”, “tires”, “brakes” — or add it as your own job.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                    Button("Create a custom job") { router.homePath.append(JobRoute.customTask) }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.Palette.accent)
-                        .buttonStyle(.tappableText)
-                }
+            VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+                Text("Nothing matching “\(searchText)”")
+                    .font(.subheadline.weight(.medium))
+                Text("Try a simpler word — “oil”, “tires”, “brakes” — or add it as your own job.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Create a custom job") { router.homePath.append(JobRoute.customTask) }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.Palette.accent)
+                    .buttonStyle(.tappableText)
             }
+            .padding(.horizontal, Theme.Spacing.large)
         } else {
-            VStack(spacing: 0) {
-                ForEach(Array(results.prefix(8))) { result in
-                    JobSearchRow(result: result) {
-                        if let planItemID = result.planItemID {
-                            router.homePath.append(JobRoute.task(planItemID))
-                        } else {
-                            router.homePath.append(JobRoute.addTask)
-                        }
-                    }
-                    if result.id != results.prefix(8).last?.id {
-                        Divider().overlay(Theme.Palette.separator)
+            let shown = Array(results.prefix(8))
+            SeparatedRows(shown) { result in
+                JobSearchRow(result: result) {
+                    if let planItemID = result.planItemID {
+                        router.homePath.append(JobRoute.task(planItemID))
+                    } else {
+                        router.homePath.append(JobRoute.addTask)
                     }
                 }
             }
-            .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         }
     }
 
     @ViewBuilder
     private func partResults(for vehicle: Vehicle) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-                Text("Parts for \(vehicle.displayName)")
-                    .font(.subheadline.weight(.medium))
-                Text("Odomind opens a retailer's own search with what it knows about your vehicle. It does not hold prices or stock of its own.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.Palette.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                PrimaryActionButton(title: "Find “\(searchText)”", symbolName: "bag") {
-                    router.homePath.append(JobRoute.parts(PartsDestination(query: searchText)))
-                }
-                .accessibilityIdentifier("home.findParts")
+        VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+            Text("Odomind opens a retailer's own search with what it knows about \(vehicle.displayName). It does not hold prices or stock of its own.")
+                .font(.footnote)
+                .foregroundStyle(Theme.Palette.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            PrimaryActionButton(title: "Find “\(searchText)”", isProminent: false, symbolName: "bag") {
+                router.homePath.append(JobRoute.parts(PartsDestination(query: searchText)))
             }
+            .accessibilityIdentifier("home.findParts")
         }
+        .padding(.horizontal, Theme.Spacing.large)
     }
 
     // MARK: - Up next
@@ -268,52 +305,32 @@ struct HomeView: View {
                 .buttonStyle(.tappableText)
                 .accessibilityIdentifier("home.openCalendar")
             }
+            .padding(.horizontal, Theme.Spacing.large)
 
             WeekStrip { day in
                 router.selectedTab = .calendar
                 router.calendarSelectedDay = day
             }
+            .padding(.horizontal, Theme.Spacing.large)
 
             if agenda.isEmpty {
-                Card {
-                    UpNextEmptyState(vehicle: vehicle) {
-                        router.selectedTab = .jobs
-                    }
+                UpNextEmptyState(vehicle: vehicle) {
+                    router.selectedTab = .jobs
                 }
+                .padding(.horizontal, Theme.Spacing.large)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(agenda) { evaluation in
-                        AgendaRow(evaluation: evaluation) {
-                            router.homePath.append(JobRoute.task(evaluation.planItemID))
-                        } markDone: {
-                            quickLog = QuickLogRequest(vehicleID: vehicle.id, planItemID: evaluation.planItemID)
-                        }
-                        if evaluation.id != agenda.last?.id {
-                            Divider().overlay(Theme.Palette.separator)
-                        }
+                SeparatedRows(agenda) { evaluation in
+                    AgendaRow(evaluation: evaluation) {
+                        router.homePath.append(JobRoute.task(evaluation.planItemID))
+                    } markDone: {
+                        quickLog = QuickLogRequest(vehicleID: vehicle.id, planItemID: evaluation.planItemID)
                     }
                 }
-                .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
             }
         }
     }
 
-    // MARK: - Actions and recent work
-
-    @ViewBuilder
-    private func actionsSection(for vehicle: Vehicle) -> some View {
-        VStack(spacing: Theme.Spacing.small) {
-            PrimaryActionButton(title: "Log service", symbolName: "checkmark.seal") {
-                showingServiceLog = true
-            }
-            .accessibilityIdentifier("home.logService")
-
-            PrimaryActionButton(title: "Update mileage", isProminent: false) {
-                showingMileageEntry = true
-            }
-            .accessibilityIdentifier("home.updateMileage")
-        }
-    }
+    // MARK: - Recent work
 
     @ViewBuilder
     private func recentSection(for vehicle: Vehicle) -> some View {
@@ -326,20 +343,102 @@ struct HomeView: View {
                         .foregroundStyle(Theme.Palette.accent)
                         .buttonStyle(.tappableText)
                 }
-                VStack(spacing: 0) {
-                    ForEach(records) { record in
-                        Button {
-                            router.homePath.append(RecordRoute.record(record.id))
-                        } label: {
-                            RecentWorkRow(record: record)
-                        }
-                        .buttonStyle(.plain)
-                        if record.id != records.last?.id {
-                            Divider().overlay(Theme.Palette.separator)
-                        }
+                .padding(.horizontal, Theme.Spacing.large)
+
+                SeparatedRows(records) { record in
+                    Button {
+                        router.homePath.append(RecordRoute.record(record.id))
+                    } label: {
+                        RecentWorkRow(record: record)
                     }
+                    .buttonStyle(.plain)
                 }
-                .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            }
+        }
+    }
+}
+
+/// One compact vehicle overview: the mileage, when it was read, and the one
+/// way to change it.
+///
+/// The vehicle's name is not here on purpose — the navigation bar above says
+/// it, and Build 2 printed it twice within forty points. What is left is the
+/// number the rest of the screen is calculated from, at a size that says so.
+struct MileageOverview: View {
+    @Environment(AppModel.self) private var model
+    let vehicle: Vehicle
+    let updateMileage: () -> Void
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 2) {
+                if let reading = model.latestReading(for: vehicle.id) {
+                    Text(Format.distance(reading.value))
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Theme.Palette.primaryText)
+                        .accessibilityIdentifier("home.odometer")
+                        .accessibilityLabel(Text("Recorded odometer \(Format.distance(reading.value))"))
+                    Text(recordedText(reading))
+                        .font(.footnote)
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                } else {
+                    Text("No mileage yet")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Theme.Palette.primaryText)
+                        .accessibilityIdentifier("home.odometer")
+                    Text("Odomind needs one reading before it can work out what is due.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: Theme.Spacing.small)
+
+            Button("Update", action: updateMileage)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Theme.Palette.accent)
+                .buttonStyle(.tappableText)
+                .accessibilityLabel(Text("Update mileage"))
+                .accessibilityIdentifier("home.updateMileage")
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func recordedText(_ reading: OdometerReading) -> String {
+        let days = DateSupport.dayCount(from: reading.recordedOn, to: model.clock.now, in: model.calendar)
+        switch days {
+        case ..<0: return "Recorded \(Format.date(reading.recordedOn))"
+        case 0: return "Recorded today"
+        case 1: return "Recorded yesterday"
+        default: return "Recorded \(days) days ago"
+        }
+    }
+}
+
+/// A run of rows with a hairline between them and nothing around them.
+///
+/// The replacement for wrapping every list on Home in its own rounded plate.
+/// The separator is inset to the content margin so it reads as a list rather
+/// than a full-bleed rule across the screen.
+struct SeparatedRows<Element: Identifiable, Row: View>: View {
+    private let elements: [Element]
+    private let row: (Element) -> Row
+
+    init(_ elements: [Element], @ViewBuilder row: @escaping (Element) -> Row) {
+        self.elements = elements
+        self.row = row
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(elements) { element in
+                row(element)
+                if element.id != elements.last?.id {
+                    Divider()
+                        .overlay(Theme.Palette.separator)
+                        .padding(.leading, Theme.Spacing.large)
+                }
             }
         }
     }
@@ -392,6 +491,9 @@ struct UpNextEmptyState: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.medium)
+        .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("home.upNextEmpty")
     }
@@ -451,7 +553,7 @@ struct AgendaRow: View {
                 .accessibilityIdentifier("agenda.markDone.\(evaluation.definitionID)")
             }
         }
-        .padding(.horizontal, Theme.Spacing.medium)
+        .padding(.horizontal, Theme.Spacing.large)
         .padding(.vertical, Theme.Spacing.small)
     }
 
@@ -519,8 +621,6 @@ struct WeekStrip: View {
             }
         }
         .padding(.vertical, Theme.Spacing.small)
-        .padding(.horizontal, Theme.Spacing.small)
-        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
     }
 
     private func dayLabel(_ day: Date, isToday: Bool, count: Int) -> String {
@@ -553,7 +653,7 @@ struct RecentWorkRow: View {
                 .foregroundStyle(Theme.Palette.secondaryText)
                 .accessibilityHidden(true)
         }
-        .padding(.horizontal, Theme.Spacing.medium)
+        .padding(.horizontal, Theme.Spacing.large)
         .padding(.vertical, Theme.Spacing.medium)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
