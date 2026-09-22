@@ -62,6 +62,12 @@ REFERENCED = (
     re.compile(r'setSwitch\(\s*"([^"]+)"'),
 )
 NAV_TITLE = re.compile(r'navigationBars\["([^"]+)"\]')
+# Titles the app actually sets, as literals. A dynamic title —
+# `.navigationTitle(step.title)` — cannot be read here, so a test naming one
+# is reported rather than silently accepted; the fix is to anchor that test on
+# an accessibility identifier, which is what it should have used anyway.
+DECLARED_TITLE = re.compile(r'\.navigationTitle\(')
+TAB_TITLE = re.compile(r'case \.\w+:\s*return\s*"([^"]+)"')
 
 
 def main(root: pathlib.Path) -> int:
@@ -86,6 +92,19 @@ def main(root: pathlib.Path) -> int:
                     exact.add(value)
     declared = exact | prefixes
 
+    declared_titles: set[str] = set()
+    for path in (root / "Odomind").rglob("*.swift"):
+        text = path.read_text()
+        for call in DECLARED_TITLE.finditer(text):
+            # Every literal in the call, so a conditional title —
+            # `.navigationTitle(isEditing ? "Edit service" : "Log service")` —
+            # declares both of its branches rather than neither.
+            for literal in STRING_LITERAL.finditer(call_arguments(text, call.end() - 1)):
+                if literal.group(1):
+                    declared_titles.add(literal.group(1))
+        if path.name == "NavigationRouter.swift":
+            declared_titles.update(m.group(1) for m in TAB_TITLE.finditer(text))
+
     referenced: dict[str, set[str]] = {}
     titles: set[str] = set()
     test_files = sorted(root.glob("Odomind*Tests/*.swift"))
@@ -97,25 +116,45 @@ def main(root: pathlib.Path) -> int:
                 referenced.setdefault(match.group(1), set()).add(path.name)
 
     def known(identifier: str) -> bool:
-        # A navigation bar is addressed by its title, not an identifier.
-        if identifier in exact or identifier in titles:
+        if identifier in exact:
             return True
         return any(identifier.startswith(prefix) for prefix in prefixes)
 
     missing = sorted(i for i in referenced if not known(i))
 
-    print(f"{len(exact)} identifier(s) and {len(prefixes)} interpolated prefix(es) declared across the app")
-    print(f"{len(referenced)} identifier(s) referenced across {len(test_files)} test file(s)")
+    # A navigation bar is addressed by its title rather than an identifier, so
+    # these are checked against the titles the app sets.
+    #
+    # Build 4 hid Home's navigation bar — a bar saying "Home" above a tab bar
+    # saying "Home" was the third repeat on one screen — and twelve tests were
+    # still waiting on `navigationBars["Home"]`. Sixteen of them failed in the
+    # deploy's UI suite, which is a forty-minute way to learn something a text
+    # search answers instantly.
+    missing_titles = sorted(t for t in titles if t not in declared_titles)
 
-    if not missing:
-        print("\nEvery identifier a UI test looks for exists in the app.")
+    print(f"{len(exact)} identifier(s) and {len(prefixes)} interpolated prefix(es) declared across the app")
+    print(f"{len(declared_titles)} navigation title(s) set by the app")
+    print(f"{len(referenced)} identifier(s) and {len(titles)} navigation title(s) referenced "
+          f"across {len(test_files)} test file(s)")
+
+    if not missing and not missing_titles:
+        print("\nEvery identifier and navigation title a UI test looks for exists in the app.")
         return 0
 
-    print("\nReferenced by a test but never set by the app:")
-    for identifier in missing:
-        where = ", ".join(sorted(referenced[identifier]))
-        print(f"  {identifier}  (from {where})")
-    print("\nEither add the identifier to the view, or correct the test.")
+    if missing:
+        print("\nReferenced by a test but never set by the app:")
+        for identifier in missing:
+            where = ", ".join(sorted(referenced[identifier]))
+            print(f"  {identifier}  (from {where})")
+
+    if missing_titles:
+        print("\nNavigation bars a test waits for that the app does not title:")
+        for title in missing_titles:
+            print(f"  navigationBars[\"{title}\"]")
+        print("  (a screen whose title is dynamic should be anchored on an "
+              "accessibility identifier instead)")
+
+    print("\nEither add it to the view, or correct the test.")
     return 1
 
 

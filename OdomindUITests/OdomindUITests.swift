@@ -106,7 +106,7 @@ final class OdomindJourneyUITests: XCTestCase {
         next.tap()          // confirm -> plan
 
         waitFor(app.buttons["addVehicle.finish"], 10, "the Add vehicle button is missing").tap()
-        waitFor(app.navigationBars["Home"], 15, "Home did not appear after adding a vehicle")
+        waitFor(app.element(withIdentifier: "home.odometer"), 15, "Home did not appear after adding a vehicle")
     }
 
     // MARK: - Tests
@@ -133,7 +133,7 @@ final class OdomindJourneyUITests: XCTestCase {
         field.typeText("124800")
         app.buttons["mileage.save"].tap()
 
-        waitFor(app.navigationBars["Home"], 10, "the sheet did not close")
+        waitFor(app.element(withIdentifier: "home.odometer"), 10, "the sheet did not close")
         let odometer = waitFor(app.element(withIdentifier: "home.odometer"), 10, "the odometer summary is missing")
         XCTAssertTrue(
             odometer.label.contains("124"),
@@ -402,7 +402,7 @@ final class OdomindJourneyUITests: XCTestCase {
         app.buttons["logService.task.engine-oil-and-filter"].tap()
         app.buttons["logService.save"].tap()
 
-        waitFor(app.navigationBars["Home"], 10, "the sheet did not close after saving")
+        waitFor(app.element(withIdentifier: "home.odometer"), 10, "the sheet did not close after saving")
 
         app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not open")
@@ -417,7 +417,7 @@ final class OdomindJourneyUITests: XCTestCase {
         waitFor(app.navigationBars["Log service"], 10, "the log service sheet did not open")
         app.buttons["logService.task.engine-oil-and-filter"].tap()
         app.buttons["logService.save"].tap()
-        waitFor(app.navigationBars["Home"], 10, "the sheet did not close")
+        waitFor(app.element(withIdentifier: "home.odometer"), 10, "the sheet did not close")
 
         app.tabBars.buttons["Jobs"].tap()
         waitFor(app.element(withIdentifier: "jobs.task.engine-oil-and-filter"), 10, "the oil task is missing").tap()
@@ -509,7 +509,7 @@ final class OdomindJourneyUITests: XCTestCase {
         app.scrollTo(app.textFields["logService.odometer"])
         replaceText("121000", in: app.textFields["logService.odometer"])
         app.buttons["logService.save"].tap()
-        waitFor(app.navigationBars["Home"], 10, "the sheet did not close after saving")
+        waitFor(app.element(withIdentifier: "home.odometer"), 10, "the sheet did not close after saving")
 
         app.tabBars.buttons["Calendar"].tap()
         waitFor(app.navigationBars["Calendar"], 10, "the Calendar tab did not open")
@@ -619,7 +619,7 @@ final class OdomindJourneyUITests: XCTestCase {
 
     func testSampleVehicleIsClearlyMarked() {
         waitFor(app.buttons["onboarding.sample"], 20, "onboarding did not appear").tap()
-        waitFor(app.navigationBars["Home"], 15, "Home did not appear after adding the sample")
+        waitFor(app.element(withIdentifier: "home.odometer"), 15, "Home did not appear after adding the sample")
 
         XCTAssertTrue(
             app.element(labelContaining: "SAMPLE").waitForExistence(timeout: 10),

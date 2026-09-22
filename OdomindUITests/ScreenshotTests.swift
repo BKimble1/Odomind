@@ -37,7 +37,7 @@ final class OdomindScreenshotTests: XCTestCase {
     }
 
     private func walk(_ prefix: String) {
-        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear")
+        XCTAssertTrue(waitFor(app.element(withIdentifier: "home.odometer"), 25), "Home did not appear")
         capture("\(prefix)-01-home")
 
         app.tabBars.buttons["Jobs"].tap()
@@ -151,7 +151,7 @@ final class OdomindScreenshotTests: XCTestCase {
         ]
         app.launch()
 
-        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear at a large text size")
+        XCTAssertTrue(waitFor(app.element(withIdentifier: "home.odometer"), 25), "Home did not appear at a large text size")
         capture("large-text-01-home")
 
         app.tabBars.buttons["Jobs"].tap()
@@ -382,7 +382,7 @@ final class OdomindScreenshotTests: XCTestCase {
         )
         fresh.buttons["addVehicle.finish"].tap()
 
-        guard fresh.navigationBars["Home"].waitForExistence(timeout: 20) else {
+        guard fresh.element(withIdentifier: "home.odometer").waitForExistence(timeout: 20) else {
             XCTFail("Home did not appear after adding a vehicle")
             return
         }

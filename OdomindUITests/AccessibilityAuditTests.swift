@@ -98,7 +98,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
 
     func testMainScreensAreAccessible() {
         app.launch()
-        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear")
+        XCTAssertTrue(waitFor(app.element(withIdentifier: "home.odometer"), 25), "Home did not appear")
         audit("Today")
 
         app.tabBars.buttons["Jobs"].tap()
@@ -124,7 +124,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
 
     func testSpecificationsScreenIsAccessible() {
         app.launch()
-        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25))
+        XCTAssertTrue(waitFor(app.element(withIdentifier: "home.odometer"), 25))
 
         app.tabBars.buttons["Garage"].tap()
         XCTAssertTrue(waitFor(app.navigationBars["Garage"]))
@@ -146,7 +146,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
     func testTodayIsAccessibleAtLargeTextSizes() {
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
         app.launch()
-        XCTAssertTrue(waitFor(app.navigationBars["Home"], 25), "Home did not appear at a large text size")
+        XCTAssertTrue(waitFor(app.element(withIdentifier: "home.odometer"), 25), "Home did not appear at a large text size")
         audit("Today at accessibility XL")
 
         app.tabBars.buttons["Jobs"].tap()
