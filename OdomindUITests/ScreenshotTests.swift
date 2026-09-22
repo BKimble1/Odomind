@@ -48,6 +48,17 @@ final class OdomindScreenshotTests: XCTestCase {
         if waitFor(task, 8) {
             task.tap()
             capture("\(prefix)-03-job-detail")
+
+            // Parts, from the job that needs them. Build 4 rebuilt this
+            // screen more than any other and no capture had ever shown it.
+            let parts = app.element(withIdentifier: "task.findParts")
+            if app.scrollTo(parts, hittable: true) {
+                parts.tap()
+                if waitFor(app.navigationBars["Parts"], 10) {
+                    capture("\(prefix)-03b-parts")
+                }
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+            }
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
 
@@ -446,6 +457,15 @@ final class OdomindScreenshotTests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing", "-odomind-appearance", "light"]
         XCUIDevice.shared.appearance = .light
         fresh.launch()
+
+        // Photographed before it is answered: it is the first screen a new
+        // owner meets, and the only capture that can show it is this one.
+        if fresh.buttons["interests.continue"].waitForExistence(timeout: 25) {
+            let question = XCTAttachment(screenshot: fresh.screenshot())
+            question.name = "light-00a-what-you-track"
+            question.lifetime = .keepAlways
+            add(question)
+        }
 
         fresh.skipTheTrackingQuestion(timeout: 25)
         XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
