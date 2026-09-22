@@ -22,10 +22,11 @@ PROJECT = ROOT / "Odomind.xcodeproj"
 BUNDLE_ID = "com.idlery.odomind"
 DEPLOYMENT_TARGET = "18.0"
 SWIFT_VERSION = "5.0"
-# A product milestone moves the marketing version with it. Build 3 is one:
-# search, configuration, photographs and Home all changed shape.
+# A product milestone moves the marketing version with it. Build 4 is one:
+# every screen was rebuilt on one surface, the app narrowed to one car at a
+# time, and Parts gained a per-car specification to work from.
 # Build numbers still come from App Store Connect, highest seen plus one.
-MARKETING_VERSION = "1.2"
+MARKETING_VERSION = "1.3"
 PROJECT_VERSION = "1"
 
 APP = "Odomind"
