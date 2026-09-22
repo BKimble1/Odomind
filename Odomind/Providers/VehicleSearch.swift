@@ -87,6 +87,12 @@ final class VehicleSearchModel {
     private var generation = 0
     private var modelCache: [String: [String]] = [:]
     private var index: VehicleIndex = .empty
+    /// Whether the bundled index has landed — or has been tried and failed.
+    /// Not the same as "is empty": a load that fails must not hold the field
+    /// hostage for the rest of the session.
+    private var indexIsSettled = false
+    /// The last thing typed, so the index can re-plan it when it arrives.
+    private var lastQuery = ""
 
     init(provider: VehicleIdentificationProvider, clock: OdomindClock = SystemClock()) {
         self.provider = provider
@@ -99,12 +105,23 @@ final class VehicleSearchModel {
     /// wait for, so searching works before this finishes — against the
     /// provider alone — and suggestions sharpen once it lands.
     func loadIndex() async {
-        guard index.makes.isEmpty else { return }
+        guard !indexIsSettled else { return }
         let loaded = await Task.detached(priority: .utility) {
             try? VehicleIndexLoader.loadBundled()
         }.value
-        guard let loaded else { return }
-        index = loaded
+        indexIsSettled = true
+        if let loaded { index = loaded }
+
+        // Re-plan whatever was typed while this was loading.
+        //
+        // A query planned against an empty index has nothing to route with,
+        // and the only fallback left is "treat the first word as a make". An
+        // iPhone SE beat the loader to it and a search for "wrangler" came
+        // back as a vehicle whose make was "wrangler" — vPIC lists a trailer
+        // manufacturer by that name, which is the same collision the
+        // three-pass make resolution exists to avoid. That resolution is
+        // useless before there is an index to resolve against.
+        if !lastQuery.isEmpty { search(lastQuery, debounce: .milliseconds(1)) }
         // Deliberately does not put suggestions on screen.
         //
         // It used to, and that pushed "Type it in myself" and "Use my VIN"
@@ -139,6 +156,7 @@ final class VehicleSearchModel {
         searchTask?.cancel()
         searchTask = nil
         trimHint = nil
+        lastQuery = text
 
         let query = VehicleQueryPlanner.plan(text, index: index, now: clock.now)
 
@@ -180,6 +198,15 @@ final class VehicleSearchModel {
             run(mine, debounce: debounce, make: best.make, year: query.modelYear, narrowing: tokens)
 
         case .unrecognised(let tokens):
+            // Against an index that has not landed, *everything* is
+            // unrecognised — so this is not a finding yet, and acting on it
+            // means guessing that the first word is a make. `loadIndex` runs
+            // the query again the moment it settles, so the wait is a spinner
+            // rather than a wrong answer.
+            guard indexIsSettled else {
+                state = .searching
+                return
+            }
             // The index has never heard of it. Ask the provider anyway, using
             // the first word as a make — this is exactly where Build 2 gave up.
             guard let first = tokens.first else {

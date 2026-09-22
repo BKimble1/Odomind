@@ -457,6 +457,33 @@ final class VehicleSearchTests: XCTestCase {
 
     // MARK: - The thing Build 3 exists to fix
 
+    func testAQueryTypedBeforeTheIndexLandsIsNotGuessedAt() async throws {
+        // An iPhone SE beat the index loader and the screenshot showed the
+        // result: a vehicle whose make was "wrangler". Against an empty index
+        // every query is unrecognised, and the only fallback left is to treat
+        // the first word as a make — which vPIC obligingly has, because it
+        // lists a trailer manufacturer called WRANGLER. The three-pass make
+        // resolution that exists to stop exactly this is useless before there
+        // is an index to resolve against.
+        let provider = ScriptedModelProvider()
+        let search = VehicleSearchModel(provider: provider, clock: FixedClock(Date()))
+        // Deliberately not loading the index first, unlike every other test
+        // here.
+
+        search.search("wrangler", debounce: .zero)
+        try await Task.sleep(for: .milliseconds(120))
+
+        let asked = await provider.callCount()
+        XCTAssertEqual(asked, 0, "nothing should be asked about a make the app has only guessed at")
+        XCTAssertEqual(search.state, .searching, "the wait should be a spinner, not a wrong answer")
+
+        // And the moment the index settles, the same query is planned again —
+        // properly this time.
+        await search.loadIndex()
+        let called = await provider.waitForCall(make: "JEEP")
+        XCTAssertTrue(called, "the query typed before the index landed should be re-planned once it has")
+    }
+
     func testAModelNameAloneReachesTheProviderWithoutAYear() async throws {
         let provider = ScriptedModelProvider()
         let search = await makeSearch(provider)

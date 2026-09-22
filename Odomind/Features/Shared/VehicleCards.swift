@@ -43,7 +43,9 @@ struct VehiclePortrait: View {
         Group {
             if let found = resolvedPhoto {
                 RemoteVehiclePhoto(photo: found, height: height)
-                    .accessibilityLabel(Text("\(vehicle.displayName). \(found.matchLevel.disclosure)"))
+                    .accessibilityLabel(
+                        Text("\(vehicle.displayName). \(found.matchLevel.disclosure). Photo by \(found.creditLine)")
+                    )
             } else {
                 VehicleArtworkView(
                     resolution: resolution,
@@ -182,16 +184,31 @@ struct RemoteVehiclePhoto: View {
         AsyncImage(url: photo.imageURL) { phase in
             switch phase {
             case .success(let image):
+                // Sized and clipped *here*, before the credit goes on.
+                //
+                // `aspectRatio(contentMode: .fill)` reports a layout size that
+                // covers the proposal rather than fitting inside it: a
+                // landscape photograph in a 124-point card lays out more than
+                // twice as tall as the card. A bottom-trailing overlay on the
+                // image therefore sat below the card's bottom edge, and the
+                // `.clipped()` further out removed it — so the first real
+                // photograph Odomind ever showed went out with nothing naming
+                // its author. The licence is a condition of showing the
+                // picture, so that is not a cosmetic bug.
+                //
+                // Caught by a screenshot and then by the assertion written
+                // from it, not by anything that existed before.
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .frame(height: height)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
                     // Present only when a photograph has actually been
                     // fetched and drawn, so a capture run can tell a real
                     // photo from the drawing that stands in for one.
                     .accessibilityIdentifier("vehicle.photo")
                     .overlay(alignment: .bottomTrailing) {
-                        // The licence is a condition of showing the picture,
-                        // not a footnote, so it travels with the picture.
                         Text(photo.creditLine)
                             .font(.caption2)
                             .foregroundStyle(.white)

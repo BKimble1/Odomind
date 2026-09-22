@@ -303,8 +303,16 @@ final class OdomindScreenshotTests: XCTestCase {
         // the question then correctly disappears.
         if fresh.scrollTo(powertrain, hittable: true, maxSwipes: 6) {
             powertrain.tap()
-            let gasoline = fresh.buttons["Gasoline"]
-            XCTAssertTrue(gasoline.waitForExistence(timeout: 5), "Gasoline was not offered")
+            // By label rather than by type. A Picker's options are buttons in
+            // a menu and rows in a pushed list, and which one SwiftUI chose
+            // depends on how much width it had — so `buttons["Gasoline"]`
+            // found nothing on an iPhone SE and reported it as the option not
+            // being offered.
+            let gasoline = fresh.element(labelContaining: "Gasoline")
+            XCTAssertTrue(
+                fresh.scrollTo(gasoline, hittable: true),
+                "Gasoline was not offered — saw \(fresh.visibleRowLabels())"
+            )
             gasoline.tap()
         }
 
@@ -329,16 +337,18 @@ final class OdomindScreenshotTests: XCTestCase {
         XCTAssertTrue(fresh.navigationBars["Garage"].waitForExistence(timeout: 15), "Garage did not open")
         let photo = fresh.element(withIdentifier: "vehicle.photo")
         fresh.waitUntil(timeout: 25) { photo.exists }
+        shot("build3-07-garage")
         if photo.exists {
-            // The licence is a condition of showing the picture, not a
-            // footnote — a photograph on screen with nothing naming its
-            // author is the one outcome here that is worse than a drawing.
+            // After the shot, not before it. The licence is a condition of
+            // showing the picture, not a footnote — a photograph on screen
+            // with nothing naming its author is the one outcome here worse
+            // than a drawing — but failing ahead of the capture threw away
+            // the only picture of what was wrong.
             XCTAssertTrue(
                 fresh.element(labelContaining: "Photo by").exists,
                 "a photograph is on screen with no credit beside it"
             )
         }
-        shot("build3-07-garage")
 
         // 5. Parts, reached from a job rather than typed again.
         //
