@@ -215,7 +215,9 @@ struct AttentionCard: View {
 struct PanelCard<Content: View>: View {
     let symbol: String
     let title: String
-    var action: (() -> Void)?
+    // Explicit, so the memberwise initialiser plainly has a default for it
+    // and `PanelCard(symbol:title:) { … }` reads as the ordinary call.
+    var action: (() -> Void)? = nil
     @ViewBuilder var content: Content
 
     var body: some View {

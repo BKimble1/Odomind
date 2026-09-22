@@ -121,7 +121,7 @@ struct ShoppingLocationPicker: View {
                         }
                     }
                 } footer: {
-                    Text("Used only to list shops near you, and only when you ask.")
+                    Text("Only to list shops near you.")
                 }
 
                 Section {
@@ -161,9 +161,11 @@ struct ShoppingLocationPicker: View {
                 } header: {
                     Text("Somewhere else")
                 } footer: {
-                    Text("An area you pick stays selected until you change it.")
+                    Text("Stays set until you change it.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Shopping area")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

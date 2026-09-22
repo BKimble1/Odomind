@@ -214,9 +214,11 @@ struct PartsView: View {
         return "\(latitude),\(longitude)|\(mapTerm)"
     }
 
-    /// A tyre shop for tyres, a parts shop for everything else. The retailer
-    /// entries already carry this, so it is read from the best match rather
-    /// than kept in a second list here.
+    /// A tyre shop for tyres, a parts shop for everything else.
+    ///
+    /// Read from the specifications the search has already resolved rather
+    /// than from the typed text, so it follows the same decision the rest of
+    /// the screen made instead of matching words a second time.
     private var mapTerm: String {
         let kinds = relevantSpecificationKinds
         if kinds.contains(where: { $0.group == .tiresAndWheels }) { return "tire shop" }
@@ -317,7 +319,7 @@ struct PartsView: View {
 private struct SpecRow: View {
     let label: String
     let value: String?
-    var hint: String?
+    var hint: String? = nil
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
