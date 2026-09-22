@@ -11,7 +11,11 @@ final class OdomindScreenshotTests: XCTestCase {
     private var app: XCUIApplication!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        // True, unlike the journey suite. The screens are the product here
+        // and the assertions are diagnostics — stopping at the first one
+        // threw away every screen after it, twice, and left me guessing at
+        // what had gone wrong from an empty list of row labels.
+        continueAfterFailure = true
         app = XCUIApplication()
         app.launchArguments = ["-odomind-ui-testing", "-odomind-seed-sample"]
     }
@@ -288,8 +292,24 @@ final class OdomindScreenshotTests: XCTestCase {
         // Whichever of the two appeared, the powertrain has to end up
         // answered: it is what makes the engine oil job exist, and that job
         // is how the parts capture below is reached.
-        if option.exists, fresh.scrollTo(option, hittable: true) {
-            option.tap()
+        if option.exists {
+            if fresh.scrollTo(option, hittable: true) {
+                option.tap()
+                shot("build3-03b-picked")
+                // The trait, not a downstream symptom. The iPhone SE reported
+                // engine oil missing from Jobs three screens later, and the
+                // real event was here: the configuration was never picked, so
+                // the powertrain was never confirmed, so Odomind correctly
+                // left engine oil out of the plan.
+                XCTAssertTrue(option.isSelected, "tapping a published configuration should select it")
+            } else {
+                XCTFail("a configuration was published but could not be reached — saw \(fresh.visibleRowLabels())")
+                // Keep walking through the app's own escape hatch, so the
+                // screens after this one are still captured rather than lost
+                // to the failure above.
+                let noneOfThese = fresh.element(withIdentifier: "confirm.noneOfThese")
+                if fresh.scrollTo(noneOfThese, hittable: true) { noneOfThese.tap() }
+            }
         }
         // Scrolled to, not waited for. On an iPhone SE this question sits
         // below the fold, and a row a Form has not realised is not in the
@@ -309,11 +329,11 @@ final class OdomindScreenshotTests: XCTestCase {
             // found nothing on an iPhone SE and reported it as the option not
             // being offered.
             let gasoline = fresh.element(labelContaining: "Gasoline")
-            XCTAssertTrue(
-                fresh.scrollTo(gasoline, hittable: true),
-                "Gasoline was not offered — saw \(fresh.visibleRowLabels())"
-            )
-            gasoline.tap()
+            if fresh.scrollTo(gasoline, hittable: true) {
+                gasoline.tap()
+            } else {
+                XCTFail("Gasoline was not offered — saw \(fresh.visibleRowLabels())")
+            }
         }
 
         next.tap()          // confirm -> plan
@@ -363,18 +383,21 @@ final class OdomindScreenshotTests: XCTestCase {
         // record of what was actually on it was an empty list of row labels.
         _ = fresh.navigationBars["Jobs"].waitForExistence(timeout: 10)
         shot("build3-04b-jobs")
+        // Guarded rather than asserted-then-tapped. Tapping an element that
+        // is not there is a hard error that ends the test, and with it every
+        // screen the walk had not reached yet.
         let job = fresh.element(withIdentifier: "jobs.task.engine-oil-and-filter")
-        XCTAssertTrue(
-            fresh.scrollTo(job, hittable: true),
-            "the oil job is missing from Jobs — saw \(fresh.visibleRowLabels())"
-        )
+        guard fresh.scrollTo(job, hittable: true) else {
+            XCTFail("the oil job is missing from Jobs — saw \(fresh.visibleRowLabels())")
+            return
+        }
         job.tap()
 
         let parts = fresh.element(withIdentifier: "task.findParts")
-        XCTAssertTrue(
-            fresh.scrollTo(parts, hittable: true),
-            "Find parts should be reachable on a job — saw \(fresh.visibleRowLabels())"
-        )
+        guard fresh.scrollTo(parts, hittable: true) else {
+            XCTFail("Find parts should be reachable on a job — saw \(fresh.visibleRowLabels())")
+            return
+        }
         parts.tap()
         XCTAssertTrue(fresh.navigationBars["Parts"].waitForExistence(timeout: 10), "Parts did not open")
         shot("build3-05-parts-from-a-job")

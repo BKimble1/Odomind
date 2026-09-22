@@ -325,20 +325,27 @@ final class OdomindJourneyUITests: XCTestCase {
 
         let search = waitFor(app.textFields["home.search"], 10, "the Home search field is missing")
         search.tap()
-        // Not one of the two tasks the setup flow adds, so it is certainly
-        // untracked.
-        // The newline dismisses the keyboard, which on this screen is sitting
-        // over the results it is about to produce. Waiting for the row to
-        // *exist* and then tapping it delivered the touch to a key instead,
-        // nothing was pushed, and the failure read as the untracked job
-        // screen not offering to track the job — a screen that had never
-        // opened. The same mistake cost the capture run two screens.
-        search.typeText("brake fluid\n")
+        // Spark plugs, because this test needs a job the starter plan does
+        // *not* take on, and only an advanced one qualifies: a task is
+        // recommended by default when it is not advanced, applies to the
+        // vehicle, and resolves a schedule — which is most of the catalog.
+        //
+        // It used to search "brake fluid", described in a comment as "not one
+        // of the two tasks the setup flow adds". The setup flow adds about
+        // twenty now, brake fluid among them, so the tap was opening a
+        // *tracked* job's detail — which correctly has no button offering to
+        // start tracking it. The test had been asserting against a screen it
+        // was never going to reach, and said "the untracked job should offer
+        // to track itself" while the app was behaving perfectly.
+        //
+        // The newline puts the keyboard away, which is worth doing on a
+        // screen whose results appear underneath it.
+        search.typeText("spark plugs\n")
 
-        let result = app.element(withIdentifier: "jobSearch.brake-fluid")
+        let result = app.element(withIdentifier: "jobSearch.spark-plugs")
         XCTAssertTrue(
             app.scrollTo(result, hittable: true),
-            "a brake fluid job should be found and tappable — saw \(app.visibleRowLabels())"
+            "a spark plugs job should be found and tappable — saw \(app.visibleRowLabels())"
         )
         result.tap()
 
@@ -348,7 +355,7 @@ final class OdomindJourneyUITests: XCTestCase {
             "an untracked job must not open the catalog library"
         )
         XCTAssertTrue(
-            app.scrollTo(app.buttons["untracked.track"], hittable: true),
+            app.scrollTo(app.element(withIdentifier: "untracked.track"), hittable: true),
             "the untracked job should offer to track itself — saw \(app.visibleRowLabels())"
         )
     }
