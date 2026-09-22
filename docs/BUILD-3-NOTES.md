@@ -293,6 +293,35 @@ device. The last of those was half an app bug too — the owner saw the wrong
 question flicker past — and is fixed in the app rather than worked around in
 the test.
 
+### The narrowest screen, and a claim I had to take back
+
+The iPhone SE capture kept losing its last screen, and three theories went by
+before the evidence did. Recording it because the sequence is the point.
+
+The failure said "the oil job is missing from Jobs". It was: the Jobs
+screenshot the capture now takes shows "My plan" holding Battery test, Brake
+fluid, Brake inspection, Cabin air filter, Exterior lights and Suspension —
+and no engine jobs at all, which is exactly what Odomind does when the
+powertrain is unconfirmed. So the configuration had never been picked, three
+screens earlier.
+
+Why it had not been picked took one more run to establish, and the answer was
+only visible because the walk now photographs the screen immediately after the
+tap: **that screenshot came back byte-identical to the one before it.** The
+scroll had reported success and the tap had been delivered, so the touch went
+somewhere inert. The step bar floats over the bottom of the confirmation
+screen, XCUI reports a row underneath it as hittable, and `scrollTo` therefore
+stopped the moment the first configuration appeared at the bottom edge.
+
+**The correction.** I wrote in a commit message that an iPhone SE owner "could
+not pick the configuration their car was sold in". That is not true, and the
+screenshot says so: the row's first line — the one naming the configuration —
+sits above the bar and a finger lands on it. What is behind the blur is its
+second line, the engine size and fuel. That is a legibility problem on the
+narrowest screen, worth the bottom content margin it now has, but it is not a
+blocker. The thing that could not tap the row was the test, and the test taps
+the row's upper fifth now rather than its centre.
+
 ### What the screenshots confirmed was right
 
 The yearless search returns "JEEP Wrangler" and "JEEP Wrangler JK" for
