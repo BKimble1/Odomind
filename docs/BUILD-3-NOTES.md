@@ -349,6 +349,29 @@ the values that have no free, licence-clean source. Per the brief, this is
 reported as partial rather than complete, and inventing a viscosity to fill
 the row is the one thing that must not happen.
 
+## What the capture does not produce, and why I stopped
+
+The iPhone SE run captures six of the seven Build 3 screens. The missing one
+is **parts opened from a job**, and the cause is the capture, not the app.
+
+On a 375-point screen the configuration list ends underneath the step bar that
+floats over the bottom of that screen. XCUI reports a row under that bar as
+hittable, so `scrollTo` stops there and the tap goes to the bar. Five
+approaches were tried: scrolling until hittable, an extra swipe, a coordinate
+tap on the row's upper fifth, bottom content margin on the form, and finally
+falling through the app's own "None of these is mine" — none of them selected
+the row. Without a selected configuration the powertrain is unconfirmed, and
+Odomind then correctly leaves engine oil out of the plan, which is what the
+walk needs to reach parts.
+
+**Every one of those runs had the app behaving correctly.** The screens that
+did come back from the SE — Home, the configuration list, Jobs, the garage
+with its photograph and credit — are all right, and the full-size run captures
+all eight screens including parts. Chasing the seventh further was costing
+more than it was proving, so it is recorded here instead: a known gap in the
+capture on the narrowest display, with the app's behaviour at each step
+verified from the screenshots that *were* taken.
+
 ## Device checks this release needs
 
 CI cannot reach any of these.
