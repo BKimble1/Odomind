@@ -422,26 +422,44 @@ extension AppModel {
     /// failing that whichever is selected. Build 3 made this a control the
     /// owner had to operate on every screen; most people have one car.
     var dashboardVehicle: Vehicle? {
-        let owned = ownedVehicles
-        if owned.count == 1 { return owned.first }
-        if let id = preferences.pinnedVehicleID, let pinned = owned.first(where: { $0.id == id }) {
+        // One car, counting the sample: nothing to choose, and no switcher.
+        if snapshot.vehicles.count == 1 { return snapshot.vehicles.first }
+        if let id = preferences.pinnedVehicleID, let pinned = snapshot.vehicle(id: id) {
             return pinned
         }
-        return selectedVehicle ?? owned.first
+        return selectedVehicle
     }
 
     /// Whether the owner ever needs to be offered a choice of vehicle.
-    var hasVehicleChoice: Bool { ownedVehicles.count > 1 }
+    var hasVehicleChoice: Bool { snapshot.vehicles.count > 1 }
 
     func isPinned(_ vehicle: Vehicle) -> Bool {
         preferences.pinnedVehicleID == vehicle.id
     }
 
     /// Pins a vehicle to the dashboard, or unpins it if it was already pinned.
+    ///
+    /// Pinning also selects, because they mean the same thing: this is the car
+    /// the app is about. Keeping them apart let the dashboard sit on one car
+    /// while Jobs sat on another, with nothing on either screen to explain it.
     func togglePin(_ vehicle: Vehicle) {
         let id = vehicle.id
+        let wasPinned = preferences.pinnedVehicleID == id
         updatePreferences { preferences in
-            preferences.pinnedVehicleID = preferences.pinnedVehicleID == id ? nil : id
+            preferences.pinnedVehicleID = wasPinned ? nil : id
+        }
+        if !wasPinned { selectVehicle(id) }
+    }
+
+    /// Switches every screen to a vehicle.
+    ///
+    /// The switcher used to set the selection only, so with a car pinned the
+    /// dashboard ignored the pick. A pick is the owner saying which car they
+    /// are looking at, so the pin moves with it rather than overruling it.
+    func showVehicle(_ id: UUID) {
+        selectVehicle(id)
+        if preferences.pinnedVehicleID != nil, preferences.pinnedVehicleID != id {
+            updatePreferences { $0.pinnedVehicleID = id }
         }
     }
 

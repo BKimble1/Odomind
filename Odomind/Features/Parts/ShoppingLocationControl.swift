@@ -9,31 +9,44 @@ import SwiftUI
 /// is buying a part in a different city they change it once and it stays
 /// changed.
 struct ShoppingLocationControl: View {
+    /// How much room the control is asking for.
+    enum Style {
+        /// The standing chip in a toolbar: a town name most of the time.
+        case chip
+        /// The one place there is nothing to show yet, where the control has
+        /// to read as the thing to do rather than as a label.
+        case prominent
+    }
+
     @Environment(AppModel.self) private var model
+    var style: Style = .chip
     @State private var showingPicker = false
 
     var body: some View {
         Button {
             showingPicker = true
         } label: {
-            HStack(spacing: Theme.Spacing.tight) {
+            HStack(spacing: Theme.Spacing.tight + 2) {
                 Image(systemName: symbolName)
                     .font(.caption)
                     .accessibilityHidden(true)
-                Text(label)
-                    .font(.subheadline)
+                Text(style == .prominent ? "Choose your area" : label)
+                    .font(.subheadline.weight(style == .prominent ? .semibold : .regular))
                     .lineLimit(1)
             }
-            .foregroundStyle(Theme.Palette.accent)
-            .padding(.horizontal, Theme.Spacing.medium)
-            .padding(.vertical, Theme.Spacing.small)
-            .background(Theme.Palette.raised, in: Capsule())
+            .foregroundStyle(style == .prominent ? Theme.Palette.onAccent : Theme.Palette.accent)
+            .padding(.horizontal, style == .prominent ? Theme.Spacing.large : Theme.Spacing.medium)
+            .padding(.vertical, style == .prominent ? Theme.Spacing.medium - 1 : Theme.Spacing.small)
+            .background(
+                style == .prominent ? Theme.Palette.accent : Theme.Palette.raised,
+                in: Capsule()
+            )
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Shopping area: \(label)"))
         .accessibilityHint(Text("Choose a different area"))
-        .accessibilityIdentifier("shopping.location")
+        .accessibilityIdentifier(style == .prominent ? "shopping.chooseArea" : "shopping.location")
         .sheet(isPresented: $showingPicker) {
             ShoppingLocationPicker()
         }

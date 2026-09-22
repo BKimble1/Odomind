@@ -97,7 +97,7 @@ struct PaywallView: View {
                 }
             }
         }
-        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .cardSurface()
     }
 
     @ViewBuilder
@@ -266,7 +266,7 @@ private struct PlanRow: View {
             }
             .padding(Theme.Spacing.medium)
             .frame(minHeight: Theme.minimumTapTarget)
-            .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .cardSurface(radius: Theme.Radius.tile)
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.tile)
                     .strokeBorder(isSelected ? Theme.Palette.accent : Color.clear, lineWidth: 2)

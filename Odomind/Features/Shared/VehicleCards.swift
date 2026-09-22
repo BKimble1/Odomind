@@ -88,19 +88,10 @@ struct GarageVehicleCard: View {
             // picture *is* the top of the card. Build 2 drew a rounded grey
             // plate inside a rounded white card inside a grouped background —
             // three nested frames around one photograph.
-            VehiclePortrait(
-                vehicle: vehicle,
-                height: isHero ? 168 : 124,
-                cornerRadius: 0
-            )
-            .clipShape(
-                .rect(
-                    topLeadingRadius: Theme.Radius.card,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: 0,
-                    topTrailingRadius: Theme.Radius.card
-                )
-            )
+            StudioVehicleImage(vehicle: vehicle, width: isHero ? 260 : 200)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Theme.Spacing.large)
+                .padding(.bottom, Theme.Spacing.small)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
@@ -111,8 +102,8 @@ struct GarageVehicleCard: View {
                     Spacer(minLength: Theme.Spacing.small)
                     if isSelected {
                         // Never colour alone: the word is the signal and the
-                        // dot is decoration.
-                        Label("Selected", systemImage: "checkmark.circle.fill")
+                        // mark is decoration.
+                        Label("Pinned", systemImage: "pin.fill")
                             .labelStyle(.titleAndIcon)
                             .font(.caption.weight(.medium))
                             .foregroundStyle(Theme.Palette.accent)
@@ -136,7 +127,7 @@ struct GarageVehicleCard: View {
             }
             .padding(Theme.Spacing.medium)
         }
-        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .cardSurface()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("garage.vehicle")
     }

@@ -14,7 +14,7 @@ struct AddTaskView: View {
     @State private var showAdvanced = false
     @State private var addedIDs: Set<String> = []
 
-    private var vehicle: Vehicle? { model.selectedVehicle }
+    private var vehicle: Vehicle? { model.dashboardVehicle }
 
     var body: some View {
         Group {

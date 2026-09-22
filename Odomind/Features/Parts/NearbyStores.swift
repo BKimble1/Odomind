@@ -23,73 +23,36 @@ struct NearbyStore: Identifiable, Hashable {
     }
 }
 
-/// Finds parts shops near the owner, using MapKit's own search.
+/// Finds parts shops around a point, using MapKit's own search.
 ///
-/// Two things this deliberately does not do: ask for location at launch, and
-/// require location at all. Permission is requested when the owner taps
-/// "Near me", and a postal code or town works just as well — the accuracy
-/// difference does not matter for "which shops are around here".
+/// It asks for a point and it never asks for permission. Build 3 had this
+/// class running its own `CLLocationManager` beside `ShoppingLocationService`,
+/// so two objects could each put a location prompt on screen and the answer
+/// one of them got was thrown away when the screen closed. The owner's
+/// shopping area is now the single answer to "where", chosen once, and this
+/// searches around whatever coordinate that produces.
 ///
 /// Nothing about the vehicle is sent anywhere by this. MapKit is asked for
 /// "auto parts store" near a point, and that is the whole request.
 @MainActor
 @Observable
-final class NearbyStoreFinder: NSObject {
+final class NearbyStoreFinder {
     enum State: Equatable {
         case idle
         case searching
         case results([NearbyStore])
         case failed(String)
-        case locationDenied
     }
 
     private(set) var state: State = .idle
 
-    private let locationManager = CLLocationManager()
-    private var locationContinuation: CheckedContinuation<CLLocation?, Never>?
     private var searchTask: Task<Void, Never>?
 
-    override init() {
-        super.init()
-        locationManager.delegate = self
-        // Reduced accuracy is plenty for "shops around here", and it is the
-        // least the owner has to give up to get an answer.
-        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-    }
-
-    /// Searches near the device, asking for permission at this moment and not
-    /// before.
-    func searchNearMe(term: String) {
+    /// Searches around a point the app already has.
+    func search(term: String, near coordinate: CLLocationCoordinate2D) {
         searchTask?.cancel()
         searchTask = Task {
             state = .searching
-            let status = locationManager.authorizationStatus
-            if status == .denied || status == .restricted {
-                state = .locationDenied
-                return
-            }
-            if status == .notDetermined {
-                locationManager.requestWhenInUseAuthorization()
-            }
-            guard let location = await currentLocation() else {
-                state = .locationDenied
-                return
-            }
-            await run(term: term, near: location.coordinate)
-        }
-    }
-
-    /// The path that needs no permission at all.
-    func search(term: String, place: String) {
-        searchTask?.cancel()
-        searchTask = Task {
-            state = .searching
-            let geocoder = CLGeocoder()
-            let placemarks = try? await geocoder.geocodeAddressString(place)
-            guard let coordinate = placemarks?.first?.location?.coordinate else {
-                state = .failed("Odomind could not find “\(place)”. Try a postal code or a town name.")
-                return
-            }
             await run(term: term, near: coordinate)
         }
     }
@@ -127,43 +90,7 @@ final class NearbyStoreFinder: NSObject {
                 : .results(stores)
         } catch {
             if Task.isCancelled { return }
-            state = .failed("Odomind could not search for nearby shops. Check your connection and try again.")
-        }
-    }
-
-    private func currentLocation() async -> CLLocation? {
-        if let existing = locationManager.location { return existing }
-        return await withCheckedContinuation { continuation in
-            locationContinuation = continuation
-            locationManager.requestLocation()
-        }
-    }
-}
-
-extension NearbyStoreFinder: CLLocationManagerDelegate {
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations.last
-        Task { @MainActor in
-            locationContinuation?.resume(returning: location)
-            locationContinuation = nil
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in
-            locationContinuation?.resume(returning: nil)
-            locationContinuation = nil
-        }
-    }
-
-    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        Task { @MainActor in
-            let status = manager.authorizationStatus
-            if status == .denied || status == .restricted {
-                locationContinuation?.resume(returning: nil)
-                locationContinuation = nil
-                if case .searching = state { state = .locationDenied }
-            }
+            state = .failed("Odomind could not search for shops. Check your connection.")
         }
     }
 }

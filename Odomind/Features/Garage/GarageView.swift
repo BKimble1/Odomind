@@ -25,18 +25,25 @@ struct GarageView: View {
                         } label: {
                             GarageVehicleCard(
                                 vehicle: vehicle,
-                                isSelected: vehicle.id == model.selectedVehicleID,
+                                isSelected: model.isPinned(vehicle),
                                 isHero: vehicles.count == 1
                             )
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            if vehicle.id != model.selectedVehicleID {
+                            // Pinning is how somebody with several cars says
+                            // which one the dashboard is about. With one car
+                            // there is nothing to pin, so it is not offered.
+                            if model.hasVehicleChoice {
                                 Button {
-                                    model.selectVehicle(vehicle.id)
+                                    model.togglePin(vehicle)
                                 } label: {
-                                    Label("Use this vehicle", systemImage: "checkmark")
+                                    Label(
+                                        model.isPinned(vehicle) ? "Unpin from the dashboard" : "Pin to the dashboard",
+                                        systemImage: model.isPinned(vehicle) ? "pin.slash" : "pin"
+                                    )
                                 }
+                                .accessibilityIdentifier("garage.pin")
                             }
                             Button {
                                 router.garagePath.append(VehicleRoute.artwork(vehicle.id))
@@ -57,7 +64,7 @@ struct GarageView: View {
                         .foregroundStyle(Theme.Palette.accent)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 56)
-                        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                        .cardSurface()
                     }
                     .accessibilityIdentifier("garage.addVehicle")
 
@@ -68,7 +75,7 @@ struct GarageView: View {
                 }
                 .padding(Theme.Spacing.large)
             }
-            .background(Theme.Palette.page)
+            .background(LuminousField(strength: 0.6))
             .navigationTitle("Garage")
             .odomindDestinations()
             .sheet(isPresented: $showingAddVehicle) {

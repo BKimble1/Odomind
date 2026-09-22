@@ -1,14 +1,20 @@
+import CoreLocation
 import SwiftUI
 import UIKit
 import OdomindCore
 
-/// Parts: what this vehicle takes, where to look, and what Odomind will not
-/// claim about either.
+/// Parts: what this car takes, and where to get it.
 ///
-/// Opened from a job (with that job's specifications already filled in) or on
-/// its own from Home. Everything here is a link into somebody else's search.
-/// Odomind holds no prices and no stock, and says so once rather than in three
-/// places.
+/// Opened from a job with that job's specifications already filled in, or on
+/// its own from the dashboard. Everything here leads into somebody else's
+/// search — Odomind holds no prices and no stock, and says so once.
+///
+/// Two things changed in Build 4. The screen follows the dashboard's car
+/// rather than a separate selection, so looking up a part for the car on the
+/// dashboard is not a two-step. And the shop list searches from the area
+/// already chosen instead of a postal-code field and a "Near me" button that
+/// appeared on every visit: where you shop is a standing answer, not a
+/// question per screen.
 struct PartsView: View {
     @Environment(AppModel.self) private var model
 
@@ -21,18 +27,22 @@ struct PartsView: View {
     var planItemID: UUID? { destination.planItemID }
 
     @State private var partText = ""
-    @State private var place = ""
     @State private var finder = NearbyStoreFinder()
     @State private var copied: String?
     @State private var didSeedQuery = false
 
     var body: some View {
         Group {
-            if let vehicle = model.selectedVehicle {
+            if let vehicle = model.dashboardVehicle {
                 content(for: vehicle)
             } else {
                 NoVehicleView()
             }
+        }
+        .navigationTitle("Parts")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { ShoppingLocationControl() }
         }
         .task {
             // Once: re-seeding on every appearance would undo the owner's own
@@ -43,73 +53,71 @@ struct PartsView: View {
                 partText = query
             } else if let category = destination.category, !category.isEmpty {
                 partText = category
+            } else if let planItemID, let item = model.planItem(id: planItemID) {
+                partText = item.title
             }
-        }
-        .navigationTitle("Parts")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { ShoppingLocationControl() }
         }
         .task {
             // Opening Parts with an area already chosen should show shops,
             // not a prompt to say where you are for the fourth time.
             model.shoppingLocation.resolve()
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear(perform: prefill)
+        // Whenever there is somewhere to search, search it — on open, and
+        // again the moment the owner changes area. Nothing to tap.
+        .task(id: searchKey) { searchNearby() }
     }
 
     @ViewBuilder
     private func content(for vehicle: Vehicle) -> some View {
-        List {
-            Section {
-                TextField("What do you need?", text: $partText)
-                    .accessibilityIdentifier("parts.query")
-                ValueRow(label: "Vehicle", value: vehicle.identity.displayName)
-            } header: {
-                Text("Search")
-            } footer: {
-                Text(PartsQueryBuilder.fitmentCaveat)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Spacing.large) {
+                searchCard(for: vehicle)
+                specificationsCard(for: vehicle)
+                retailersCard(for: vehicle)
+                nearbyCard
+
+                Text("Odomind opens a search. It has no parts catalogue, so check fit on the retailer's site. Your VIN and history are never sent.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Theme.Spacing.tight)
             }
-
-            specificationsSection(for: vehicle)
-
-            Section {
-                ForEach(Retailer.all) { retailer in
-                    RetailerRow(
-                        retailer: retailer,
-                        query: retailerQuery(for: vehicle)
-                    ) { text in
-                        UIPasteboard.general.string = text
-                        copied = text
-                    }
-                }
-            } header: {
-                Text("Shop online")
-            } footer: {
-                VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-                    // Labelled as the fallback it is. Odomind has no licensed
-                    // catalogue, so it cannot resolve a product — it can only
-                    // hand the retailer the best search it can build.
-                    Text("This is a search, not a matched product. Odomind has no parts catalogue, so it cannot confirm a part number fits — the retailer's own fitment check can.")
-                    if let spec = specificationForQuery(vehicle) {
-                        Text("Searching with the \(spec.label.lowercased()) you have recorded: \(spec.value).")
-                            .foregroundStyle(Theme.Palette.secondaryText)
-                    }
-                    Text("Odomind opens the retailer's own search in your browser. It does not hold prices or stock, and it never sends your VIN, your mileage or your service history to a retailer.")
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                }
-            }
-
-            nearbySection
-
-            if let copied {
-                Section {
-                    QuietNote(text: "Copied “\(copied)”. Paste it into the retailer's search.", symbolName: "doc.on.doc")
-                }
-            }
+            .padding(Theme.Spacing.large)
+            .padding(.bottom, Theme.Spacing.section)
         }
-        .listStyle(.insetGrouped)
+        .background(LuminousField(strength: 0.55))
+        .overlay(alignment: .bottom) { copiedNote }
     }
+
+    // MARK: - What you are looking for
+
+    private func searchCard(for vehicle: Vehicle) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+            HStack(spacing: Theme.Spacing.medium) {
+                IconChip(symbol: "magnifyingglass")
+                TextField("What do you need?", text: $partText)
+                    .font(.body)
+                    .accessibilityIdentifier("parts.query")
+            }
+            Divider().overlay(Theme.Palette.separator)
+            HStack(spacing: Theme.Spacing.small) {
+                Image(systemName: "car.fill")
+                    .font(.caption)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+                    .accessibilityHidden(true)
+                Text(vehicle.identity.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text("Searching for \(vehicle.identity.displayName)"))
+        }
+        .padding(Theme.Spacing.large - 1)
+        .cardSurface()
+    }
+
+    // MARK: - What this vehicle takes
 
     /// The specification worth putting in a retailer search.
     ///
@@ -141,87 +149,139 @@ struct PartsView: View {
 
     /// The specifications that actually matter for what is being bought.
     @ViewBuilder
-    private func specificationsSection(for vehicle: Vehicle) -> some View {
+    private func specificationsCard(for vehicle: Vehicle) -> some View {
         let kinds = relevantSpecificationKinds
         if !kinds.isEmpty {
             let resolved = model.resolvedSpecifications(for: vehicle)
-            Section {
-                ForEach(kinds, id: \.self) { kind in
-                    if let match = resolved.first(where: { $0.kind == kind }) {
-                        let value = match.active.value.displayString
-                        Button {
-                            UIPasteboard.general.string = value
-                            copied = value
-                        } label: {
-                            ValueRow(
-                                label: kind.displayName,
-                                value: value,
-                                secondary: "Tap to copy"
-                            )
+            PanelCard(symbol: "list.bullet.rectangle", title: "What it takes") {
+                VStack(spacing: 0) {
+                    ForEach(kinds, id: \.self) { kind in
+                        if let match = resolved.first(where: { $0.kind == kind }) {
+                            let value = match.active.value.displayString
+                            Button {
+                                UIPasteboard.general.string = value
+                                copied = value
+                            } label: {
+                                SpecRow(label: kind.displayName, value: value)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("parts.spec.\(kind.rawValue)")
+                        } else {
+                            SpecRow(label: kind.displayName, value: nil, hint: kind.sourceHint)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("parts.spec.\(kind.rawValue)")
-                    } else {
-                        UnavailableValueRow(label: kind.displayName, explanation: kind.sourceHint)
                     }
                 }
-            } header: {
-                Text("What this vehicle takes")
-            } footer: {
-                Text("Odomind shows a value only when it has one it can stand behind. Anything missing you can add against this vehicle and it will be used everywhere.")
+                .padding(.top, Theme.Spacing.small)
             }
         }
     }
 
-    @ViewBuilder
-    private var nearbySection: some View {
-        Section {
-            HStack {
-                TextField("Postal code or town", text: $place)
-                    .accessibilityIdentifier("parts.place")
-                Button("Search") {
-                    finder.search(term: "auto parts store", place: place)
-                }
-                .disabled(place.trimmingCharacters(in: .whitespaces).isEmpty)
-                .accessibilityIdentifier("parts.searchPlace")
-            }
+    // MARK: - Where to buy
 
-            Button {
-                finder.searchNearMe(term: "auto parts store")
-            } label: {
-                Label("Near me", systemImage: "location")
-            }
-            .accessibilityIdentifier("parts.nearMe")
-
-            switch finder.state {
-            case .idle:
-                EmptyView()
-            case .searching:
-                HStack { ProgressView(); Text("Searching…").foregroundStyle(Theme.Palette.secondaryText) }
-            case .locationDenied:
-                VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    Text("Odomind does not have your location.")
-                        .font(.subheadline)
-                    Text("You can type a postal code above instead — Odomind never needs your location to track maintenance.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        Link("Open Odomind's settings", destination: url)
+    private func retailersCard(for vehicle: Vehicle) -> some View {
+        let query = retailerQuery(for: vehicle)
+        return PanelCard(symbol: "bag", title: "Buy online") {
+            VStack(spacing: 0) {
+                ForEach(Retailer.all) { retailer in
+                    RetailerRow(retailer: retailer, query: query) { text in
+                        UIPasteboard.general.string = text
+                        copied = text
                     }
                 }
-            case .failed(let message):
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.Palette.secondaryText)
-            case .results(let stores):
-                ForEach(stores) { store in
-                    NearbyStoreRow(store: store)
+            }
+            .padding(.top, Theme.Spacing.small)
+        }
+    }
+
+    // MARK: - Shops
+
+    /// Changes whenever there is a different place to search from, or a
+    /// different thing to search for. Used as a `task(id:)` key so the list
+    /// refreshes itself instead of waiting to be asked.
+    private var searchKey: String {
+        guard case .ready(let latitude, let longitude, _) = model.shoppingLocation.resolution else {
+            return "none"
+        }
+        return "\(latitude),\(longitude)|\(mapTerm)"
+    }
+
+    /// A tyre shop for tyres, a parts shop for everything else. The retailer
+    /// entries already carry this, so it is read from the best match rather
+    /// than kept in a second list here.
+    private var mapTerm: String {
+        let kinds = relevantSpecificationKinds
+        if kinds.contains(where: { $0.group == .tires }) { return "tire shop" }
+        return "auto parts store"
+    }
+
+    private func searchNearby() {
+        guard let coordinate = model.shoppingLocation.resolution.coordinate else { return }
+        finder.search(term: mapTerm, near: coordinate)
+    }
+
+    @ViewBuilder
+    private var nearbyCard: some View {
+        PanelCard(symbol: "mappin.and.ellipse", title: nearbyTitle) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+                if !hasArea {
+                    // The one tap left, and it is made once rather than on
+                    // every visit. A refused location is the same case: there
+                    // is nowhere to search, and typing a town fixes it.
+                    if model.shoppingLocation.resolution == .denied {
+                        Text("Location is off. Pick a town instead.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                    }
+                    ShoppingLocationControl(style: .prominent)
+                        .padding(.top, Theme.Spacing.tight)
+                } else {
+                    switch finder.state {
+                    case .idle:
+                        EmptyView()
+                    case .searching:
+                        HStack(spacing: Theme.Spacing.small) {
+                            ProgressView().controlSize(.small)
+                            Text("Looking…").foregroundStyle(Theme.Palette.secondaryText)
+                        }
+                        .font(.footnote)
+                    case .failed(let message):
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.Palette.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    case .results(let stores):
+                        VStack(spacing: 0) {
+                            ForEach(stores.prefix(5)) { store in
+                                NearbyStoreRow(store: store)
+                            }
+                        }
+                    }
                 }
             }
-        } header: {
-            Text("Nearby")
-        } footer: {
-            Text("These are businesses a map search returned. Odomind has no way to know what any of them has in stock or what they charge.")
+            .padding(.top, Theme.Spacing.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var nearbyTitle: String {
+        if let label = model.shoppingLocation.resolution.label { return "Near \(label)" }
+        return "Nearby"
+    }
+
+    private var hasArea: Bool { model.shoppingLocation.resolution.coordinate != nil }
+
+    @ViewBuilder
+    private var copiedNote: some View {
+        if let copied {
+            Text("Copied “\(copied)”")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(Theme.Palette.onAccent)
+                .padding(.horizontal, Theme.Spacing.large)
+                .padding(.vertical, Theme.Spacing.medium)
+                .background(Theme.Palette.accent, in: Capsule())
+                .padding(.bottom, Theme.Spacing.section)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityIdentifier("parts.copied")
         }
     }
 
@@ -242,10 +302,40 @@ struct PartsView: View {
         }
         return PartCategoryMatch.specifications(for: partText, categoryHint: destination.category)
     }
+}
 
-    private func prefill() {
-        guard partText.isEmpty, let planItemID, let item = model.planItem(id: planItemID) else { return }
-        partText = item.title
+/// One specification: what it is, and the value to copy.
+private struct SpecRow: View {
+    let label: String
+    let value: String?
+    var hint: String?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.medium) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(Theme.Palette.secondaryText)
+            Spacer(minLength: Theme.Spacing.small)
+            if let value {
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .multilineTextAlignment(.trailing)
+                Image(systemName: "doc.on.doc")
+                    .font(.caption)
+                    .foregroundStyle(Theme.Palette.accent)
+                    .accessibilityHidden(true)
+            } else {
+                // Never a guess, and never a blank that reads as zero.
+                Text("Not known")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.Palette.secondaryText)
+            }
+        }
+        .padding(.vertical, Theme.Spacing.medium - 2)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(Text(value == nil ? (hint ?? "") : "Copies this value"))
     }
 }
 
@@ -257,38 +347,43 @@ private struct RetailerRow: View {
     var body: some View {
         if retailer.acceptsPrefilledSearch, let url = retailer.url(for: query) {
             Link(destination: url) {
-                LabeledContent {
-                    Image(systemName: "arrow.up.forward.app")
-                        .foregroundStyle(Theme.Palette.secondaryText)
-                } label: {
-                    Text(retailer.name)
-                }
+                row(symbol: "arrow.up.forward")
             }
             .accessibilityIdentifier("parts.retailer.\(retailer.id)")
             .accessibilityHint(Text("Opens \(retailer.name) with this search"))
         } else {
-            VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                if let url = retailer.url(for: "") {
-                    Link(destination: url) {
-                        LabeledContent {
-                            Image(systemName: "arrow.up.forward.app")
-                                .foregroundStyle(Theme.Palette.secondaryText)
-                        } label: {
-                            Text(retailer.name)
-                        }
-                    }
+            // Honest about the limitation rather than shipping a link that
+            // lands on an empty search and looks broken.
+            Button {
+                copy(query)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    row(symbol: "doc.on.doc")
+                    Text("Picks the car in its own selector — copy and paste")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Palette.secondaryText)
+                        .padding(.bottom, Theme.Spacing.small)
                 }
-                // Honest about the limitation rather than shipping a link that
-                // lands on an empty search and looks broken.
-                Text("This site picks the vehicle in its own selector, so Odomind cannot fill the search in for you.")
-                    .font(.caption)
-                    .foregroundStyle(Theme.Palette.secondaryText)
-                Button("Copy “\(query)”") { copy(query) }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Theme.Palette.accent)
             }
+            .buttonStyle(.plain)
             .accessibilityIdentifier("parts.retailer.\(retailer.id)")
+            .accessibilityHint(Text("Copies the search for \(retailer.name)"))
         }
+    }
+
+    private func row(symbol: String) -> some View {
+        HStack(spacing: Theme.Spacing.medium) {
+            Text(retailer.name)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Theme.Palette.primaryText)
+            Spacer(minLength: Theme.Spacing.small)
+            Image(systemName: symbol)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.Palette.accent)
+                .accessibilityHidden(true)
+        }
+        .padding(.vertical, Theme.Spacing.medium - 2)
+        .contentShape(Rectangle())
     }
 }
 
@@ -296,31 +391,29 @@ private struct NearbyStoreRow: View {
     let store: NearbyStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-            Text(store.name)
-                .foregroundStyle(Theme.Palette.primaryText)
-            if let address = store.address {
-                Text(address)
-                    .font(.caption)
-                    .foregroundStyle(Theme.Palette.secondaryText)
-            }
-            HStack(spacing: Theme.Spacing.large) {
+        HStack(alignment: .top, spacing: Theme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(store.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.Palette.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let distance = store.distance {
                     Text(Format.distanceAway(metres: distance))
                         .font(.caption)
                         .foregroundStyle(Theme.Palette.secondaryText)
                 }
-                if let directions = store.directionsURL {
-                    Link("Directions", destination: directions)
-                        .font(.caption.weight(.medium))
+            }
+            Spacer(minLength: Theme.Spacing.small)
+            if let directions = store.directionsURL {
+                Link(destination: directions) {
+                    Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Theme.Palette.accent)
                 }
-                if let website = store.website {
-                    Link("Website", destination: website)
-                        .font(.caption.weight(.medium))
-                }
+                .accessibilityLabel(Text("Directions to \(store.name)"))
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, Theme.Spacing.medium - 2)
         .accessibilityElement(children: .contain)
     }
 }

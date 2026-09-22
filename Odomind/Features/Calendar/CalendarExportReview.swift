@@ -25,7 +25,7 @@ struct CalendarExportReview: View {
                     ContentUnavailableView {
                         Label("Nothing to add", systemImage: "calendar.badge.exclamationmark")
                     } description: {
-                        if model.selectedVehicle?.isDemo == true {
+                        if model.dashboardVehicle?.isDemo == true {
                             Text("This is the sample vehicle. Odomind does not put fictional dates in your calendar.")
                         } else {
                             Text("Odomind only exports deadlines it has a date for. Jobs that are due at a mileage have no date until it knows how far you drive.")
@@ -116,7 +116,7 @@ struct CalendarExportReview: View {
         // fictional, it is already excluded from reminders and reports, and a
         // made-up deadline sitting in somebody's calendar next to real ones is
         // exactly the kind of thing nobody would notice until it mattered.
-        guard let vehicle = model.selectedVehicle, !vehicle.isDemo else { return [] }
+        guard let vehicle = model.dashboardVehicle, !vehicle.isDemo else { return [] }
         let now = model.clock.now
         let horizon = model.calendar.date(
             byAdding: .month, value: model.calendarProjectionMonths, to: now

@@ -26,20 +26,21 @@ struct JobsView: View {
                 // shrink — which is how a screenshot of this screen showed
                 // "Sa…" where the vehicle's name should be. Home was moved
                 // out for the same reason and this is the same fix.
-                if model.selectedVehicle != nil {
+                if model.dashboardVehicle != nil {
                     VehiclePickerBar()
                         .padding(.horizontal, Theme.Spacing.large)
                         .padding(.bottom, Theme.Spacing.small)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Group {
-                    if let vehicle = model.selectedVehicle {
+                    if let vehicle = model.dashboardVehicle {
                         list(for: vehicle)
                     } else {
                         NoVehicleView()
                     }
                 }
             }
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Jobs")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -48,23 +49,23 @@ struct JobsView: View {
                         Button {
                             router.jobsPath.append(JobRoute.addTask)
                         } label: {
-                            Label("Add from the library", systemImage: "text.book.closed")
+                            Label("Browse jobs", systemImage: "text.book.closed")
                         }
                         .accessibilityIdentifier("jobs.addFromCatalog")
                         Button {
                             router.jobsPath.append(JobRoute.customTask)
                         } label: {
-                            Label("Create a custom job", systemImage: "square.and.pencil")
+                            Label("Custom job", systemImage: "square.and.pencil")
                         }
                         .accessibilityIdentifier("jobs.createCustomTask")
                         Divider()
-                        Toggle("Show advanced jobs", isOn: $showsAdvanced)
+                        Toggle("Advanced jobs", isOn: $showsAdvanced)
                         if model.openProposalCount > 0 {
                             Divider()
                             Button {
                                 router.jobsPath.append(JobRoute.proposals)
                             } label: {
-                                Label("Review schedule changes (\(model.openProposalCount))", systemImage: "bell.badge")
+                                Label("Schedule changes (\(model.openProposalCount))", systemImage: "bell.badge")
                             }
                         }
                     } label: {
@@ -88,11 +89,11 @@ struct JobsView: View {
         if tracked.isEmpty && untracked.isEmpty {
             if searchText.isEmpty {
                 ContentUnavailableView {
-                    Label("No jobs tracked yet", systemImage: "wrench.and.screwdriver")
+                    Label("Nothing tracked yet", systemImage: "wrench.and.screwdriver")
                 } description: {
-                    Text("Pick the maintenance you care about. You can add more at any time, and remove anything you do not want to see.")
+                    Text("Pick the jobs you care about. Add or remove any time.")
                 } actions: {
-                    Button("Add from the library") { router.jobsPath.append(JobRoute.addTask) }
+                    Button("Browse jobs") { router.jobsPath.append(JobRoute.addTask) }
                         .buttonStyle(.borderedProminent)
                 }
             } else {
@@ -112,6 +113,7 @@ struct JobsView: View {
                     } header: {
                         Text("My plan")
                     }
+                    .listRowBackground(Theme.Palette.raised)
                 }
 
                 if !untracked.isEmpty {
@@ -127,11 +129,14 @@ struct JobsView: View {
                     } header: {
                         Text(searchText.isEmpty ? "More jobs" : "Not tracked yet")
                     } footer: {
-                        Text("Adding a job puts it in your plan. It does not record that the work was done.")
+                        // Adding is not logging, and people do assume it is.
+                        Text("Adding tracks a job. It does not log the work.")
                     }
+                    .listRowBackground(Theme.Palette.raised)
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
     }
 }

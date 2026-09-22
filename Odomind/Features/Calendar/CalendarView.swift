@@ -26,14 +26,14 @@ struct CalendarView: View {
                 // Out of the toolbar, for the same reason as Home and Jobs:
                 // a bar cannot give a vehicle's name two lines, so it gives
                 // it three characters instead.
-                if model.selectedVehicle != nil {
+                if model.dashboardVehicle != nil {
                     VehiclePickerBar()
                         .padding(.horizontal, Theme.Spacing.large)
                         .padding(.bottom, Theme.Spacing.small)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Group {
-                    if model.selectedVehicle != nil {
+                    if model.dashboardVehicle != nil {
                         content
                     } else {
                         NoVehicleView()
@@ -42,7 +42,7 @@ struct CalendarView: View {
             }
             .navigationTitle("Calendar")
             .navigationBarTitleDisplayMode(.inline)
-            .background(Theme.Palette.page)
+            .background(LuminousField(strength: 0.5))
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
@@ -50,18 +50,18 @@ struct CalendarView: View {
                             showsList.toggle()
                         } label: {
                             Label(
-                                showsList ? "Show the month" : "Show as a list",
+                                showsList ? "Month" : "List",
                                 systemImage: showsList ? "calendar" : "list.bullet"
                             )
                         }
                         .accessibilityIdentifier("calendar.toggleList")
 
                         Button {
-                            if let vehicleID = model.selectedVehicleID {
+                            if let vehicleID = model.dashboardVehicle?.id {
                                 newAppointment = AppointmentDraft(vehicleID: vehicleID, scheduledOn: selectedDay)
                             }
                         } label: {
-                            Label("Add an appointment", systemImage: "calendar.badge.plus")
+                            Label("Add appointment", systemImage: "calendar.badge.plus")
                         }
 
                         Divider()
@@ -69,7 +69,7 @@ struct CalendarView: View {
                         Button {
                             router.calendarPath.append(RecordRoute.export)
                         } label: {
-                            Label("Export service history", systemImage: "square.and.arrow.up")
+                            Label("Export history", systemImage: "square.and.arrow.up")
                         }
                         .accessibilityIdentifier("calendar.export")
                     } label: {
@@ -148,7 +148,7 @@ struct CalendarView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
             SectionHeading(title: Format.longDate(selectedDay)) {
                 Button {
-                    if let vehicleID = model.selectedVehicleID {
+                    if let vehicleID = model.dashboardVehicle?.id {
                         newAppointment = AppointmentDraft(vehicleID: vehicleID, scheduledOn: selectedDay)
                     }
                 } label: {
@@ -176,7 +176,7 @@ struct CalendarView: View {
                         }
                     }
                 }
-                .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                .cardSurface()
             }
         }
     }
@@ -186,10 +186,10 @@ struct CalendarView: View {
         let unscheduled = model.unscheduledCalendarItems()
         if !unscheduled.isEmpty {
             VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-                SectionHeading("Mileage based · date not yet estimated")
+                SectionHeading("No date yet")
                 Card {
                     VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-                        Text("These are due at a mileage, and Odomind does not yet know enough about how far you drive to put a date on them.")
+                        Text("Due at a mileage. Odomind needs more readings before it can put a date on these.")
                             .font(.footnote)
                             .foregroundStyle(Theme.Palette.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)

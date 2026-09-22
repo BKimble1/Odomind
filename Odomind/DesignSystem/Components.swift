@@ -246,7 +246,10 @@ struct Card<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
-            .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            // One card treatment for the whole app. Build 3 had five slightly
+            // different ones, which is what happens when each screen draws its
+            // own rounded rectangle.
+            .cardSurface()
     }
 }
 

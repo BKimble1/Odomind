@@ -91,10 +91,12 @@ struct SettingsView: View {
                 Button("Delete all data", role: .destructive) { showingDeleteAll = true }
                     .accessibilityIdentifier("settings.deleteAll")
             } footer: {
-                Text("Removes every vehicle, reading, job, service record and receipt from this device, and cancels every reminder. This cannot be undone.")
+                Text("Removes everything from this device and cancels every reminder. Cannot be undone.")
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Delete everything?", isPresented: $showingDeleteAll, titleVisibility: .visible) {
@@ -132,7 +134,7 @@ struct ReminderSettingsView: View {
                     )
                 )
             } footer: {
-                Text("Odomind asks for notification permission the moment you turn this on, not before. Everything else works without it.")
+                Text("Asks for permission when you turn this on, not before.")
             }
 
             if settings.remindersEnabled {
@@ -188,7 +190,7 @@ struct ReminderSettingsView: View {
                 } header: {
                     Text("Delivery")
                 } footer: {
-                    Text("An estimated reminder is built from how far you usually drive, and says so. Odomind cannot watch your odometer, so it can never promise a reminder at an exact mileage.")
+                    Text("An estimated reminder says so. Odomind cannot watch your odometer.")
                 }
 
                 Section {
@@ -253,6 +255,8 @@ struct ReminderSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Reminders")
         .navigationBarTitleDisplayMode(.inline)
     }

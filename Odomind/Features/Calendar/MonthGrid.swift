@@ -75,7 +75,7 @@ struct MonthGrid: View {
             .accessibilityIdentifier("calendar.today")
         }
         .padding(Theme.Spacing.medium)
-        .background(Theme.Palette.raised, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .cardSurface()
     }
 
     private func step(by months: Int) {

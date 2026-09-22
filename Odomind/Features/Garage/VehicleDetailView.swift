@@ -34,9 +34,22 @@ struct VehicleDetailView: View {
     private func content(_ vehicle: Vehicle) -> some View {
         List {
             Section {
-                VehiclePortrait(vehicle: vehicle, height: 140)
+                StudioVehicleImage(vehicle: vehicle, width: 250)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.small)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+            }
+            .listSectionSeparator(.hidden)
+
+            if model.hasVehicleChoice {
+                Section {
+                    Toggle("Show on the dashboard", isOn: pinBinding(vehicle))
+                        .accessibilityIdentifier("vehicle.pin")
+                }
+            }
+
+            Section {
                 NavigationLink(value: VehicleRoute.artwork(vehicleID)) {
                     Label("Change the picture", systemImage: "photo")
                 }
@@ -51,9 +64,6 @@ struct VehicleDetailView: View {
             Section("Name") {
                 TextField("Nickname", text: $nickname)
                     .onSubmit { saveNickname(vehicle) }
-                Text("A nickname shows instead of the year, make and model.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
 
@@ -111,7 +121,7 @@ struct VehicleDetailView: View {
                 } header: {
                     Label("Still to confirm", systemImage: "questionmark.circle")
                 } footer: {
-                    Text("Until these are answered, Odomind leaves the tasks that depend on them out of your plan rather than guessing.")
+                    Text("Odomind leaves the jobs that depend on these out of your plan rather than guessing.")
                 }
             }
 
@@ -126,7 +136,7 @@ struct VehicleDetailView: View {
                     in: ...Date(),
                     displayedComponents: .date
                 )
-                Text("The date the vehicle was first put on the road. Used for age-based manufacturer milestones. Different from when you bought it.")
+                Text("When it first went on the road — not when you bought it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -137,10 +147,12 @@ struct VehicleDetailView: View {
                     showingDeleteConfirmation = true
                 }
             } footer: {
-                Text("This deletes its mileage, tasks, service history, receipts and reminders. Other vehicles are untouched.")
+                Text("Deletes its mileage, jobs, history and receipts. Other vehicles are untouched.")
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
@@ -161,6 +173,16 @@ struct VehicleDetailView: View {
     }
 
 
+
+    /// The dashboard's car, as a switch on the car itself. Pinning lives in
+    /// the garage's context menu too; this is the same one thing, where
+    /// somebody looking at a vehicle would expect to find it.
+    private func pinBinding(_ vehicle: Vehicle) -> Binding<Bool> {
+        Binding(
+            get: { model.isPinned(vehicle) },
+            set: { _ in model.togglePin(vehicle) }
+        )
+    }
 
     private func saveNickname(_ vehicle: Vehicle) {
         let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)

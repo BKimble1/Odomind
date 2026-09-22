@@ -19,7 +19,7 @@ struct ExportView: View {
             Section {
                 Button {
                     exportedFile = model.exportHistoryCSV(
-                        vehicleIDs: allVehicles ? nil : model.selectedVehicleID.map { [$0] },
+                        vehicleIDs: allVehicles ? nil : model.dashboardVehicle.map { [$0.id] },
                         includeDemoContent: includeDemo
                     )
                 } label: {
@@ -27,7 +27,7 @@ struct ExportView: View {
                 }
                 .accessibilityIdentifier("export.csv")
 
-                if let vehicle = model.selectedVehicle {
+                if let vehicle = model.dashboardVehicle {
                     Button {
                         exportedFile = model.exportHistoryPDF(
                             vehicleID: vehicle.id,

@@ -19,7 +19,7 @@ struct CustomTaskEditor: View {
     @State private var timeCount = 6
     @State private var timeUnit: CalendarInterval.Unit = .months
 
-    private var vehicle: Vehicle? { model.selectedVehicle }
+    private var vehicle: Vehicle? { model.dashboardVehicle }
     private var unit: DistanceUnit { vehicle?.displayUnit ?? .miles }
 
     private var rule: ScheduleRule? {

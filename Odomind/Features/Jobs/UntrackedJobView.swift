@@ -20,7 +20,7 @@ struct UntrackedJobView: View {
 
     let definitionID: String
 
-    private var vehicle: Vehicle? { model.selectedVehicle }
+    private var vehicle: Vehicle? { model.dashboardVehicle }
 
     /// The suggestion as it stands for *this* vehicle, so the schedule and the
     /// applicability shown are the ones that would actually be used.

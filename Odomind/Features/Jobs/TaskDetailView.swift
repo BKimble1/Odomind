@@ -80,7 +80,7 @@ struct TaskDetailView: View {
                 Text("Status")
             } footer: {
                 if Self.canStartTrackingFromToday(item: item, evaluation: evaluation) {
-                    Text("Starting from today records a starting point, not work that was done.")
+                    Text("A starting point, not work done.")
                 }
             }
 
@@ -120,6 +120,8 @@ struct TaskDetailView: View {
             manageSection(item: item)
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .sheet(isPresented: $showingScheduleEditor) {
             ScheduleEditor(planItemID: planItemID)
         }
@@ -146,7 +148,7 @@ struct TaskDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Snoozing pauses reminders. The due date does not change, and overdue work stays overdue.")
+            Text("Pauses reminders. The due date does not change.")
         }
         .alert("Add a second event?", isPresented: $showingDuplicateCalendarWarning) {
             Button("Add anyway") { presentCalendarEditor(evaluation: evaluation, vehicle: vehicle, item: item) }
@@ -163,7 +165,7 @@ struct TaskDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your service history for this task is kept. Only the schedule is removed.")
+            Text("Your history is kept. Only the schedule goes.")
         }
     }
 
@@ -190,7 +192,7 @@ struct TaskDetailView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
                     Text("No schedule yet")
                         .font(.body.weight(.medium))
-                    Text("Odomind does not publish an interval for this task, because the right one depends on your specific vehicle. Enter the interval from your owner's manual and Odomind will track it from there.")
+                    Text("The right interval depends on your car. Enter it from the owner's manual and Odomind tracks it.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -261,7 +263,7 @@ struct TaskDetailView: View {
                             secondary: evaluation.estimateConfidence.map { "\($0.displayName) estimate" },
                             symbolName: "chart.line.uptrend.xyaxis"
                         )
-                        Text("A projection from how far you usually drive, not a confirmed date. Update your mileage to replace it with a real one.")
+                        Text("Projected from how far you drive. Update your mileage for a real date.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -286,7 +288,7 @@ struct TaskDetailView: View {
                             model.startTrackingFromToday(planItemID: planItemID)
                         }
                         .font(.callout)
-                        Text("Odomind records this as a starting point, not as work that was done.")
+                        Text("Recorded as a starting point, not as work done.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -320,7 +322,7 @@ struct TaskDetailView: View {
             Text("Service history")
         } footer: {
             if records.count > 5 {
-                Text("Showing the 5 most recent of \(records.count). The full list is in History.")
+                Text("5 of \(records.count). The rest is in History.")
             }
         }
     }
@@ -348,7 +350,7 @@ struct TaskDetailView: View {
             } header: {
                 Text("Specifications")
             } footer: {
-                Text("Odomind shows a value only when it has one it can stand behind. Anything you add here is stored against this vehicle and used everywhere.")
+                Text("Shown only when Odomind has a value it can stand behind. Anything you add is used everywhere.")
             }
         }
     }
@@ -382,7 +384,7 @@ struct TaskDetailView: View {
     private func calendarFooter(item: MaintenancePlanItem) -> some View {
         switch model.calendarExportState(planItemID: planItemID) {
         case .notExported:
-            Text("Adding to Calendar creates a one-off event you confirm yourself. Odomind does not read your calendar, and it cannot change or remove the event later.")
+            Text("Creates a one-off event you confirm. Odomind cannot change or remove it later.")
         case .exported(let on):
             Text("You added this to your calendar on \(Format.date(on)). Odomind cannot update or remove that event.")
         case .exportedButStale(let on, let eventDate):
@@ -430,9 +432,9 @@ struct TaskDetailView: View {
             Text("Reminder")
         } footer: {
             if item.reminder.isEnabled, !model.snapshot.settings.reminders.remindersEnabled {
-                Text("Reminders are turned off for Odomind, so nothing will be delivered. Turn them on in Garage → Settings → Reminders.")
+                Text("Reminders are off for Odomind. Turn them on in Settings → Reminders.")
             } else {
-                Text("Reminders use dates Odomind is confident about. A reminder built from a mileage estimate says so.")
+                Text("A reminder built from an estimate says so.")
             }
         }
     }
@@ -451,7 +453,7 @@ struct TaskDetailView: View {
                 showingDeleteConfirmation = true
             }
         } footer: {
-            Text("Turning tracking off hides this from Today without losing your history.")
+            Text("Hides this without losing your history.")
         }
     }
 
@@ -497,7 +499,7 @@ struct TaskDetailView: View {
             // No invented "typical cost in your area". Odomind has no source
             // for one, and a made-up number beside a real one is worse than
             // no number at all.
-            Text("Odomind does not carry regional price estimates, so it does not show one. What it can show is what you have actually spent.")
+            Text("No price estimates — only what you have actually spent.")
         }
     }
 

@@ -128,12 +128,12 @@ struct VehiclePickerBar: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        if let selected = model.selectedVehicle {
-            if model.snapshot.vehicles.count > 1 {
+        if let selected = model.dashboardVehicle {
+            if model.hasVehicleChoice {
                 Menu {
                     ForEach(model.snapshot.vehicles) { vehicle in
                         Button {
-                            model.selectVehicle(vehicle.id)
+                            model.showVehicle(vehicle.id)
                         } label: {
                             if vehicle.id == selected.id {
                                 Label(vehicle.displayName, systemImage: "checkmark")
