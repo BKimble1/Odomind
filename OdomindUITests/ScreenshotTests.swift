@@ -319,6 +319,16 @@ final class OdomindScreenshotTests: XCTestCase {
                 // the powertrain was never confirmed, so Odomind correctly
                 // left engine oil out of the plan.
                 XCTAssertTrue(option.isSelected, "tapping a published configuration should select it")
+                if !option.isSelected {
+                    // Reported above, and walked around here so the screens
+                    // after this one are still captured rather than lost with
+                    // it. "None of these is mine" is the app's own way through
+                    // for an owner whose car is not on the list, and it puts
+                    // the two generic questions back — which is what the rest
+                    // of this walk needs answered.
+                    let noneOfThese = fresh.element(withIdentifier: "confirm.noneOfThese")
+                    if fresh.scrollTo(noneOfThese, hittable: true) { noneOfThese.tap() }
+                }
             } else {
                 XCTFail("a configuration was published but could not be reached — saw \(fresh.visibleRowLabels())")
                 // Keep walking through the app's own escape hatch, so the
