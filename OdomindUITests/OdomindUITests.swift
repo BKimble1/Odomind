@@ -327,12 +327,18 @@ final class OdomindJourneyUITests: XCTestCase {
         search.tap()
         // Not one of the two tasks the setup flow adds, so it is certainly
         // untracked.
-        search.typeText("brake fluid")
+        // The newline dismisses the keyboard, which on this screen is sitting
+        // over the results it is about to produce. Waiting for the row to
+        // *exist* and then tapping it delivered the touch to a key instead,
+        // nothing was pushed, and the failure read as the untracked job
+        // screen not offering to track the job — a screen that had never
+        // opened. The same mistake cost the capture run two screens.
+        search.typeText("brake fluid\n")
 
-        let result = waitFor(
-            app.element(withIdentifier: "jobSearch.brake-fluid"),
-            10,
-            "a brake fluid job should be found — saw \(app.visibleRowLabels())"
+        let result = app.element(withIdentifier: "jobSearch.brake-fluid")
+        XCTAssertTrue(
+            app.scrollTo(result, hittable: true),
+            "a brake fluid job should be found and tappable — saw \(app.visibleRowLabels())"
         )
         result.tap()
 

@@ -358,6 +358,11 @@ final class OdomindScreenshotTests: XCTestCase {
         // existing would make this capture go missing rather than fail —
         // which is the harder kind of wrong to notice in a screenshot run.
         fresh.tabBars.buttons["Jobs"].tap()
+        // Photographed before it is asserted on. The iPhone SE reported the
+        // oil job missing from this screen twice, and both times the only
+        // record of what was actually on it was an empty list of row labels.
+        _ = fresh.navigationBars["Jobs"].waitForExistence(timeout: 10)
+        shot("build3-04b-jobs")
         let job = fresh.element(withIdentifier: "jobs.task.engine-oil-and-filter")
         XCTAssertTrue(
             fresh.scrollTo(job, hittable: true),
