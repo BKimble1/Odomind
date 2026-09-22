@@ -537,9 +537,10 @@ private struct ConfirmStep: View {
         }
         // Room to scroll clear of the step bar that floats over the bottom of
         // this screen. Without it the last row of the configuration list stops
-        // underneath that bar and cannot be tapped — which on an iPhone SE
-        // meant an owner could not pick the configuration their car was sold
-        // in, and the capture run could not either.
+        // half underneath that bar, with its second line — the engine size and
+        // fuel, the part an owner is choosing between — behind the blur. The
+        // row is still tappable by finger; it is simply hard to read, on the
+        // screen with the least room to spare.
         .contentMargins(.bottom, Theme.Spacing.section * 2, for: .scrollContent)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {

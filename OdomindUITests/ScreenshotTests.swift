@@ -294,6 +294,18 @@ final class OdomindScreenshotTests: XCTestCase {
         // is how the parts capture below is reached.
         if option.exists {
             if fresh.scrollTo(option, hittable: true) {
+                // Hittable is not the same as unobstructed. The step bar
+                // floats over the bottom of this screen, and XCUI's hit test
+                // reports a row underneath it as hittable — so `scrollTo`
+                // stopped the moment the row appeared at the bottom edge, the
+                // tap landed on the bar, and the screenshot taken after it
+                // came back byte-identical to the one before. Lift the row
+                // clear of the bar before touching it.
+                var lifts = 0
+                while option.exists, option.frame.maxY > fresh.frame.height - 140, lifts < 6 {
+                    fresh.swipeUp()
+                    lifts += 1
+                }
                 option.tap()
                 shot("build3-03b-picked")
                 // The trait, not a downstream symptom. The iPhone SE reported
