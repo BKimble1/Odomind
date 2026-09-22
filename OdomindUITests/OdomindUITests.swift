@@ -618,6 +618,11 @@ final class OdomindJourneyUITests: XCTestCase {
     }
 
     func testSampleVehicleIsClearlyMarked() {
+        // The sample button is behind the tracking question too. This was the
+        // one onboarding entry point the first sweep missed, because it taps
+        // `onboarding.sample` rather than `onboarding.addVehicle` — so the tap
+        // landed on the sheet, no sample was ever added, and Home never came.
+        app.skipTheTrackingQuestion(timeout: 25)
         waitFor(app.buttons["onboarding.sample"], 20, "onboarding did not appear").tap()
         waitFor(app.element(withIdentifier: "home.odometer"), 15, "Home did not appear after adding the sample")
 
