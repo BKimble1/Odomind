@@ -19,9 +19,14 @@ enum Theme {
     }
 
     enum Radius {
-        static let card: CGFloat = 16
-        static let tile: CGFloat = 12
+        static let card: CGFloat = 20
+        static let tile: CGFloat = 16
         static let badge: CGFloat = 6
+        /// The vehicle card at the top of the dashboard, which is larger than
+        /// everything under it and reads as the object the screen is about.
+        static let hero: CGFloat = 24
+        /// A circular icon chip.
+        static let chip: CGFloat = 999
     }
 
     /// The smallest comfortable target, per Apple's Human Interface Guidelines.
@@ -79,6 +84,28 @@ enum Theme {
         static let separator = dynamic(light: 0xD3D9DA, dark: 0x303B3F)
         /// The quiet ground a vehicle illustration sits on.
         static let artworkGround = dynamic(light: 0xE9EDEE, dark: 0x192124)
+
+        /// The hairline around a card. Lighter than `separator`, because a
+        /// card is already told apart from the page by its fill; this only
+        /// stops white-on-white disappearing.
+        static let cardBorder = dynamic(light: 0xEBEEEF, dark: 0x1D2529)
+
+        // The two tints in the luminous field behind the dashboard. Held as
+        // tokens rather than written into the view so the field can be
+        // measured and tuned in one place — it sits under every screen.
+        static let fieldPrimary = dynamic(light: 0x146E68, dark: 0x34B2A2)
+        static let fieldSecondary = dynamic(light: 0x7BA0D2, dark: 0x607EC6)
+
+        // Pastel grounds for the icon chips. Each is paired with a foreground
+        // from `Colors` or `accent`, and the pair is what the contrast test
+        // measures — a chip is a coloured circle with a glyph in it, so the
+        // glyph has to clear 3:1 against its own ground, not against the page.
+        static let chipAccent = dynamic(light: 0xE4F1EF, dark: 0x13312E)
+        static let chipInformative = dynamic(light: 0xE8EEFB, dark: 0x16223A)
+        static let chipOverdue = dynamic(light: 0xFDEAE6, dark: 0x3A1B16)
+        static let chipCaution = dynamic(light: 0xF8E7C8, dark: 0x3A2C11)
+        /// The ground of the whole attention card, not just its chip.
+        static let cautionSurface = dynamic(light: 0xFDF4E3, dark: 0x1D1710)
 
         private static func dynamic(light: UInt32, dark: UInt32) -> Color {
             Color(uiColor: UIColor { traits in

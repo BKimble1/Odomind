@@ -1,21 +1,22 @@
 import SwiftUI
 import OdomindCore
 
-/// Home: which vehicle, what is coming, and the two things an owner actually
-/// does — record mileage and record work.
+/// The dashboard: which car, how it is, and the one thing to do next.
 ///
-/// The hierarchy is the one Build 3 asked for, top to bottom: the vehicle at
-/// upper left and the shopping area at upper right, then one compact overview
-/// with a single way to edit mileage, then one search field with an explicit
-/// Jobs/Parts choice, then the week and a short agenda. "Log service" is
-/// pinned above the tab bar so the primary action is never the thing you have
-/// to scroll past four due jobs to reach.
+/// Build 4 replaced a list of sections with a board. Top to bottom: who this
+/// is, the car itself with its mileage and a one-word verdict, three numbers
+/// worth a glance, what is coming, and anything that runs on a date rather
+/// than a distance. "Log service" stays pinned above the tab bar.
 ///
-/// What is gone since Build 2: the card that repeated the vehicle's name under
-/// the navigation bar that already said it, the second "Update mileage" button
-/// that did the same thing as the pencil two rows above it, and the rounded
-/// plate drawn around every one of five sections. Rows sit on the page and are
-/// separated by hairlines, which is what a list looks like.
+/// Two things it no longer asks of the owner. There is no vehicle switcher
+/// when there is only one vehicle, which is most people — the car on the
+/// dashboard is simply theirs, or the one they pinned in the garage. And the
+/// shopping area is not a control to operate: it resolves from what was chosen
+/// last time and only appears when there is nothing to go on.
+///
+/// The words are the other half of it. A card that says "Engine oil and
+/// filter" and "800 mi past due" does not also need a sentence explaining what
+/// an oil change is.
 struct HomeView: View {
     /// Shown only to somebody who already had a garage before these questions
     /// existed. See `AppModel.shouldOfferPermissionCatchUp`.
@@ -54,24 +55,20 @@ struct HomeView: View {
 
         NavigationStack(path: $router.homePath) {
             Group {
-                if let vehicle = model.selectedVehicle {
+                if let vehicle = model.dashboardVehicle {
                     content(for: vehicle)
                 } else {
                     NoVehicleView()
                 }
             }
-            .navigationTitle("Home")
-            // Compact, because the tab bar already says "Home" and a large
-            // title spends a whole line restating it — on the narrowest
-            // phone, the one with least to spare.
-            .navigationBarTitleDisplayMode(.inline)
-            // White in light, near-black in dark. With the section plates gone
-            // the rows need a surface of their own to sit on, and the page
-            // grey underneath a plateless list only looks unfinished.
-            .background(Theme.Palette.raised)
+            // No navigation title at all: the header inside the content says
+            // who this is, and a bar repeating "Home" above a tab bar that
+            // already says "Home" is the third time in one screen.
+            .toolbar(.hidden, for: .navigationBar)
+            .background(LuminousField())
             .odomindDestinations()
             .sheet(isPresented: $showingMileageEntry) {
-                if let vehicle = model.selectedVehicle { MileageEntrySheet(vehicle: vehicle) }
+                if let vehicle = model.dashboardVehicle { MileageEntrySheet(vehicle: vehicle) }
             }
             .sheet(isPresented: $showingPermissionCatchUp) {
                 PermissionSetupView {
@@ -80,7 +77,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showingServiceLog) {
-                if let vehicle = model.selectedVehicle { LogServiceView(vehicle: vehicle) }
+                if let vehicle = model.dashboardVehicle { LogServiceView(vehicle: vehicle) }
             }
             .sheet(item: $quickLog) { request in
                 QuickLogSheet(request: request)
@@ -103,57 +100,54 @@ struct HomeView: View {
     @ViewBuilder
     private func content(for vehicle: Vehicle) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.section) {
-                // Vehicle upper left, shopping area upper right — the two
-                // standing choices every screen below depends on.
-                //
-                // In the content rather than the navigation bar, because a
-                // screenshot from an iPhone SE showed the vehicle's name
-                // rendered as "Sa…". Two toolbar items compete for one bar's
-                // width, and the leading one lost: the single most important
-                // piece of context on the screen — which car this is about —
-                // was three characters. Here they each get the full width.
-                HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.small) {
-                    VehiclePickerBar()
-                    Spacer(minLength: Theme.Spacing.small)
-                    ShoppingLocationControl()
-                }
-                .padding(.horizontal, Theme.Spacing.large)
+            VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+                DashboardHeader(showsSwitcher: model.hasVehicleChoice)
+                    .padding(.bottom, Theme.Spacing.tight)
 
-                MileageOverview(vehicle: vehicle) { showingMileageEntry = true }
-                    .padding(.horizontal, Theme.Spacing.large)
+                HeroVehicleCard(vehicle: vehicle) { showingMileageEntry = true }
+
+                StatTrio(vehicle: vehicle)
 
                 searchSection(for: vehicle)
 
                 if searchText.isEmpty {
                     upNextSection(for: vehicle)
+                    dateBasedSection(for: vehicle)
                     recentSection(for: vehicle)
                 }
 
                 if vehicle.isDemo, let disclaimer = model.demoDisclaimer {
                     QuietNote(text: disclaimer, symbolName: "exclamationmark.triangle")
-                        .padding(.horizontal, Theme.Spacing.large)
                 }
 
-                // Somebody upgrading already has a garage and has never been
-                // asked these. One quiet row, dismissed for good either way —
-                // not the whole welcome sequence replayed at them.
                 if model.shouldOfferPermissionCatchUp {
                     permissionCatchUpRow
-                        .padding(.horizontal, Theme.Spacing.large)
                 }
             }
+            .padding(.horizontal, Theme.Spacing.large)
             .padding(.vertical, Theme.Spacing.large)
         }
         .scrollDismissesKeyboard(.interactively)
-        // The one primary action, kept where a thumb is and where four due
-        // jobs cannot push it off the bottom of the screen. `safeAreaInset`
-        // is what keeps it clear of the tab bar and above the keyboard, and
-        // it insets the scroll content so the last row is still reachable.
         .safeAreaInset(edge: .bottom, spacing: 0) { logServiceBar }
         .refreshable {
             model.refresh()
             await model.syncReminders()
+        }
+    }
+
+    /// Anything that comes due on a date rather than at a distance — an
+    /// inspection, a renewal. Warm, because it is a different kind of worry
+    /// from "the oil is old", and separated for the same reason.
+    @ViewBuilder
+    private func dateBasedSection(for vehicle: Vehicle) -> some View {
+        if let item = model.nextDateBasedItem(for: vehicle.id) {
+            AttentionCard(
+                symbol: "doc.text.fill",
+                title: item.title,
+                detail: item.detail
+            ) {
+                router.homePath.append(JobRoute.task(item.planItemID))
+            }
         }
     }
 

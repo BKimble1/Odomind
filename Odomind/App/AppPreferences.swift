@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import OdomindCore
 
 /// How the owner wants the app to look, regardless of the system setting.
 enum AppearancePreference: String, Codable, Sendable, CaseIterable, Hashable {
@@ -172,6 +173,19 @@ struct AppPreferences: Codable, Hashable, Sendable {
     /// existing owner upgrading from Build 2 has this false and is offered a
     /// short optional catch-up, not the whole flow again.
     var hasSeenPermissionSetup: Bool
+    /// The vehicle the dashboard opens on when there is more than one.
+    ///
+    /// Absent is the ordinary case and not a gap: with one vehicle there is
+    /// nothing to choose, and with several the most recently selected one is
+    /// the right default until somebody says otherwise. Pinning is how they
+    /// say otherwise, and it survives switching away and back.
+    var pinnedVehicleID: UUID?
+    /// What the owner said they care about tracking, asked once on first run.
+    ///
+    /// Drives which jobs the starter plan takes on. Empty means they skipped
+    /// the question, which is an answer: Odomind then offers its ordinary
+    /// recommended set rather than narrowing it.
+    var trackingInterests: Set<TrackingInterest>
 
     init(
         appearance: AppearancePreference = .system,
@@ -179,7 +193,9 @@ struct AppPreferences: Codable, Hashable, Sendable {
         catalogUpdates: CatalogUpdatePreferences = .default,
         pro: ProPreferences = .default,
         hasSeenCalendarIntroduction: Bool = false,
-        hasSeenPermissionSetup: Bool = false
+        hasSeenPermissionSetup: Bool = false,
+        pinnedVehicleID: UUID? = nil,
+        trackingInterests: Set<TrackingInterest> = []
     ) {
         self.appearance = appearance
         self.calendar = calendar
@@ -187,6 +203,8 @@ struct AppPreferences: Codable, Hashable, Sendable {
         self.pro = pro
         self.hasSeenCalendarIntroduction = hasSeenCalendarIntroduction
         self.hasSeenPermissionSetup = hasSeenPermissionSetup
+        self.pinnedVehicleID = pinnedVehicleID
+        self.trackingInterests = trackingInterests
     }
 
     static let `default` = AppPreferences()
@@ -199,7 +217,63 @@ struct AppPreferences: Codable, Hashable, Sendable {
             catalogUpdates: try container.decodeIfPresent(CatalogUpdatePreferences.self, forKey: .catalogUpdates) ?? .default,
             pro: try container.decodeIfPresent(ProPreferences.self, forKey: .pro) ?? .default,
             hasSeenCalendarIntroduction: try container.decodeIfPresent(Bool.self, forKey: .hasSeenCalendarIntroduction) ?? false,
-            hasSeenPermissionSetup: try container.decodeIfPresent(Bool.self, forKey: .hasSeenPermissionSetup) ?? false
+            hasSeenPermissionSetup: try container.decodeIfPresent(Bool.self, forKey: .hasSeenPermissionSetup) ?? false,
+            pinnedVehicleID: try container.decodeIfPresent(UUID.self, forKey: .pinnedVehicleID),
+            trackingInterests: try container.decodeIfPresent(Set<TrackingInterest>.self, forKey: .trackingInterests) ?? []
         )
+    }
+}
+
+/// What somebody says they want to keep an eye on, asked once, before they have
+/// entered a car.
+///
+/// Five, because a first-run question with twelve answers is a form. Each one
+/// maps to catalog categories, so answering it narrows the starter plan to work
+/// the owner actually cares about instead of handing them eighteen jobs.
+enum TrackingInterest: String, Codable, Hashable, Sendable, CaseIterable, Identifiable {
+    case essentials
+    case tyresAndBrakes
+    case fluids
+    case spending
+    case paperwork
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .essentials: return "Oil and filters"
+        case .tyresAndBrakes: return "Tyres and brakes"
+        case .fluids: return "Fluids and coolant"
+        case .spending: return "What it costs me"
+        case .paperwork: return "Inspections and renewals"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .essentials: return "drop.fill"
+        case .tyresAndBrakes: return "circle.circle"
+        case .fluids: return "thermometer.medium"
+        case .spending: return "chart.bar.fill"
+        case .paperwork: return "doc.text.fill"
+        }
+    }
+
+    /// The catalog categories this interest takes in. Matched against a task
+    /// definition's own category, so adding a job to the catalog puts it in
+    /// front of the people who asked for that kind of work without anyone
+    /// editing a list here.
+    ///
+    /// `spending` covers none: it is about receipts and totals, not about
+    /// which jobs exist, so choosing it changes what Odomind shows rather than
+    /// what it tracks.
+    var categories: Set<MaintenanceCategory> {
+        switch self {
+        case .essentials: return [.engine, .filters, .ignition]
+        case .tyresAndBrakes: return [.tiresAndWheels, .brakes, .suspensionAndSteering]
+        case .fluids: return [.fluids, .beltsAndHoses, .climate]
+        case .spending: return []
+        case .paperwork: return [.inspection, .seasonal]
+        }
     }
 }

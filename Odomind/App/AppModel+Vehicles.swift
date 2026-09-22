@@ -411,3 +411,42 @@ extension AppModel {
 
     var demoDisclaimer: String? { catalogService.catalog?.demoContent?.disclaimer }
 }
+
+// MARK: - Which vehicle the dashboard is about
+
+extension AppModel {
+    /// The vehicle the dashboard opens on.
+    ///
+    /// One vehicle means there is nothing to choose, so it shows that one and
+    /// the switcher does not appear at all. Several means the pinned one, and
+    /// failing that whichever is selected. Build 3 made this a control the
+    /// owner had to operate on every screen; most people have one car.
+    var dashboardVehicle: Vehicle? {
+        let owned = ownedVehicles
+        if owned.count == 1 { return owned.first }
+        if let id = preferences.pinnedVehicleID, let pinned = owned.first(where: { $0.id == id }) {
+            return pinned
+        }
+        return selectedVehicle ?? owned.first
+    }
+
+    /// Whether the owner ever needs to be offered a choice of vehicle.
+    var hasVehicleChoice: Bool { ownedVehicles.count > 1 }
+
+    func isPinned(_ vehicle: Vehicle) -> Bool {
+        preferences.pinnedVehicleID == vehicle.id
+    }
+
+    /// Pins a vehicle to the dashboard, or unpins it if it was already pinned.
+    func togglePin(_ vehicle: Vehicle) {
+        let id = vehicle.id
+        updatePreferences { preferences in
+            preferences.pinnedVehicleID = preferences.pinnedVehicleID == id ? nil : id
+        }
+    }
+
+    /// Records what the owner said they want to keep an eye on.
+    func setTrackingInterests(_ interests: Set<TrackingInterest>) {
+        updatePreferences { $0.trackingInterests = interests }
+    }
+}

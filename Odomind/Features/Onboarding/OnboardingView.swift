@@ -17,6 +17,8 @@ struct OnboardingView: View {
     /// owner's stated preference and also the better order: both are about
     /// what the app may do, and neither depends on knowing the car.
     @State private var showingPermissions = false
+    /// Asked before anything else, and only once.
+    @State private var showingInterests = false
 
     /// A fixed point size does not grow with the owner's text setting, which
     /// XCTest's accessibility audit reports as partially unsupported Dynamic
@@ -47,6 +49,16 @@ struct OnboardingView: View {
                 showingAddVehicle = true
             }
             .interactiveDismissDisabled(false)
+        }
+        .sheet(isPresented: $showingInterests) {
+            TrackingInterestsView {
+                showingInterests = false
+                if shouldOfferPermissions {
+                    showingPermissions = true
+                } else {
+                    showingAddVehicle = true
+                }
+            }
         }
     }
 
@@ -83,7 +95,13 @@ struct OnboardingView: View {
 
             VStack(spacing: Theme.Spacing.medium) {
                 PrimaryActionButton(title: "Add my vehicle") {
-                    if shouldOfferPermissions {
+                    // What you care about, then what the app may do, then the
+                    // car. The first two are about the owner and take seconds;
+                    // asking them after the vehicle flow means asking somebody
+                    // who has just finished and wants to be done.
+                    if model.preferences.trackingInterests.isEmpty {
+                        showingInterests = true
+                    } else if shouldOfferPermissions {
                         showingPermissions = true
                     } else {
                         showingAddVehicle = true
