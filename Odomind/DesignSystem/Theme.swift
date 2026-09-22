@@ -93,6 +93,14 @@ enum Theme {
         // The two tints in the luminous field behind the dashboard. Held as
         // tokens rather than written into the view so the field can be
         // measured and tuned in one place — it sits under every screen.
+        //
+        // The field is drawn *under* text on the dashboard header, so the
+        // pairing that matters is text over the composited tint rather than
+        // over `page`. At full strength the tightest is `secondaryText` over
+        // the primary tint in light mode: 4.70:1 against a 4.5 bar. That is
+        // real headroom but not much, so raising either opacity means
+        // re-running `ContrastTests`, which composites them rather than
+        // measuring the tint at full opacity.
         static let fieldPrimary = dynamic(light: 0x146E68, dark: 0x34B2A2)
         static let fieldSecondary = dynamic(light: 0x7BA0D2, dark: 0x607EC6)
 
@@ -100,6 +108,15 @@ enum Theme {
         // from `Colors` or `accent`, and the pair is what the contrast test
         // measures — a chip is a coloured circle with a glyph in it, so the
         // glyph has to clear 3:1 against its own ground, not against the page.
+        //
+        // Measured: 5.24 / 6.17 for accent, 5.41 / 7.21 informative, 4.90 /
+        // 6.81 overdue, 5.40 / 8.49 caution (light / dark). All four clear
+        // 4.5:1 as well, which they have to — `StatusPill` puts a word on
+        // these grounds, not only a glyph.
+        //
+        // Build 4 added these and the claim above was untrue for three
+        // releases: `ContrastTests` covered the original table only, so not
+        // one chip had ever been measured.
         static let chipAccent = dynamic(light: 0xE4F1EF, dark: 0x13312E)
         static let chipInformative = dynamic(light: 0xE8EEFB, dark: 0x16223A)
         static let chipOverdue = dynamic(light: 0xFDEAE6, dark: 0x3A1B16)

@@ -162,4 +162,96 @@ final class ContrastTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - Build 4's chips and surfaces
+
+    /// A chip is a coloured circle with a glyph in it, so the glyph has to
+    /// clear the bar against **its own ground**, not against the page. Build 4
+    /// added five such grounds and the Theme comment claimed this test covered
+    /// them; it did not, so nothing measured a single one.
+    ///
+    /// 3:1 rather than 4.5:1, and deliberately: a chip glyph is a large
+    /// graphical object — an SF Symbol at 19 points, semibold — which is the
+    /// case WCAG's non-text bar is for. The words beside it carry the meaning
+    /// and are measured at 4.5:1 elsewhere.
+    func testEveryChipGlyphClearsItsOwnGround() {
+        assertContrast(Theme.Palette.accent, on: Theme.Palette.chipAccent,
+                       atLeast: 3, "accent glyph on the accent chip")
+        assertContrast(Theme.Colors.informative, on: Theme.Palette.chipInformative,
+                       atLeast: 3, "informative glyph on its chip")
+        assertContrast(Theme.Colors.overdue, on: Theme.Palette.chipOverdue,
+                       atLeast: 3, "overdue glyph on its chip")
+        assertContrast(Theme.Colors.caution, on: Theme.Palette.chipCaution,
+                       atLeast: 3, "caution glyph on its chip")
+    }
+
+    /// The status pill puts a word on a chip ground, not just a glyph, so that
+    /// pairing is text and takes the 4.5:1 bar.
+    func testStatusPillTextClearsItsGround() {
+        assertContrast(Theme.Palette.accent, on: Theme.Palette.chipAccent,
+                       atLeast: 4.5, "pill text on the accent chip")
+        assertContrast(Theme.Colors.overdue, on: Theme.Palette.chipOverdue,
+                       atLeast: 4.5, "pill text on the overdue chip")
+        assertContrast(Theme.Colors.caution, on: Theme.Palette.chipCaution,
+                       atLeast: 4.5, "pill text on the caution chip")
+    }
+
+    /// AttentionCard tints the whole card, so every word on it is measured
+    /// against that tint rather than against `raised`.
+    func testTextOnTheAttentionCardClearsItsWarmGround() {
+        assertContrast(Theme.Palette.primaryText, on: Theme.Palette.cautionSurface,
+                       atLeast: 4.5, "attention card title")
+        assertContrast(Theme.Palette.secondaryText, on: Theme.Palette.cautionSurface,
+                       atLeast: 4.5, "attention card detail")
+    }
+
+    /// The luminous field is drawn under every screen, so `page` is no longer
+    /// the darkest thing a card sits on. The tint is faint by design — 17% and
+    /// 13% at full strength — but "faint" is an intention, not a measurement.
+    ///
+    /// Composited at full strength over the page, the field must still leave
+    /// body text on a card clearing the bar. A card is opaque `raised`, so the
+    /// pairing that actually matters is unchanged; what this guards is the
+    /// text Odomind draws directly on the field, which the dashboard header
+    /// does.
+    func testTextDrawnStraightOnTheFieldStaysLegible() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let name = style == .dark ? "dark" : "light"
+            let page = resolve(Theme.Palette.page, style)
+            for (tint, strength, which) in [
+                (Theme.Palette.fieldPrimary, 0.17, "primary"),
+                (Theme.Palette.fieldSecondary, 0.13, "secondary"),
+            ] {
+                let lit = blend(resolve(tint, style), over: page, alpha: strength)
+                for (token, label) in [
+                    (Theme.Palette.primaryText, "primary text"),
+                    (Theme.Palette.secondaryText, "secondary text"),
+                ] {
+                    let measured = ratio(resolve(token, style), on: lit)
+                    XCTAssertGreaterThanOrEqual(
+                        measured, 4.5,
+                        String(
+                            format: "%@ over the %@ field measures %.2f:1 in %@ mode",
+                            label, which, measured, name
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /// Source-over compositing, so the field can be measured at the strength
+    /// it is actually drawn at rather than at full opacity.
+    private func blend(_ top: UIColor, over bottom: UIColor, alpha: CGFloat) -> UIColor {
+        var tr: CGFloat = 0, tg: CGFloat = 0, tb: CGFloat = 0, ta: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        top.getRed(&tr, green: &tg, blue: &tb, alpha: &ta)
+        bottom.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        return UIColor(
+            red: tr * alpha + br * (1 - alpha),
+            green: tg * alpha + bg * (1 - alpha),
+            blue: tb * alpha + bb * (1 - alpha),
+            alpha: 1
+        )
+    }
 }
