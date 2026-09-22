@@ -677,6 +677,7 @@ private struct ConfirmStep: View {
         configurationBeforeOptions = base
         model.vehicleOptions.selectedOptionID = option.id
         draft.configuration = option.applied(to: base)
+        draft.chosenOption = option
     }
 
     private func prepare() {

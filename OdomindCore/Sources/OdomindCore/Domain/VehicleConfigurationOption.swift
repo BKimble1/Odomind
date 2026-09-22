@@ -155,6 +155,61 @@ public struct VehicleConfigurationOption: Codable, Hashable, Sendable, Identifia
         return .unknown
     }
 
+    /// The specifications this option's own words actually state.
+    ///
+    /// One, today: the fuel grade. It is worth having because it is the first
+    /// thing the bundled catalog cannot supply for any vehicle — that catalog
+    /// carries a single profile with no specifications at all, so before this
+    /// the Parts screen had nothing per-car to show anybody and every retailer
+    /// search went out as bare year-make-model.
+    ///
+    /// It is limited to one because this provider states one. Viscosity,
+    /// capacities, tyre sizes and part numbers are not in this data and are
+    /// not inferable from it: a 3.8 L V6 does not imply an oil grade, and
+    /// guessing one would put a number the owner might buy against a source
+    /// that never said it. Those stay empty until the owner enters them or a
+    /// licensed dataset supplies them.
+    ///
+    /// `referenceSourced`, never `manufacturerSourced`: this is a US
+    /// government fuel-economy record, not the manufacturer's own statement,
+    /// so it can never carry a verified badge.
+    public func specifications(recordedAt: Date = Date()) -> [Specification] {
+        guard let grade = fuelGrade else { return [] }
+        return [
+            Specification(
+                kind: .fuelGrade,
+                value: .text(grade),
+                provenance: Provenance(
+                    origin: .referenceSourced,
+                    attribution: SourceAttribution(
+                        sourceName: providerName,
+                        sourceReference: providerURL?.absoluteString,
+                        note: "The configuration you picked: \(label)"
+                    )
+                ),
+                updatedAt: recordedAt
+            )
+        ]
+    }
+
+    /// The grade this option names, in the provider's own vocabulary.
+    ///
+    /// The vocabulary is small and published, so this reads it rather than
+    /// guessing: anything outside it produces nothing. "Regular Gas or
+    /// Electricity" is a plug-in hybrid that still takes regular in its tank,
+    /// which is the answer somebody standing at a pump wants.
+    public var fuelGrade: String? {
+        let text = (fuelDescription ?? "").lowercased()
+        guard !text.isEmpty else { return nil }
+        if text.contains("diesel") { return "Diesel" }
+        if text.contains("premium") { return "Premium" }
+        if text.contains("midgrade") { return "Midgrade" }
+        if text.contains("regular") { return "Regular" }
+        // "Electricity" alone, hydrogen, natural gas: nothing a pump grade
+        // describes, so nothing is claimed.
+        return nil
+    }
+
     /// Applies only what the provider stated, leaving everything else alone.
     ///
     /// A value the owner has already confirmed is never overwritten: they were

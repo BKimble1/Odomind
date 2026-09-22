@@ -24,6 +24,13 @@ struct VehicleDraft {
     /// Set when the identity came from a VIN decode, so the confirm screen can
     /// show what the decoder actually said.
     var decodeResult: VehicleDecodeResult?
+    /// The configuration the owner picked from a provider's list.
+    ///
+    /// Kept whole rather than only as the fields it maps onto the
+    /// configuration, because it also states things the configuration has no
+    /// field for — the fuel grade — and those are worth recording against the
+    /// vehicle with the source that said them.
+    var chosenOption: VehicleConfigurationOption?
 
     var isReadyToSave: Bool {
         !identity.make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -80,6 +87,14 @@ extension AppModel {
             let items = makePlanItems(for: vehicle, draft: draft, now: now)
             if !items.isEmpty {
                 try store.save(planItems: items)
+            }
+
+            // Whatever the chosen configuration actually states. The bundled
+            // catalog carries no specifications for any vehicle, so without
+            // this the Parts screen has nothing per-car to show and every
+            // retailer search goes out as bare year-make-model.
+            for specification in draft.chosenOption?.specifications(recordedAt: now) ?? [] {
+                try store.save(specification: specification, for: vehicle.id)
             }
 
             var settings = snapshot.settings

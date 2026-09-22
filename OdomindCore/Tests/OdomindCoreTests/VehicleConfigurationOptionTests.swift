@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import OdomindCore
 
@@ -261,5 +262,65 @@ final class VehicleConfigurationOptionTests: XCTestCase {
             return XCTFail("an option should survive its own encoding")
         }
         XCTAssertEqual(back, chosen)
+    }
+}
+
+/// The specifications an option is allowed to state, and the many it is not.
+final class ConfigurationOptionSpecificationTests: XCTestCase {
+
+    private func option(fuel: String?) -> VehicleConfigurationOption {
+        VehicleConfigurationOption(
+            id: "31873",
+            providerName: "fueleconomy.gov",
+            providerKey: "fueleconomy.gov",
+            providerURL: URL(string: "https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=31873"),
+            label: "3.8 L, 6 cyl, Automatic 4-spd, Regular Gasoline",
+            fuelDescription: fuel
+        )
+    }
+
+    func testTheProvidersOwnVocabularyBecomesAFuelGrade() {
+        XCTAssertEqual(option(fuel: "Regular Gasoline").fuelGrade, "Regular")
+        XCTAssertEqual(option(fuel: "Premium Gasoline").fuelGrade, "Premium")
+        XCTAssertEqual(option(fuel: "Midgrade Gasoline").fuelGrade, "Midgrade")
+        XCTAssertEqual(option(fuel: "Diesel").fuelGrade, "Diesel")
+        // A plug-in hybrid still takes a grade in its tank, which is the
+        // answer somebody standing at a pump wants.
+        XCTAssertEqual(option(fuel: "Regular Gas or Electricity").fuelGrade, "Regular")
+    }
+
+    func testNothingIsClaimedForFuelsAPumpGradeDoesNotDescribe() {
+        XCTAssertNil(option(fuel: "Electricity").fuelGrade)
+        XCTAssertNil(option(fuel: "Hydrogen").fuelGrade)
+        XCTAssertNil(option(fuel: "Compressed Natural Gas").fuelGrade)
+        XCTAssertNil(option(fuel: nil).fuelGrade)
+        XCTAssertNil(option(fuel: "").fuelGrade)
+    }
+
+    func testTheSpecificationCarriesItsSourceAndIsNeverVerified() throws {
+        let specifications = option(fuel: "Regular Gasoline").specifications()
+        let specification = try XCTUnwrap(specifications.first)
+
+        XCTAssertEqual(specifications.count, 1)
+        XCTAssertEqual(specification.kind, .fuelGrade)
+        XCTAssertEqual(specification.value.displayString, "Regular")
+        XCTAssertEqual(specification.provenance.origin, .referenceSourced)
+        XCTAssertEqual(specification.provenance.attribution?.sourceName, "fueleconomy.gov")
+        XCTAssertNotNil(specification.provenance.attribution?.sourceReference)
+        // A government fuel-economy record is not the manufacturer speaking,
+        // so it can never carry a verified badge.
+        XCTAssertFalse(specification.isVerified)
+    }
+
+    /// The guardrail: this provider says nothing about viscosity, capacities,
+    /// tyre sizes or part numbers, so neither does Odomind. A future edit that
+    /// starts inferring one of these from the engine size fails here.
+    func testNothingBeyondTheFuelGradeIsInvented() {
+        let kinds = option(fuel: "Regular Gasoline").specifications().map(\.kind)
+        XCTAssertEqual(kinds, [.fuelGrade])
+        XCTAssertFalse(kinds.contains(.engineOilViscosity))
+        XCTAssertFalse(kinds.contains(.engineOilCapacityWithFilter))
+        XCTAssertFalse(kinds.contains(.tireSizeFront))
+        XCTAssertFalse(kinds.contains(.engineAirFilterPartNumber))
     }
 }

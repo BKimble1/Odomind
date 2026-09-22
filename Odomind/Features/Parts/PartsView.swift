@@ -167,7 +167,16 @@ struct PartsView: View {
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("parts.spec.\(kind.rawValue)")
                         } else {
-                            SpecRow(label: kind.displayName, value: nil, hint: kind.sourceHint)
+                            // Not a dead row. Odomind has no licensed
+                            // specification data, so for most vehicles this is
+                            // the normal case — and the owner's manual on the
+                            // passenger seat has the answer. One tap to record
+                            // it, and it is used in every search from then on.
+                            NavigationLink(value: VehicleRoute.specifications(vehicle.id)) {
+                                SpecRow(label: kind.displayName, value: nil, hint: kind.sourceHint)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("parts.addSpec.\(kind.rawValue)")
                         }
                     }
                 }
@@ -327,15 +336,19 @@ private struct SpecRow: View {
                     .accessibilityHidden(true)
             } else {
                 // Never a guess, and never a blank that reads as zero.
-                Text("Not known")
-                    .font(.subheadline)
+                Text("Add")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.Palette.accent)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.Palette.secondaryText)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.vertical, Theme.Spacing.medium - 2)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint(Text(value == nil ? (hint ?? "") : "Copies this value"))
+        .accessibilityHint(Text(value == nil ? "Odomind has no value for this. \(hint ?? "")" : "Copies this value"))
     }
 }
 

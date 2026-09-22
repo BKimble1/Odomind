@@ -199,6 +199,73 @@ final class DashboardAndInterestsTests: XCTestCase {
         XCTAssertEqual(model.distanceThisMonth(for: id), Distance(300, .miles))
     }
 
+    // MARK: - Parts for a specific car
+
+    /// The chain the whole Parts screen rests on: pick a configuration, and
+    /// what that configuration states is recorded against the vehicle and
+    /// comes back out of `resolvedSpecifications`.
+    func testAChosenConfigurationsFuelGradeReachesTheVehicle() throws {
+        let model = try makeModel()
+        var draft = AppFixture.draft()
+        draft.chosenOption = VehicleConfigurationOption(
+            id: "31873",
+            providerName: "fueleconomy.gov",
+            providerKey: "fueleconomy.gov",
+            providerURL: URL(string: "https://www.fueleconomy.gov/feg/Find.do?action=sbs&id=31873"),
+            label: "3.8 L, 6 cyl, Automatic 4-spd, Regular Gasoline",
+            fuelDescription: "Regular Gasoline"
+        )
+
+        let id = try XCTUnwrap(model.addVehicle(from: draft))
+        let vehicle = try XCTUnwrap(model.snapshot.vehicle(id: id))
+        let resolved = model.resolvedSpecifications(for: vehicle)
+
+        let grade = try XCTUnwrap(resolved.first { $0.kind == .fuelGrade })
+        XCTAssertEqual(grade.active.value.displayString, "Regular")
+        XCTAssertEqual(grade.active.provenance.attribution?.sourceName, "fueleconomy.gov")
+    }
+
+    /// A vehicle added without picking a configuration records nothing, rather
+    /// than a default grade nobody stated.
+    func testNoChosenConfigurationMeansNoInventedSpecification() throws {
+        let model = try makeModel()
+        let id = try XCTUnwrap(model.addVehicle(from: AppFixture.draft()))
+        let vehicle = try XCTUnwrap(model.snapshot.vehicle(id: id))
+
+        XCTAssertTrue(model.resolvedSpecifications(for: vehicle).isEmpty)
+    }
+
+    /// The retailer search carries the recorded value, which is the whole
+    /// point of holding one: "2010 Jeep Wrangler Regular fuel" beats "2010
+    /// Jeep Wrangler fuel".
+    func testARecordedSpecificationReachesTheRetailerSearch() throws {
+        let model = try makeModel()
+        let id = try XCTUnwrap(model.addVehicle(from: AppFixture.draft()))
+        let vehicle = try XCTUnwrap(model.snapshot.vehicle(id: id))
+
+        model.saveSpecification(
+            Specification(
+                kind: .batteryGroupSize,
+                value: .text("Group 34"),
+                provenance: .userEntered
+            ),
+            for: id
+        )
+
+        let resolved = model.resolvedSpecifications(for: vehicle)
+        let battery = try XCTUnwrap(resolved.first { $0.kind == .batteryGroupSize })
+        let query = PartsQueryBuilder.query(
+            for: vehicle,
+            part: "battery",
+            specification: battery.active.value.displayString
+        )
+
+        XCTAssertTrue(query.contains("Group 34"), query)
+        XCTAssertTrue(query.contains("Wrangler"), query)
+        // Never the VIN, the nickname or anything from the history.
+        XCTAssertFalse(query.lowercased().contains("vin"))
+    }
+
     func testTheDashboardSummaryIsAboutTheRecordsOdomindHolds() throws {
         let model = try makeModel()
         let id = try XCTUnwrap(model.addVehicle(from: AppFixture.draft()))
