@@ -177,7 +177,13 @@ final class DashboardAndInterestsTests: XCTestCase {
 
     func testDistanceThisMonthNeedsTwoReadingsToMeanAnything() throws {
         let model = try makeModel(now: appDate(2026, 6, 15))
-        let id = try XCTUnwrap(model.addVehicle(from: AppFixture.draft(odometer: 120_000)))
+        // The setup reading is dated, so the second one has to come after it.
+        // Written the other way round first, this asserted 600 miles against a
+        // sequence where the odometer went *down* over two weeks — and the
+        // implementation was right to refuse it.
+        let id = try XCTUnwrap(
+            model.addVehicle(from: AppFixture.draft(odometer: 120_000, now: appDate(2026, 6, 2)))
+        )
 
         // One reading is a position, not a distance travelled. Reporting zero
         // would be a claim Odomind cannot make.
@@ -186,6 +192,19 @@ final class DashboardAndInterestsTests: XCTestCase {
         model.recordOdometer(vehicleID: id, amount: 120_600, on: appDate(2026, 6, 14))
 
         XCTAssertEqual(model.distanceThisMonth(for: id), Distance(600, .miles))
+    }
+
+    /// An odometer that reads lower than it did is bad data, not a negative
+    /// distance. Odomind says nothing rather than putting a number on it.
+    func testAFallingOdometerReportsNoDistanceRatherThanANegativeOne() throws {
+        let model = try makeModel(now: appDate(2026, 6, 15))
+        let id = try XCTUnwrap(
+            model.addVehicle(from: AppFixture.draft(odometer: 120_600, now: appDate(2026, 6, 2)))
+        )
+
+        model.recordOdometer(vehicleID: id, amount: 120_000, on: appDate(2026, 6, 14))
+
+        XCTAssertNil(model.distanceThisMonth(for: id))
     }
 
     func testDistanceThisMonthIgnoresLastMonthsReadings() throws {
