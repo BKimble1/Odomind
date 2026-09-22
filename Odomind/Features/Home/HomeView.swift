@@ -178,7 +178,7 @@ struct HomeView: View {
                     Text("Finish setting up")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.Palette.primaryText)
-                    Text("Reminders and nearby shops are still off.")
+                    Text("Reminders and shops are off.")
                         .font(.caption)
                         .foregroundStyle(Theme.Palette.secondaryText)
                 }
@@ -258,7 +258,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.small) {
                 Text("Nothing matching “\(searchText)”")
                     .font(.subheadline.weight(.medium))
-                Text("Try a simpler word — “oil”, “tires”, “brakes” — or add it as your own job.")
+                Text("Try “oil”, “tires” or “brakes”.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -289,7 +289,7 @@ struct HomeView: View {
     @ViewBuilder
     private func partResults(for vehicle: Vehicle) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-            Text("Odomind opens a retailer's own search with what it knows about \(vehicle.displayName). It does not hold prices or stock of its own.")
+            Text("Opens a retailer's search for your \(vehicle.identity.model). No prices, no stock.")
                 .font(.footnote)
                 .foregroundStyle(Theme.Palette.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -420,7 +420,7 @@ struct MileageOverview: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(Theme.Palette.primaryText)
                     .accessibilityIdentifier("home.odometer")
-                Text("Odomind needs one reading before it can work out what is due.")
+                Text("Add one reading to see what is due.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -494,7 +494,7 @@ struct UpNextEmptyState: View {
             if evaluations.isEmpty {
                 Text("No jobs tracked yet")
                     .font(.subheadline.weight(.medium))
-                Text("Pick the maintenance you care about and Odomind will keep track of when it is next due.")
+                Text("Pick the jobs you care about.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -505,7 +505,7 @@ struct UpNextEmptyState: View {
             } else if !unknown.isEmpty {
                 Text("Your plan is ready")
                     .font(.subheadline.weight(.medium))
-                Text("Add your last oil change when you know it and Odomind can work out when the next one is due. Until then it will not guess.")
+                Text("Add your last oil change and Odomind works out the next. It will not guess.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -517,7 +517,7 @@ struct UpNextEmptyState: View {
             } else {
                 Text("Nothing due from your records")
                     .font(.subheadline.weight(.medium))
-                Text("Keeping your mileage current is what keeps this accurate.")
+                Text("Keep your mileage current.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

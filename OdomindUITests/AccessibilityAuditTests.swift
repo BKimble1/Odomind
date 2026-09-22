@@ -91,6 +91,7 @@ final class OdomindAccessibilityAuditTests: XCTestCase {
         let fresh = XCUIApplication()
         fresh.launchArguments = ["-odomind-ui-testing"]
         fresh.launch()
+        fresh.skipTheTrackingQuestion(timeout: 25)
         XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
         audit("Onboarding", in: fresh)
     }

@@ -19,6 +19,10 @@ struct OnboardingView: View {
     @State private var showingPermissions = false
     /// Asked before anything else, and only once.
     @State private var showingInterests = false
+    /// Whether answering the question should carry on into the vehicle flow.
+    /// False when the question was put on launch and nobody has asked to add
+    /// a car yet.
+    @State private var hasStartedAddingAVehicle = false
 
     /// A fixed point size does not grow with the owner's text setting, which
     /// XCTest's accessibility audit reports as partially unsupported Dynamic
@@ -53,12 +57,26 @@ struct OnboardingView: View {
         .sheet(isPresented: $showingInterests) {
             TrackingInterestsView {
                 showingInterests = false
+                // Answered from the welcome screen, so there is nowhere to go
+                // next yet — they have not asked to add a car. Answered on the
+                // way in, the flow carries straight on.
+                guard hasStartedAddingAVehicle else { return }
                 if shouldOfferPermissions {
                     showingPermissions = true
                 } else {
                     showingAddVehicle = true
                 }
             }
+        }
+        .task {
+            // The first thing a new owner sees. It takes one tap, it decides
+            // what their plan starts as, and asking it after the vehicle flow
+            // means asking somebody who has just finished and wants to be
+            // done. Dismissing without answering is allowed — the question
+            // comes back once, on the way into the vehicle flow.
+            guard !model.preferences.hasAnsweredTrackingQuestion else { return }
+            guard !showingAddVehicle, !showingPermissions else { return }
+            showingInterests = true
         }
     }
 
@@ -96,9 +114,10 @@ struct OnboardingView: View {
             VStack(spacing: Theme.Spacing.medium) {
                 PrimaryActionButton(title: "Add my vehicle") {
                     // What you care about, then what the app may do, then the
-                    // car. The first two are about the owner and take seconds;
-                    // asking them after the vehicle flow means asking somebody
-                    // who has just finished and wants to be done.
+                    // car. The question normally has an answer by now — it is
+                    // put on launch — so this is the path for somebody who
+                    // swiped it away.
+                    hasStartedAddingAVehicle = true
                     if !model.preferences.hasAnsweredTrackingQuestion {
                         showingInterests = true
                     } else if shouldOfferPermissions {

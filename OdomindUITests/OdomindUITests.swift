@@ -60,6 +60,9 @@ final class OdomindJourneyUITests: XCTestCase {
     /// `provider-smoke` workflow. What this exercises is the path that has to
     /// work with no connection at all.
     private func addVehicle(odometer: String = "120000", powertrain: String? = "Gasoline") {
+        // Build 4 puts the tracking question on launch, so it is the first
+        // thing between a fresh install and the welcome screen.
+        app.skipTheTrackingQuestion(timeout: 25)
         let start = waitFor(
             app.buttons["onboarding.addVehicle"],
             20,
@@ -230,6 +233,33 @@ final class OdomindJourneyUITests: XCTestCase {
         )
     }
 
+    /// What the owner meets on a fresh install, in order.
+    ///
+    /// The question decides what their plan starts as, so it comes before the
+    /// vehicle rather than after it: asking somebody who has just finished
+    /// adding a car is asking somebody who wants to be done.
+    func testANewOwnerIsAskedWhatTheyTrackBeforeAnythingElse() {
+        let fresh = XCUIApplication()
+        fresh.launchArguments = ["-odomind-ui-testing"]
+        fresh.launch()
+
+        XCTAssertTrue(
+            fresh.element(withIdentifier: "interest.tyresAndBrakes").waitForExistence(timeout: 25),
+            "a new owner should be asked what they track before anything else — saw \(fresh.visibleRowLabels())"
+        )
+
+        XCTAssertTrue(
+            fresh.answerTheTrackingQuestion("tyresAndBrakes"),
+            "the question should be answerable in one tap and a continue"
+        )
+
+        // Answered, it gets out of the way and the welcome screen is there.
+        XCTAssertTrue(
+            fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 15),
+            "answering should land on the welcome screen — saw \(fresh.visibleRowLabels())"
+        )
+    }
+
     func testTheWaysOutOfSearchAreOnScreenBeforeAnythingIsTyped() {
         // Both escape hatches have to be reachable without scrolling past a
         // list of suggestions nobody asked for. Loading the suggestion index
@@ -238,6 +268,7 @@ final class OdomindJourneyUITests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing"]
         fresh.launch()
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
         _ = fresh.textFields["addVehicle.search"].waitForExistence(timeout: 10)
 
@@ -269,6 +300,7 @@ final class OdomindJourneyUITests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing"]
         fresh.launch()
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
         let search = waitFor(fresh.textFields["addVehicle.search"], 10, "the search field is missing")
 
@@ -551,6 +583,7 @@ final class OdomindJourneyUITests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing", "-odomind-exercise-permissions"]
         fresh.launch()
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
 
         // Both questions are put, and neither prompt fires on appearance —
@@ -571,6 +604,7 @@ final class OdomindJourneyUITests: XCTestCase {
         fresh.launchArguments = ["-odomind-ui-testing", "-odomind-exercise-permissions"]
         fresh.launch()
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         waitFor(fresh.buttons["onboarding.addVehicle"], 20, "onboarding did not appear").tap()
         waitFor(fresh.buttons["permissions.continue"], 10, "the permission step is missing").tap()
         waitFor(fresh.buttons["addVehicle.manual"], 15, "the vehicle flow should follow")
@@ -578,6 +612,7 @@ final class OdomindJourneyUITests: XCTestCase {
         // Back out without adding anything, then start again. A refusal is an
         // answer; re-asking is how an app trains people to dismiss it.
         fresh.buttons["addVehicle.cancel"].tap()
+        fresh.skipTheTrackingQuestion(timeout: 25)
         waitFor(fresh.buttons["onboarding.addVehicle"], 10, "onboarding should come back").tap()
         waitFor(fresh.buttons["addVehicle.manual"], 15, "the permission step must not be put a second time")
     }
@@ -604,6 +639,10 @@ final class OdomindAccessibilityUITests: XCTestCase {
             "UICTContentSizeCategoryAccessibilityL"
         ]
         app.launch()
+
+        // The question comes first, and it has to survive these text sizes
+        // too — it is the first screen a new owner ever sees.
+        app.skipTheTrackingQuestion(timeout: 25)
 
         let start = app.buttons["onboarding.addVehicle"]
         XCTAssertTrue(start.waitForExistence(timeout: 20), "onboarding did not appear at a large text size")

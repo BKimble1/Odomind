@@ -2,6 +2,39 @@ import XCTest
 
 extension XCUIApplication {
 
+    /// Answers the first-run tracking question, if it is on screen.
+    ///
+    /// Build 4 puts it on launch rather than behind the welcome screen's
+    /// button, because it decides what a new owner's plan starts as and
+    /// asking after the vehicle flow means asking somebody who has just
+    /// finished. That means every test that starts from a fresh install meets
+    /// it first, and has to answer it before the welcome screen underneath is
+    /// reachable — `onboarding.addVehicle` exists in the tree while the sheet
+    /// covers it, so waiting on it succeeds and the tap lands on the sheet.
+    ///
+    /// Skipping is the answer used here: it is the fastest path and it leaves
+    /// the starter plan exactly as every existing test expects it.
+    @discardableResult
+    func skipTheTrackingQuestion(timeout: TimeInterval = 10) -> Bool {
+        let button = buttons["interests.continue"]
+        guard button.waitForExistence(timeout: timeout) else { return false }
+        button.tap()
+        return true
+    }
+
+    /// Chooses one interest and continues, for the tests that care what the
+    /// answer does.
+    @discardableResult
+    func answerTheTrackingQuestion(_ interest: String, timeout: TimeInterval = 10) -> Bool {
+        let option = element(withIdentifier: "interest.\(interest)")
+        guard option.waitForExistence(timeout: timeout) else { return false }
+        option.tap()
+        let button = buttons["interests.continue"]
+        guard button.waitForExistence(timeout: 5) else { return false }
+        button.tap()
+        return true
+    }
+
     /// The element carrying `identifier`, whatever type it resolves to.
     ///
     /// A row in a SwiftUI List surfaces as a button when it wraps a

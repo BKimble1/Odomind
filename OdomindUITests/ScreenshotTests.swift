@@ -181,6 +181,7 @@ final class OdomindScreenshotTests: XCTestCase {
             add(attachment)
         }
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
         fresh.buttons["onboarding.addVehicle"].tap()
 
@@ -446,6 +447,7 @@ final class OdomindScreenshotTests: XCTestCase {
         XCUIDevice.shared.appearance = .light
         fresh.launch()
 
+        fresh.skipTheTrackingQuestion(timeout: 25)
         XCTAssertTrue(fresh.buttons["onboarding.addVehicle"].waitForExistence(timeout: 25))
         let screenshot = XCTAttachment(screenshot: fresh.screenshot())
         screenshot.name = "light-00-onboarding"
