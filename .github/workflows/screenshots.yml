@@ -139,8 +139,15 @@ jobs:
           else
             files=()
             for name in $wanted; do
-              if [ -f "$RUNNER_TEMP/small/$name.jpg" ]; then
-                files+=("$RUNNER_TEMP/small/$name.jpg")
+              # Globbed, not matched exactly. `xcresulttool` exports each
+              # attachment under its readable name *plus* an index and a UUID,
+              # so the file is "light-01-home_1_8FCA….jpg" and an exact
+              # lookup finds nothing — which is what the first run of this
+              # step reported for all four screens asked for. The iPhone SE
+              # step alongside has always globbed for this reason.
+              found=$(find "$RUNNER_TEMP/small" -maxdepth 1 -type f -name "$name*.jpg" | sort | head -1)
+              if [ -n "$found" ]; then
+                files+=("$found")
               else
                 echo "IMGMISS:$name"
               fi
