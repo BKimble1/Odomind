@@ -195,6 +195,8 @@ struct ScheduleEditor: View {
                     )
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Schedule")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

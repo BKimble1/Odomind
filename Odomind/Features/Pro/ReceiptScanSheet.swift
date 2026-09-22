@@ -84,6 +84,8 @@ struct ReceiptScanSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Scan a receipt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

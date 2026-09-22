@@ -35,6 +35,8 @@ struct CalendarExportReview: View {
                     list
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Add to calendar")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

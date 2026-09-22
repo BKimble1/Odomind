@@ -108,6 +108,8 @@ struct AppointmentEditor: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle(draft.existingID == nil ? "New appointment" : "Appointment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

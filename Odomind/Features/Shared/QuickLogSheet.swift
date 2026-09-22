@@ -103,6 +103,8 @@ struct QuickLogSheet: View {
                         .lineLimit(1...4)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Record work")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

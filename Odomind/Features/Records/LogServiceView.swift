@@ -186,6 +186,8 @@ struct LogServiceView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle(editingRecord == nil ? "Log service" : "Edit service")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

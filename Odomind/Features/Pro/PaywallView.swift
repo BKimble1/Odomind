@@ -27,7 +27,7 @@ struct PaywallView: View {
                 }
                 .padding(Theme.Spacing.large)
             }
-            .background(Theme.Palette.page)
+            .background(LuminousField())
             .navigationTitle("Odomind Pro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

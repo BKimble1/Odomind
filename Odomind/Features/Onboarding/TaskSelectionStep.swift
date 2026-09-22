@@ -52,8 +52,9 @@ struct TaskSelectionStep: View {
             }
         }
         .listStyle(.insetGrouped)
+        // The field comes from AddVehicleFlow, which wraps every step. A
+        // second one here would double the tint on one screen out of three.
         .scrollContentBackground(.hidden)
-        .background(LuminousField(strength: 0.5))
         .onAppear(perform: preselect)
     }
 

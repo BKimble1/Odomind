@@ -90,6 +90,8 @@ struct MileageEntrySheet: View {
                         .lineLimit(1...3)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Update mileage")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -195,6 +197,8 @@ struct OdometerReplacementSheet: View {
                         .lineLimit(1...3)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Odometer replaced")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

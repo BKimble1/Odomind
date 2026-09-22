@@ -45,6 +45,8 @@ struct AddVehicleFlow: View {
                     TaskSelectionStep(draft: $draft)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle(step.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

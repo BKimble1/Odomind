@@ -131,6 +131,8 @@ struct SpecificationEditor: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle(kind.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

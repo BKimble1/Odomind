@@ -97,6 +97,8 @@ struct VINEntryView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(LuminousField(strength: 0.5))
             .navigationTitle("Look up a VIN")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
