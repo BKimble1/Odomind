@@ -35,7 +35,9 @@ struct VehicleArtworkPicker: View {
 
         List {
             Section {
-                VehiclePortrait(vehicle: vehicle, height: 150)
+                StudioVehicleImage(vehicle: vehicle, width: 260)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.small)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             } footer: {
@@ -122,6 +124,8 @@ struct VehicleArtworkPicker: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .task(id: photoItem) {
             guard let photoItem else { return }
             isImporting = true
