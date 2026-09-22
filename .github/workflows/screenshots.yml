@@ -19,6 +19,12 @@ on:
         description: "Pixel width for the log copies."
         required: false
         default: "430"
+      screens:
+        description: >
+          Space-separated capture names to put in the log, e.g.
+          "light-01-home light-03b-parts". Blank emits every one.
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -94,21 +100,11 @@ jobs:
           done
           ls -l "$RUNNER_TEMP/small"
 
-      # The log is the only channel out of a runner this repository can read,
-      # so every screen goes into it here rather than through an artifact. A
-      # finalize call returning 403 took all thirty images with it last time,
-      # because the emit jobs needed an artifact that never landed.
-      - name: Emit every capture into the log
-        if: always()
-        run: |
-          shopt -s nullglob
-          for file in "$RUNNER_TEMP"/small/*.jpg; do
-            name=$(basename "$file" .jpg)
-            echo "IMGSTART:$name:$(wc -c < "$file" | tr -d ' ')"
-            base64 -i "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
-            echo "IMGEND:$name"
-          done
-
+      # Both uploads are best-effort. They are for somebody looking at the run
+      # in a browser; the authoring host cannot reach an artifact at all, which
+      # is what the emit step below is for. The full-size upload in particular
+      # fails whenever xcresult exports a debug-description file whose name
+      # carries a double quote, and that must not take the run down with it.
       - name: Upload the full-size screenshots
         continue-on-error: true
         uses: actions/upload-artifact@v4
@@ -126,6 +122,36 @@ jobs:
           path: ${{ runner.temp }}/small
           retention-days: 14
           if-no-files-found: error
+
+      # Reading these back means pulling the tail of this log, because a job
+      # log is the only channel out of a runner this repository can read —
+      # artifact downloads resolve to blob storage, which the authoring host's
+      # egress policy denies. Emitting all thirty-one puts the interesting ones
+      # hundreds of lines deep, so `screens` narrows the set and the chosen
+      # ones land at the end where a short tail reaches them.
+      - name: Emit captures into the log
+        if: always()
+        run: |
+          shopt -s nullglob
+          wanted="${{ inputs.screens }}"
+          if [ -z "$wanted" ]; then
+            files=("$RUNNER_TEMP"/small/*.jpg)
+          else
+            files=()
+            for name in $wanted; do
+              if [ -f "$RUNNER_TEMP/small/$name.jpg" ]; then
+                files+=("$RUNNER_TEMP/small/$name.jpg")
+              else
+                echo "IMGMISS:$name"
+              fi
+            done
+          fi
+          for file in "${files[@]}"; do
+            name=$(basename "$file" .jpg)
+            echo "IMGSTART:$name:$(wc -c < "$file" | tr -d ' ')"
+            base64 -i "$file" | fold -w 2400 | awk '{printf "IMG:%04d:%s\n", NR, $0}'
+            echo "IMGEND:$name"
+          done
 
   small-display:
     name: Capture on the smallest iPhone
