@@ -154,8 +154,10 @@ the catalog gap this build addresses.
 
 ## Verified
 
-- Build, unit tests, domain tests, catalog validation and the full UI suite
-  green in CI.
+- The app and test targets build; the domain tests, catalog validation and the
+  Xcode project check pass. The unit and UI suites run on every push and the
+  branch is not considered done until both are green — see the CI run for the
+  head commit rather than trusting this line.
 - The tracking question, the pin, the dashboard vehicle, distance this month
   and the parts chain covered by tests in `DashboardAndInterestsTests` and
   `ConfigurationOptionSpecificationTests`.
