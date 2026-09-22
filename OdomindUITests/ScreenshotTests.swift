@@ -302,11 +302,16 @@ final class OdomindScreenshotTests: XCTestCase {
                 // came back byte-identical to the one before. Lift the row
                 // clear of the bar before touching it.
                 var lifts = 0
-                while option.exists, option.frame.maxY > fresh.frame.height - 140, lifts < 6 {
+                while option.exists, option.frame.maxY > fresh.frame.height - 140, lifts < 3 {
                     fresh.swipeUp()
                     lifts += 1
                 }
-                option.tap()
+                // The row's upper area rather than its centre. A swipe on a
+                // 667-point screen moves far enough to overshoot, and the
+                // centre of a two-line row sitting at the bottom edge is
+                // exactly the part the bar covers — while its first line,
+                // which is what names the configuration, is in the clear.
+                option.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
                 shot("build3-03b-picked")
                 // The trait, not a downstream symptom. The iPhone SE reported
                 // engine oil missing from Jobs three screens later, and the
