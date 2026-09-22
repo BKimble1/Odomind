@@ -38,7 +38,7 @@ struct OnboardingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-        .background(Theme.Palette.page)
+        .background(LuminousField())
         .sheet(isPresented: $showingAddVehicle) {
             AddVehicleFlow()
         }
@@ -99,7 +99,7 @@ struct OnboardingView: View {
                     // car. The first two are about the owner and take seconds;
                     // asking them after the vehicle flow means asking somebody
                     // who has just finished and wants to be done.
-                    if model.preferences.trackingInterests.isEmpty {
+                    if !model.preferences.hasAnsweredTrackingQuestion {
                         showingInterests = true
                     } else if shouldOfferPermissions {
                         showingPermissions = true

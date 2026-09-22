@@ -79,6 +79,21 @@ enum AppFixture {
         draft.selectedTaskIDs = taskIDs
         return draft
     }
+
+    /// The vehicle the selection step builds from a draft before anything is
+    /// saved, so a test can ask the catalog what it would offer.
+    static func previewVehicle(
+        make: String = "Jeep",
+        model: String = "Wrangler",
+        year: Int = 2010
+    ) -> Vehicle {
+        let source = draft(make: make, model: model, year: year)
+        return Vehicle(
+            identity: source.identity,
+            configuration: source.configuration,
+            displayUnit: source.displayUnit
+        )
+    }
 }
 
 /// A provider that answers from a canned result rather than the network.

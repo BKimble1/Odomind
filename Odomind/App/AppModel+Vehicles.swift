@@ -464,7 +464,37 @@ extension AppModel {
     }
 
     /// Records what the owner said they want to keep an eye on.
+    ///
+    /// Choosing nothing is recorded as an answer, not as a gap, so the
+    /// question is put once and never again.
     func setTrackingInterests(_ interests: Set<TrackingInterest>) {
-        updatePreferences { $0.trackingInterests = interests }
+        updatePreferences {
+            $0.trackingInterests = interests
+            $0.hasAnsweredTrackingQuestion = true
+        }
+    }
+
+    /// The jobs a new vehicle starts out tracking.
+    ///
+    /// The catalog's recommended set, narrowed to what the owner said they
+    /// care about on first run. Until Build 4 the first-run answer was stored
+    /// and never read, so somebody who said "tyres and brakes" still got
+    /// eighteen ticked jobs — which is the screen the question was added to
+    /// avoid.
+    ///
+    /// Narrowing only changes what starts out ticked. Everything the catalog
+    /// offers this vehicle stays on the screen and one tap adds it back, so a
+    /// wrong answer costs a tap rather than hiding work.
+    func recommendedTaskIDs(from suggestions: [SuggestedTask]) -> Set<String> {
+        let recommended = suggestions.filter(\.isRecommendedByDefault)
+        let categories = preferences.trackingInterests.categories
+        guard !categories.isEmpty else { return Set(recommended.map(\.definition.id)) }
+
+        let narrowed = recommended.filter { categories.contains($0.definition.category) }
+        // An answer that rules out everything this vehicle is offered is not a
+        // usable answer. An empty starting plan reads as "Odomind found
+        // nothing to track", which is worse than too much.
+        guard !narrowed.isEmpty else { return Set(recommended.map(\.definition.id)) }
+        return Set(narrowed.map(\.definition.id))
     }
 }

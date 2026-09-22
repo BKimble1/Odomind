@@ -186,6 +186,13 @@ struct AppPreferences: Codable, Hashable, Sendable {
     /// the question, which is an answer: Odomind then offers its ordinary
     /// recommended set rather than narrowing it.
     var trackingInterests: Set<TrackingInterest>
+    /// Whether the question has been put at all.
+    ///
+    /// Separate from the answer, because skipping leaves an empty set and an
+    /// empty set is indistinguishable from never having been asked. Without
+    /// this, somebody who skipped got the question again on the next launch —
+    /// exactly the behaviour the permission step was fixed for.
+    var hasAnsweredTrackingQuestion: Bool
 
     init(
         appearance: AppearancePreference = .system,
@@ -195,7 +202,8 @@ struct AppPreferences: Codable, Hashable, Sendable {
         hasSeenCalendarIntroduction: Bool = false,
         hasSeenPermissionSetup: Bool = false,
         pinnedVehicleID: UUID? = nil,
-        trackingInterests: Set<TrackingInterest> = []
+        trackingInterests: Set<TrackingInterest> = [],
+        hasAnsweredTrackingQuestion: Bool = false
     ) {
         self.appearance = appearance
         self.calendar = calendar
@@ -205,6 +213,7 @@ struct AppPreferences: Codable, Hashable, Sendable {
         self.hasSeenPermissionSetup = hasSeenPermissionSetup
         self.pinnedVehicleID = pinnedVehicleID
         self.trackingInterests = trackingInterests
+        self.hasAnsweredTrackingQuestion = hasAnsweredTrackingQuestion
     }
 
     static let `default` = AppPreferences()
@@ -219,7 +228,8 @@ struct AppPreferences: Codable, Hashable, Sendable {
             hasSeenCalendarIntroduction: try container.decodeIfPresent(Bool.self, forKey: .hasSeenCalendarIntroduction) ?? false,
             hasSeenPermissionSetup: try container.decodeIfPresent(Bool.self, forKey: .hasSeenPermissionSetup) ?? false,
             pinnedVehicleID: try container.decodeIfPresent(UUID.self, forKey: .pinnedVehicleID),
-            trackingInterests: try container.decodeIfPresent(Set<TrackingInterest>.self, forKey: .trackingInterests) ?? []
+            trackingInterests: try container.decodeIfPresent(Set<TrackingInterest>.self, forKey: .trackingInterests) ?? [],
+            hasAnsweredTrackingQuestion: try container.decodeIfPresent(Bool.self, forKey: .hasAnsweredTrackingQuestion) ?? false
         )
     }
 }
@@ -275,5 +285,15 @@ enum TrackingInterest: String, Codable, Hashable, Sendable, CaseIterable, Identi
         case .spending: return []
         case .paperwork: return [.inspection, .seasonal]
         }
+    }
+}
+
+extension Set where Element == TrackingInterest {
+    /// Every catalog category these interests take in.
+    ///
+    /// Empty means "do not narrow": either nothing was chosen, or what was
+    /// chosen is about what Odomind shows rather than what it tracks.
+    var categories: Set<MaintenanceCategory> {
+        reduce(into: Set<MaintenanceCategory>()) { $0.formUnion($1.categories) }
     }
 }

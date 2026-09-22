@@ -30,10 +30,8 @@ struct TaskSelectionStep: View {
     var body: some View {
         List {
             Section {
-                InlineNotice(
-                    message: "Pick what you care about. You can add or remove anything later, and nothing here is permanent."
-                )
-                Toggle("Show advanced tasks", isOn: $showAdvanced)
+                InlineNotice(message: preselectionNote)
+                Toggle("Advanced jobs", isOn: $showAdvanced)
             }
 
             ForEach(byCategory) { group in
@@ -72,13 +70,18 @@ struct TaskSelectionStep: View {
         }
     }
 
+    /// Says why these are ticked, when the owner's own answer decided it.
+    private var preselectionNote: String {
+        model.preferences.trackingInterests.categories.isEmpty
+            ? "Pick what you care about. Add or remove any time."
+            : "Ticked from what you said you track. Add or remove any time."
+    }
+
     private func preselect() {
         guard !didPreselect else { return }
         didPreselect = true
         guard draft.selectedTaskIDs.isEmpty else { return }
-        draft.selectedTaskIDs = Set(
-            suggestions.filter(\.isRecommendedByDefault).map(\.definition.id)
-        )
+        draft.selectedTaskIDs = model.recommendedTaskIDs(from: suggestions)
     }
 
     private func toggle(_ suggestion: SuggestedTask) {

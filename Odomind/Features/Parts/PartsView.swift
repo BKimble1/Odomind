@@ -210,7 +210,7 @@ struct PartsView: View {
     /// than kept in a second list here.
     private var mapTerm: String {
         let kinds = relevantSpecificationKinds
-        if kinds.contains(where: { $0.group == .tires }) { return "tire shop" }
+        if kinds.contains(where: { $0.group == .tiresAndWheels }) { return "tire shop" }
         return "auto parts store"
     }
 

@@ -16,7 +16,40 @@ import pathlib
 import re
 import sys
 
-DECLARED = re.compile(r'accessibilityIdentifier\(\s*"([^"]+)"')
+# The whole argument to the call, so a conditional identifier declares both
+# of its branches. A control that reads
+# `.accessibilityIdentifier(isPrimary ? "a.b" : "a.c")` sets one of two real
+# identifiers; matching only a literal that follows the paren saw neither, and
+# reported a test looking for one of them as referencing something the app
+# never sets.
+DECLARED_CALL = re.compile(r'accessibilityIdentifier\(')
+STRING_LITERAL = re.compile(r'"([^"]*)"')
+
+
+def call_arguments(text: str, start: int) -> str:
+    """The text between an opening paren and its match.
+
+    Counting parens rather than stopping at the first `)`: an interpolated
+    identifier such as `"jobs.task.\(result.definitionID)"` closes a paren
+    inside its own string literal, and a non-greedy match ended there and
+    truncated the identifier it was meant to read.
+    """
+    depth = 0
+    index = start
+    while index < len(text):
+        character = text[index]
+        if character == '"':
+            index += 1
+            while index < len(text) and text[index] != '"':
+                index += 2 if text[index] == "\\" else 1
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:index]
+        index += 1
+    return ""
 REFERENCED = (
     re.compile(r'element\(withIdentifier:\s*"([^"]+)"'),
     re.compile(
@@ -39,14 +72,18 @@ def main(root: pathlib.Path) -> int:
     exact: set[str] = set()
     prefixes: set[str] = set()
     for path in (root / "Odomind").rglob("*.swift"):
-        for match in DECLARED.finditer(path.read_text()):
-            value = match.group(1)
-            if "\\(" in value:
-                prefix = value.split("\\(")[0]
-                if prefix:
-                    prefixes.add(prefix)
-            else:
-                exact.add(value)
+        text = path.read_text()
+        for call in DECLARED_CALL.finditer(text):
+            for match in STRING_LITERAL.finditer(call_arguments(text, call.end() - 1)):
+                value = match.group(1)
+                if not value:
+                    continue
+                if "\\(" in value:
+                    prefix = value.split("\\(")[0]
+                    if prefix:
+                        prefixes.add(prefix)
+                else:
+                    exact.add(value)
     declared = exact | prefixes
 
     referenced: dict[str, set[str]] = {}

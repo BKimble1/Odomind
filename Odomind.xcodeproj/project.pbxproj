@@ -44,6 +44,7 @@
 		4291E8C34BE03468CC5F2923 /* UntrackedJobView.swift in app */ = {isa = PBXBuildFile; fileRef = 25BB9DD841DB366896A72768 /* UntrackedJobView.swift */; };
 		430F02785B55CF16BDE5EE6C /* AppModel+Vehicles.swift in app */ = {isa = PBXBuildFile; fileRef = 0F6DD0FD78B407D8AC1509C0 /* AppModel+Vehicles.swift */; };
 		4422E867A84DD7C2CC7BDF5E /* ServiceRecordDetailView.swift in app */ = {isa = PBXBuildFile; fileRef = CF16F6EDA857F2C50E694C55 /* ServiceRecordDetailView.swift */; };
+		4815D445186D95412A2C17D4 /* DashboardAndInterestsTests.swift in unit */ = {isa = PBXBuildFile; fileRef = 358D4DDB5B957AF6440A79DB /* DashboardAndInterestsTests.swift */; };
 		533F75A0723EE7DC769EC20B /* EventEditView.swift in app */ = {isa = PBXBuildFile; fileRef = 3774AD31B32A309C679A2875 /* EventEditView.swift */; };
 		5839BC7A1831E9A616D0D3C7 /* AppModel.swift in app */ = {isa = PBXBuildFile; fileRef = 5B659E1D39246BF590785B21 /* AppModel.swift */; };
 		595D4E601CB4BA2A3F5BF1F9 /* OdomindUITests.swift in ui */ = {isa = PBXBuildFile; fileRef = CA28853266D8D2A9B30AE5AE /* OdomindUITests.swift */; };
@@ -251,6 +252,7 @@
 		4553FA11E3535D4611D230A1 /* BuildTwoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildTwoTests.swift; sourceTree = "<group>"; };
 		319CE8630D9091BC0F826FF2 /* CalendarAndTransactionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarAndTransactionTests.swift; sourceTree = "<group>"; };
 		77443B2701737D36556ED06B /* ContrastTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastTests.swift; sourceTree = "<group>"; };
+		358D4DDB5B957AF6440A79DB /* DashboardAndInterestsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardAndInterestsTests.swift; sourceTree = "<group>"; };
 		257AE7BCFCED3F24575A0A49 /* EnrichmentMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrichmentMigrationTests.swift; sourceTree = "<group>"; };
 		5600D040D8A6F377701655C6 /* vpic-ambiguous-engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-ambiguous-engine.json"; sourceTree = "<group>"; };
 		B0FA6651AD2928ADDBB7D8FB /* vpic-partial-ev.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpic-partial-ev.json"; sourceTree = "<group>"; };
@@ -559,6 +561,7 @@
 				4553FA11E3535D4611D230A1,
 				319CE8630D9091BC0F826FF2,
 				77443B2701737D36556ED06B,
+				358D4DDB5B957AF6440A79DB,
 				257AE7BCFCED3F24575A0A49,
 				14B54E15F58B7109371B2568,
 				7899705A20F0C5975D740017,
@@ -852,6 +855,7 @@
 				02FA06C3C86DC943702AEF63 /* BuildTwoTests.swift */,
 				B0659432DE3852D430F5C655 /* CalendarAndTransactionTests.swift */,
 				A28029E565BC42B0F9DA2E26 /* ContrastTests.swift */,
+				4815D445186D95412A2C17D4 /* DashboardAndInterestsTests.swift */,
 				CEE0F28F2333B7C4A8C0B063 /* EnrichmentMigrationTests.swift */,
 				2EEE6D52BDAF9D02C7B8A5D1 /* FuelEconomyClientTests.swift */,
 				F250EE33134ECC955B1C34CD /* PartsQueryTests.swift */,
