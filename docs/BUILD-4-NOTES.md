@@ -154,14 +154,61 @@ the catalog gap this build addresses.
 
 ## Verified
 
-- The app and test targets build; the domain tests, catalog validation and the
-  Xcode project check pass. The unit and UI suites run on every push and the
-  branch is not considered done until both are green — see the CI run for the
-  head commit rather than trusting this line.
+- **Shipped.** TestFlight **1.3, build 11**, from commit `7c2e0fe`. App Store
+  Connect processed it and reported `VALID`, which is the state that matters —
+  "uploaded" is not the same thing, and the deploy polls until Apple says one
+  or the other.
+- The build was gated on the full suite: domain tests and catalog validation,
+  the app unit tests, and the UI suite (journeys, accessibility, accessibility
+  audit). All ran *before* the archive, so two earlier attempts stopped with
+  archive, export and upload skipped rather than shipping a red build.
+- The accessibility audit ran in full. Its contrast, clipping and Dynamic Type
+  findings are printed and marked REPORTED under the rationale in
+  `AccessibilityAuditTests` — system-rendered chrome rather than app code.
 - The tracking question, the pin, the dashboard vehicle, distance this month
   and the parts chain covered by tests in `DashboardAndInterestsTests` and
   `ConfigurationOptionSpecificationTests`.
 - The first-run flow covered by a UI test that starts from a fresh install.
+
+## What the UI suite caught
+
+Hiding Home's navigation bar — a bar saying "Home" above a tab bar saying
+"Home" was the third repeat on one screen — broke sixteen tests that anchored
+on `navigationBars["Home"]`. The dashboard rendered correctly throughout; the
+anchor was gone. They now wait on `home.odometer`.
+
+One more failed for a different reason: `testSampleVehicleIsClearlyMarked`
+enters onboarding through `onboarding.sample` rather than
+`onboarding.addVehicle`, so the sweep that taught the other tests to answer the
+new first-run question did not match it. The button sat behind the sheet, so
+waiting on it succeeded and the tap landed on the sheet.
+
+`check-ui-identifiers.py` could not have caught either. It collected every
+`navigationBars` title a test named and treated them all as known without
+asking whether any screen sets one. It now checks, and making it stricter
+immediately found a second latent case in `LogServiceView`'s conditional
+title.
+
+## The screens were not reviewed by eye
+
+This is a gap, stated rather than papered over.
+
+Artifact downloads resolve to `productionresultssa*.blob.core.windows.net`,
+which the authoring host's egress policy denies, so the only channel out of a
+runner is the job log. Getting an image from there onto disk means reproducing
+thousands of characters of base64 exactly, which is not something to rely on.
+
+Three real faults were fixed chasing it — the emit step now takes a `screens`
+list and runs after the uploads so the chosen few land where a short tail
+reaches them, and it globs for the UUID suffix `xcresulttool` appends. What
+remains is the channel itself. The durable fix is to have the capture job
+commit the small JPEGs to a throwaway branch, which `git fetch` reaches
+perfectly well; that needs `contents: write` on that job and has not been done
+without the owner's say-so.
+
+What *is* verified about the look: every palette token added in Build 4 now
+measures against its contrast bar in `ContrastTests`, including the composited
+luminous field, and there is one card component rather than five.
 
 ## Not verified from here
 
