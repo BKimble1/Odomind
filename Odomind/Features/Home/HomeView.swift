@@ -190,7 +190,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.permissionsDismiss")
             }
             .padding(Theme.Spacing.medium)
-            .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .cardSurface(radius: Theme.Radius.tile)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -222,7 +222,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, Theme.Spacing.medium)
             .padding(.vertical, Theme.Spacing.medium)
-            .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+            .cardSurface(radius: Theme.Radius.tile)
             .padding(.horizontal, Theme.Spacing.large)
 
             // Always visible, not revealed on the first keystroke: the choice
@@ -525,7 +525,7 @@ struct UpNextEmptyState: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.Spacing.medium)
-        .background(Theme.Palette.recessed, in: RoundedRectangle(cornerRadius: Theme.Radius.tile))
+        .cardSurface(radius: Theme.Radius.tile)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("home.upNextEmpty")
     }
