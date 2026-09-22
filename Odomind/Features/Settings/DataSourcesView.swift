@@ -116,6 +116,8 @@ struct DataSourcesView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Data sources")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -312,6 +314,8 @@ struct PrivacyView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -375,6 +379,8 @@ struct AboutView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -434,6 +440,8 @@ struct DiagnosticsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Diagnostics")
         .navigationBarTitleDisplayMode(.inline)
     }

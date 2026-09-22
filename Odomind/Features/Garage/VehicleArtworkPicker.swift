@@ -119,7 +119,7 @@ struct VehicleArtworkPicker: View {
                     }
                     .accessibilityIdentifier("artwork.bodyStyle")
                 } footer: {
-                    Text("Odomind guesses the shape from what the vehicle lookup reported. Set it yourself if the picture looks wrong. This changes the drawing only — it has no effect on your maintenance or on which parts fit.")
+                    Text("The drawing only. Nothing here affects your maintenance or which parts fit.")
                 }
             }
         }

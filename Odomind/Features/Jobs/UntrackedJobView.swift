@@ -155,6 +155,8 @@ struct UntrackedJobView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
     }
 
     private func scheduleSource(_ suggestion: SuggestedTask) -> String {

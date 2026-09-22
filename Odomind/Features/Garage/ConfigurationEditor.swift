@@ -71,7 +71,7 @@ struct ConfigurationEditor: View {
             } header: {
                 Text("Drivetrain")
             } footer: {
-                Text("Drivetrain decides whether differential and transfer-case service appear. All-wheel-drive vehicles vary, so Odomind asks rather than assuming.")
+                Text("Decides whether differential and transfer-case service appear.")
             }
 
             Section {
@@ -135,10 +135,12 @@ struct ConfigurationEditor: View {
             } header: {
                 Text("Where and how it is driven")
             } footer: {
-                Text("Manufacturers define severe use differently, so Odomind only offers a severe schedule where one is actually published for your vehicle. Leaving this unset changes nothing.")
+                Text("Offered only where one is published for your vehicle. Unset changes nothing.")
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
     }
 
     private func binding<Value>(

@@ -77,6 +77,8 @@ struct AddTaskView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
     }
 
     private func byCategory(_ suggestions: [SuggestedTask]) -> [SuggestionCategoryGroup] {

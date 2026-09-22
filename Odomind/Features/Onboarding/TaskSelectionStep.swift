@@ -52,6 +52,8 @@ struct TaskSelectionStep: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .onAppear(perform: preselect)
     }
 

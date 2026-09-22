@@ -65,6 +65,8 @@ struct BackupView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Backup and restore")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $exportedFile) { file in
@@ -165,6 +167,8 @@ struct ImportPreviewSheet: View {
                 }
             }
             .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
             .navigationTitle("Restore")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

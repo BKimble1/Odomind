@@ -225,7 +225,7 @@ private struct FindVehicleStep: View {
             } header: {
                 Text("Other ways")
             } footer: {
-                Text("Typing it in always works, including with no connection. A VIN can also fill in the engine and drivetrain, and Odomind asks before sending it.")
+                Text("Typing it in always works, offline too. A VIN also fills in the engine and drivetrain.")
             }
 
             if let decode = draft.decodeResult {
@@ -629,7 +629,7 @@ private struct ConfirmStep: View {
                 Text("Which one is yours?")
             } footer: {
                 VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-                    Text("These are the configurations this year, make and model was sold in. Picking one fills in the engine and drivetrain, which is what decides whether a job like a transfer case service applies at all.")
+                    Text("How this year, make and model was sold. Picking one fills in the engine and drivetrain.")
                     if let first = options.first {
                         Text(first.sourceLine)
                             .foregroundStyle(Theme.Palette.secondaryText)
@@ -665,7 +665,7 @@ private struct ConfirmStep: View {
                         if case .none(let reason) = model.vehicleOptions.status {
                             Text(reason).foregroundStyle(Theme.Palette.secondaryText)
                         }
-                        Text("These decide which jobs apply at all — an electric vehicle never gets an oil change. Leave either unset and Odomind keeps the jobs that depend on it out of your plan rather than guessing.")
+                        Text("These decide which jobs apply — an electric car never gets an oil change. Unset, Odomind leaves them out rather than guessing.")
                     }
                 }
             }

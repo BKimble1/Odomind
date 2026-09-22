@@ -118,6 +118,8 @@ struct ServiceRecordDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .sheet(isPresented: $showingEdit) {
             LogServiceView(vehicle: vehicle, editingRecord: record)
         }

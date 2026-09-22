@@ -36,6 +36,8 @@ struct AppearanceSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -93,6 +95,8 @@ struct CalendarSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Calendar")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -124,6 +128,8 @@ struct UnitsSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Units")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -210,6 +216,8 @@ struct ProSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Odomind Pro")
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.entitlements.refreshEntitlement() }
@@ -239,6 +247,8 @@ struct SampleDataView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Sample vehicle")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Remove the sample vehicle?", isPresented: $showingRemove, titleVisibility: .visible) {
@@ -338,6 +348,8 @@ struct CatalogUpdateSettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Maintenance updates")
         .navigationBarTitleDisplayMode(.inline)
     }

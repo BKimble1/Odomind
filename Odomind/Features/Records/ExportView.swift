@@ -76,6 +76,8 @@ struct ExportView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
         .navigationTitle("Export")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $exportedFile) { file in

@@ -127,6 +127,31 @@ Levels 3 and 4 are what ships. Level 4 is a vector side profile rather than a
 photographic three-quarter: it is the only level with **100% coverage**, which
 is what "every single car should have one" requires.
 
+## Live provider evidence
+
+From the `provider-smoke` workflow run on this branch at commit `2206549`
+(runner, not this host). 8 probes, 0 unreachable.
+
+| Vehicle | Identity from vPIC | Configurations from fueleconomy.gov | Commons photos with a licence | Applicable part number |
+| --- | --- | --- | --- | --- |
+| 2010 JEEP Wrangler | Confirmed | 3 | 5/5 | **Blocked** |
+| 2015 Toyota Camry | Confirmed | 2 | 5/5 | **Blocked** |
+| 2018 Ford F-150 | Confirmed | 13 | 5/5 | **Blocked** |
+
+Searching by model with no year supplied returned 24 Jeep models (including
+`Wrangler` and `Wrangler JK`) and 58 Toyota models. A VIN decode came back with
+make, model, year, body class, 3.8 L displacement, 6 cylinders, gasoline,
+4WD and the `Unlimited X` trim; only `TransmissionStyle` was blank for that
+VIN, which is the provider's gap and is left unanswered rather than guessed.
+
+vPIC's `GetParts` is **not applicable** rather than unavailable: it returns
+regulatory submission letters — `CoverLetterURL`, `LetterDate`,
+`ManufacturerName` — and carries no fitment or part numbers at all. No free
+source does.
+
+The same run printed `SPECIFICATIONS HELD (0) — none` for the Jeep, which is
+the catalog gap this build addresses.
+
 ## Verified
 
 - Build, unit tests, domain tests, catalog validation and the full UI suite

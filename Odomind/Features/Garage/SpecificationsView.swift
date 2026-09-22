@@ -93,13 +93,15 @@ struct SpecificationsView: View {
                         Label(group.displayName, systemImage: group.symbolName)
                     } footer: {
                         if group == .tiresAndWheels {
-                            Text("Use the placard in the driver's door opening for cold tire pressure. The number moulded into the tire sidewall is that tire's maximum, not your vehicle's operating pressure.")
+                            Text("Use the door-jamb placard. The sidewall number is the tire's maximum, not your pressure.")
                         }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminousField(strength: 0.5))
     }
 
     /// Only shows specification kinds that can apply to this vehicle.
