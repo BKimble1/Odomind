@@ -251,6 +251,48 @@ BMW and GMC — vPIC capitalises a lot of marques. The two Wrangler rows are the
 caught earlier: the owner picks, rather than Odomind picking one of their cars
 for them.
 
+### Two more the capture run found, after the first five
+
+Running the capture against live providers turned up two defects that no
+amount of fixture work would have.
+
+**A photograph with nobody's name on it.** The first real Commons photograph
+Odomind ever displayed went out with no credit. `aspectRatio(contentMode:
+.fill)` reports a layout size that *covers* the proposal rather than fitting
+inside it, so a landscape photograph in a 124-point card laid out more than
+twice as tall as the card — and the bottom-trailing credit sat below the
+card's bottom edge, where the `.clipped()` further out removed it. The
+attribution had been written, reviewed and shipped, and was never once on
+screen. A licence is a condition of showing the picture, so this is not a
+cosmetic bug. The picture is sized and clipped before the credit goes on now,
+the credit is in the portrait's spoken label as well, and the capture asserts
+that a photograph on screen has one.
+
+The sequence is worth recording: I could not tell from the screenshot whether
+the credit was there or merely too small to read, so I wrote an assertion
+instead of deciding. It failed on its first run.
+
+**A vehicle whose make was "wrangler".** The iPhone SE captured the
+confirmation step reading `Vehicle: 2023 wrangler Wrangler`. An SE is slow
+enough to finish typing before the bundled index finishes loading, and against
+an empty index *every* query is unrecognised — which leaves one fallback,
+treat the first word as a make. vPIC obliges: it lists a trailer manufacturer
+called `WRANGLER`. The three-pass make resolution that exists to stop exactly
+this is useless before there is an index to resolve against, so the bug it
+fixed came back whenever the loader lost a race. An unrecognised query now
+waits as a spinner until the index settles — loaded, or tried and failed — and
+`loadIndex` re-plans whatever was typed while it loaded.
+
+**And three failures that were the capture walk, not the app.** Worth naming
+because each read as an app defect first: scrolling to a live configuration
+list put the odometer field above the viewport and `scrollTo` only goes down;
+a keyboard covered the matches on an SE so the tap meant for one landed on a
+key; and `.idle` looked identical to "asked and got nothing" from outside, so
+the walk photographed the generic questions before the request had left the
+device. The last of those was half an app bug too — the owner saw the wrong
+question flicker past — and is fixed in the app rather than worked around in
+the test.
+
 ### What the screenshots confirmed was right
 
 The yearless search returns "JEEP Wrangler" and "JEEP Wrangler JK" for
