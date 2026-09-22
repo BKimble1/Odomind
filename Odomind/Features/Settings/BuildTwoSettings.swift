@@ -62,7 +62,7 @@ struct CalendarSettingsView: View {
             } header: {
                 Text("How far ahead")
             } footer: {
-                Text("A job due at a mileage moves every time you add a reading, so Odomind projects a bounded window rather than an endless series of dates that will be wrong next month.")
+                Text("A mileage-based job moves with every reading, so Odomind projects a window rather than an endless series.")
             }
 
             Section {
@@ -124,7 +124,7 @@ struct UnitsSettingsView: View {
             } header: {
                 Text("Distance")
             } footer: {
-                Text("Stored per vehicle, so a household can keep one car in miles and another in kilometres. Readings you have already entered keep the unit they were entered in.")
+                Text("Per vehicle, so one car can be in miles and another in kilometres. Existing readings keep their unit.")
             }
         }
         .listStyle(.insetGrouped)
@@ -320,10 +320,10 @@ struct CatalogUpdateSettingsView: View {
                 Text("Updates")
             } footer: {
                 VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-                    Text("Automatic checks are part of Odomind Pro and happen occasionally while you are using the app — never at launch, and never in a loop. Manual checks are always available.")
+                    Text("Pro. Occasionally while you use the app — never at launch. Manual checks are always available.")
                     // Said here rather than discovered by tapping Check now
                     // and reading a message that sounds like a fault.
-                    Text("No updated catalog has been published yet, so a check will currently find nothing. The schedules in this build are the ones Odomind is using.")
+                    Text("None published yet, so a check finds nothing. This build's schedules are the ones in use.")
                 }
             }
 
@@ -334,7 +334,7 @@ struct CatalogUpdateSettingsView: View {
                     }
                     .accessibilityIdentifier("catalogUpdates.reviewProposals")
                 } footer: {
-                    Text("An update never changes a schedule you set yourself, and never silently changes one you did not. Changed guidance is parked here for you to accept or ignore.")
+                    Text("Never changes a schedule you set, and never changes one silently. You accept or ignore each change.")
                 }
             }
 

@@ -38,7 +38,7 @@ struct BackupView: View {
             } header: {
                 Text("Back up")
             } footer: {
-                Text("One file with everything: vehicles, mileage, tasks, history, specifications, settings and, if included, your receipts. Save it somewhere you will still have it if this phone does not come back.")
+                Text("One file with everything, receipts included if you want them. Keep it somewhere this phone is not.")
             }
 
             Section {

@@ -224,7 +224,7 @@ struct CalendarView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.small) {
                 Text("Apple Calendar")
                     .font(.subheadline.weight(.medium))
-                Text("Odomind can add upcoming items to your calendar. You review what gets added, and it is a copy — Odomind does not keep it in step unless you turn on managed updates.")
+                Text("You review what gets added. It is a copy, not kept in step unless you turn on managed updates.")
                     .font(.footnote)
                     .foregroundStyle(Theme.Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

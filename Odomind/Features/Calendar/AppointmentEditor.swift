@@ -61,7 +61,7 @@ struct AppointmentEditor: View {
                     DatePicker("Date", selection: $draft.scheduledOn, displayedComponents: .date)
                     TextField("Where (optional)", text: $draft.location)
                 } footer: {
-                    Text("An appointment is a plan, not a record. Odomind will not treat it as work done, and it does not move any due date.")
+                    Text("A plan, not a record. It is not work done and moves no due date.")
                 }
 
                 if !planItems.isEmpty {

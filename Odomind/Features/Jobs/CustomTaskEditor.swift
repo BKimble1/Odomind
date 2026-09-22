@@ -75,7 +75,7 @@ struct CustomTaskEditor: View {
             Section {
                 Toggle("Give it a schedule", isOn: $wantsSchedule)
             } footer: {
-                Text("Without a schedule the task still appears, and you can log it whenever you do the work. Odomind just will not tell you when it is next due.")
+                Text("It still appears and you can log it. Odomind just will not say when it is next due.")
             }
 
             if wantsSchedule {

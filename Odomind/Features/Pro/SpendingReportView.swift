@@ -32,7 +32,7 @@ struct SpendingReportView: View {
         ContentUnavailableView {
             Label("Spending trends are part of Pro", systemImage: "chart.bar.xaxis")
         } description: {
-            Text("See what you have spent by job, by month and by vehicle, and produce a service dossier. Everything you have already recorded stays exactly where it is either way.")
+            Text("What you have spent by job, month and vehicle, plus a service dossier.")
         } actions: {
             Button("See what Pro adds") { router.presentPaywall = true }
                 .buttonStyle(.borderedProminent)
@@ -56,7 +56,7 @@ struct SpendingReportView: View {
                 Text("Total")
             } footer: {
                 // The honest caveat, once, where the number is.
-                Text("This is what you have recorded in Odomind. It is not the cost of owning this vehicle: fuel, insurance and anything you did not log are not here.")
+                Text("What you recorded — not the cost of ownership. Fuel and insurance are not here.")
             }
 
             if !byJob(byCategory).isEmpty {

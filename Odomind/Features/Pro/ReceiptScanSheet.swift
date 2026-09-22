@@ -76,7 +76,7 @@ struct ReceiptScanSheet: View {
                             }
                         }
                     } footer: {
-                        Text("Odomind does not try to work out which parts were bought. Matching a product name is not confirmation that a part fits your vehicle.")
+                        Text("Odomind does not work out which parts were bought. A product name is not proof of fit.")
                     }
                 } else if reading != nil {
                     Section {

@@ -178,7 +178,7 @@ struct VINScannerView: View {
                     ContentUnavailableView {
                         Label("Scanning is unavailable", systemImage: "camera.badge.ellipsis")
                     } description: {
-                        Text("Camera access may be turned off for Odomind. Typing the VIN works just as well — it is 17 characters off the dashboard or door jamb.")
+                        Text("Camera access may be off. Typing works just as well — 17 characters off the door jamb.")
                     } actions: {
                         Button("Type it instead") { dismiss() }
                             .buttonStyle(.borderedProminent)

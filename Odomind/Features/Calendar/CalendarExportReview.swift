@@ -28,7 +28,7 @@ struct CalendarExportReview: View {
                         if model.dashboardVehicle?.isDemo == true {
                             Text("This is the sample vehicle. Odomind does not put fictional dates in your calendar.")
                         } else {
-                            Text("Odomind only exports deadlines it has a date for. Jobs that are due at a mileage have no date until it knows how far you drive.")
+                            Text("Only deadlines with a date. Mileage-based jobs have none until Odomind knows how far you drive.")
                         }
                     }
                 } else {
@@ -84,7 +84,7 @@ struct CalendarExportReview: View {
             } header: {
                 Text("Next \(model.calendarProjectionMonths) months")
             } footer: {
-                Text("Odomind adds these as one-off events in your default calendar. It cannot read your calendar, so it cannot tell you what is already there, and it will not update or remove these later.")
+                Text("One-off events in your default calendar. Odomind cannot read it, update these or remove them.")
             }
 
             if let outcome {
@@ -97,7 +97,7 @@ struct CalendarExportReview: View {
                         VStack(alignment: .leading, spacing: Theme.Spacing.small) {
                             Label("Calendar access is off", systemImage: "exclamationmark.triangle")
                                 .foregroundStyle(Theme.Colors.caution)
-                            Text("Odomind cannot add events without permission. Everything else in the app keeps working, and you can still add a single event from a job screen.")
+                            Text("Odomind cannot add events without permission. You can still add one from a job.")
                                 .font(.footnote)
                                 .foregroundStyle(Theme.Palette.secondaryText)
                             if let url = URL(string: UIApplication.openSettingsURLString) {

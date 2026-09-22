@@ -72,7 +72,7 @@ struct ExportView: View {
             } header: {
                 Text("Backup")
             } footer: {
-                Text("A backup is a single file containing everything: vehicles, mileage, tasks, history, settings and, if you include them, your receipts. Restore it from Garage → Settings → Backup.")
+                Text("One file with everything. Restore it from Settings → Backup.")
             }
         }
         .listStyle(.insetGrouped)

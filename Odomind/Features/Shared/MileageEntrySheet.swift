@@ -180,7 +180,7 @@ struct OdometerReplacementSheet: View {
                 } header: {
                     Text("Odometer replacement")
                 } footer: {
-                    Text("Odomind keeps counting from where the old unit stopped, so your service history and next-due mileage stay correct. Your dashboard keeps showing the new unit's number.")
+                    Text("Odomind keeps counting from where the old unit stopped. The dashboard shows the new one.")
                 }
 
                 if let previousAmount, let newAmount {
